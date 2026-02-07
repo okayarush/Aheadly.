@@ -1,0 +1,47 @@
+{
+  "original_statistics": {
+    "min_elevation": 3.055555582046509,
+    "max_elevation": 55.0,
+    "mean_elevation": 24.93793487548828,
+    "std_elevation": 11.662062644958496,
+    "elevation_range": 51.94444274902344
+  },
+  "enhanced_statistics": {
+    "min_elevation": 7.272302627563477,
+    "max_elevation": 55.0,
+    "mean_elevation": 30.87116050720215,
+    "std_elevation": 10.35197925567627,
+    "elevation_range": 47.727699279785156,
+    "enhancement_factor": 0.8876628279685974
+  },
+  "processing_info": {
+    "enhancement_method": "percentile_stretch_with_gamma",
+    "gamma_value": 0.7,
+    "percentile_range": [
+      1,
+      99
+    ],
+    "normalization_percentiles": [
+      5,
+      95
+    ],
+    "color_scheme": "flood_risk_based",
+    "transparency_method": "reliability_based"
+  },
+  "color_legend": {
+    "dark_red": "Very high flood risk (lowest elevations)",
+    "red_orange": "High flood risk",
+    "orange": "Moderate flood risk",
+    "yellow": "Moderate flood risk (transitional)",
+    "light_green": "Lower flood risk",
+    "green": "Low flood risk",
+    "dark_green": "Very low flood risk (highest elevations)"
+  },
+  "flood_risk_thresholds": {
+    "very_high_risk": "< 22.44m",
+    "high_risk": "22.44 - 28.39m",
+    "moderate_risk": "28.39 - 33.86m",
+    "low_risk": "33.86 - 38.96m",
+    "very_low_risk": "> 38.96m"
+  }
+}

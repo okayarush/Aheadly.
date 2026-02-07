@@ -1,0 +1,120 @@
+{
+  "processing_info": {
+    "colormap": "inferno",
+    "normalization_method": "percentile_based",
+    "percentile_range": [2, 98],
+    "opacity": 0.75,
+    "interpolation": "bilinear"
+  },
+  "temperature_statistics": {
+    "unit": "Kelvin",
+    "display_unit": "Celsius",
+    "conversion_offset": -273.15,
+    "percentile_2": 290.5,
+    "percentile_98": 315.2,
+    "typical_range_celsius": {
+      "min": 17.35,
+      "max": 42.05
+    }
+  },
+  "color_legend": {
+    "colormap_description": "Inferno color scheme - dark purple (cool) to bright yellow (hot)",
+    "temperature_ranges": [
+      {
+        "range_celsius": "< 20°C",
+        "range_kelvin": "< 293.15K",
+        "color": "#000004",
+        "hex": "#000004",
+        "description": "Very cool surfaces (water bodies, dense vegetation)",
+        "risk_level": "low_heat"
+      },
+      {
+        "range_celsius": "20-25°C",
+        "range_kelvin": "293.15-298.15K",
+        "color": "#1b0c41",
+        "hex": "#1b0c41",
+        "description": "Cool surfaces (parks, green areas)",
+        "risk_level": "low_heat"
+      },
+      {
+        "range_celsius": "25-30°C",
+        "range_kelvin": "298.15-303.15K",
+        "color": "#4a0c6b",
+        "hex": "#4a0c6b",
+        "description": "Moderate temperatures (residential areas)",
+        "risk_level": "moderate_heat"
+      },
+      {
+        "range_celsius": "30-35°C",
+        "range_kelvin": "303.15-308.15K",
+        "color": "#781c6d",
+        "hex": "#781c6d",
+        "description": "Warm surfaces (urban areas, light construction)",
+        "risk_level": "moderate_heat"
+      },
+      {
+        "range_celsius": "35-40°C",
+        "range_kelvin": "308.15-313.15K",
+        "color": "#a52c60",
+        "hex": "#a52c60",
+        "description": "Hot surfaces (dense urban, concrete, asphalt)",
+        "risk_level": "high_heat"
+      },
+      {
+        "range_celsius": "40-45°C",
+        "range_kelvin": "313.15-318.15K",
+        "color": "#cc4778",
+        "hex": "#cc4778",
+        "description": "Very hot surfaces (industrial areas, bare soil)",
+        "risk_level": "very_high_heat"
+      },
+      {
+        "range_celsius": "> 45°C",
+        "range_kelvin": "> 318.15K",
+        "color": "#f98e09",
+        "hex": "#f98e09",
+        "description": "Extremely hot surfaces (metal roofs, exposed concrete)",
+        "risk_level": "extreme_heat"
+      }
+    ]
+  },
+  "heat_risk_categories": {
+    "low_heat": {
+      "description": "Comfortable thermal conditions",
+      "health_impact": "Minimal heat stress risk",
+      "color_indicator": "Dark purple to blue"
+    },
+    "moderate_heat": {
+      "description": "Moderate thermal conditions",
+      "health_impact": "Low to moderate heat stress risk",
+      "color_indicator": "Purple to magenta"
+    },
+    "high_heat": {
+      "description": "High thermal conditions",
+      "health_impact": "Moderate to high heat stress risk",
+      "color_indicator": "Red to orange"
+    },
+    "very_high_heat": {
+      "description": "Very high thermal conditions",
+      "health_impact": "High heat stress risk",
+      "color_indicator": "Orange to yellow"
+    },
+    "extreme_heat": {
+      "description": "Extreme thermal conditions",
+      "health_impact": "Very high heat stress and health risk",
+      "color_indicator": "Bright yellow to white"
+    }
+  },
+  "data_source": {
+    "satellite": "ECOSTRESS",
+    "temporal_resolution": "Daily to weekly",
+    "spatial_resolution": "70m to 1km",
+    "processing_date": "2025",
+    "geographic_extent": "Dhaka Metropolitan Area"
+  },
+  "visualization_settings": {
+    "recommended_opacity": 0.8,
+    "z_index": 510,
+    "blend_mode": "multiply"
+  }
+}
