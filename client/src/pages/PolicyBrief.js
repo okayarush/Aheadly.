@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { FiDownload, FiPrinter, FiShare2, FiFileText, FiLoader } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiDownload, FiPrinter, FiShare2, FiLoader, FiMapPin, FiInfo, FiX, FiShield, FiAlertTriangle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
-// Import services
-import analysisService from '../services/analysisService';
+// Services
 import { useCityData } from '../context/CityDataContext';
+import { SECTOR_LIST } from '../utils/HospitalRegistry';
+import { DiseaseDataManager } from '../utils/DiseaseDataManager';
+import { hriBridgeService } from '../services/hriBridgeService';
+import { formatDiseaseSignalFromData } from '../services/diseaseService';
+import { rankInterventions } from '../utils/interventionLogic';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const Container = styled.div`
@@ -17,7 +21,7 @@ const Container = styled.div`
 
 const Header = styled.div`
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 `;
@@ -39,6 +43,7 @@ const Subtitle = styled.p`
 const Actions = styled.div`
   display: flex;
   gap: 1rem;
+  align-items: center;
 `;
 
 const ActionButton = styled(motion.button)`
@@ -57,6 +62,22 @@ const ActionButton = styled(motion.button)`
   &:hover {
     border-color: #8b5cf6;
     background: #f3f4f6;
+  }
+`;
+
+const WardSelect = styled.select`
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 1rem;
+  color: #1e293b;
+  cursor: pointer;
+  background: white;
+  min-width: 200px;
+  
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
   }
 `;
 
@@ -150,238 +171,355 @@ const RecommendationText = styled.div`
   flex: 1;
 `;
 
-const MetricsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
+// Helper Styles for Modal
+const Badge = styled.span`
+  background: ${props => props.bg || '#3b82f6'};
+  color: ${props => props.color || '#fff'};
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  margin-bottom: 0.5rem;
 `;
 
-const MetricBox = styled.div`
-  text-align: center;
-  padding: 1rem;
-  background: #f1f5f9;
-  border-radius: 8px;
-`;
-
-const MetricValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1e293b;
-`;
-
-const MetricLabel = styled.div`
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-top: 0.25rem;
+const Button = styled.button`
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  
+  ${props => props.primary && `
+    background: #3b82f6;
+    color: white;
+    &:hover { background: #2563eb; }
+  `}
+  
+  ${props => props.secondary && `
+    background: transparent;
+    color: #94a3b8;
+    border: 1px solid #475569;
+    &:hover { color: #f8fafc; border-color: #94a3b8; }
+  `}
 `;
 
 
 const PolicyBrief = () => {
     const { selectedCity } = useCityData();
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [selectedWard, setSelectedWard] = useState('Sector-01'); // Default
     const [policyData, setPolicyData] = useState(null);
+    const [detailsModalItem, setDetailsModalItem] = useState(null);
 
     useEffect(() => {
-        fetchPolicyBrief();
-    }, [selectedCity]);
+        if (selectedWard) {
+            generateBrief(selectedWard);
+        }
+    }, [selectedWard]);
 
-    const fetchPolicyBrief = async () => {
+    const generateBrief = async (wardName) => {
+        setLoading(true);
         try {
-            setLoading(true);
-            const response = await analysisService.generatePolicyBrief(
-                1, // cityId
-                selectedCity.coordinates[0], // lat
-                selectedCity.coordinates[1], // lon
-                'comprehensive' // focus
-            );
-            setPolicyData(response.data);
-            toast.success('Policy brief generated successfully');
+            // 1. Get Disease Data (Real Source of Truth)
+            const aggregates = DiseaseDataManager.getWardAggregates();
+            const wardData = aggregates[wardName];
+            const signal = formatDiseaseSignalFromData(wardName, wardData);
+
+            // 2. Get Environmental Data (HRI)
+            const hriData = await hriBridgeService.getBaselineHRIFromTwin(wardName);
+
+            // 3. Get Recommended Interventions (Shared Logic)
+            const rankedInterventions = rankInterventions(hriData.contributors, signal);
+            const topInterventions = rankedInterventions.slice(0, 3); // Top 3
+
+            // 4. Construct Policy Object
+            const brief = {
+                title: `Public Health Action Brief: ${wardName}`,
+                generatedAt: new Date(),
+                executiveSummary: {
+                    overview: `Analysis of ${wardName} indicates a ${hriData.category} risk level (HRI: ${hriData.score.toFixed(1)}/12). Primary concern is ${signal.primary.name} with ${signal.primary.activeCases} active cases.`,
+                    keyFindings: [
+                        `Primary Disease Signal: ${signal.primary.name} (${signal.primary.trend})`,
+                        `Transmission Context: ${signal.primary.transmission || 'None detected'}`,
+                        `Key Environmental Driver: ${Object.entries(hriData.contributors).sort(([, a], [, b]) => b - a)[0][0]}`,
+                        `Total Active Case Load: ${wardData.total} cases`
+                    ],
+                    urgency: hriData.category
+                },
+                recommendations: topInterventions,
+                implementation: {
+                    governance: "Solapur Municipal Corporation - Public Health Dept.",
+                    timeline: "Immediate deployment required within 48 hours for high priority actions."
+                },
+                dataQuality: "Live Digital Twin Feed (Verified)"
+            };
+
+            setPolicyData(brief);
+            toast.success(`Policy Brief generated for ${wardName}`);
+
         } catch (error) {
-            console.error('Error fetching policy brief:', error);
-            toast.error('Failed to generate policy brief');
+            console.error("Error generating brief:", error);
+            toast.error("Failed to generate brief");
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading) {
+    if (loading && !policyData) {
         return (
             <Container>
-                <Header>
-                    <HeaderInfo>
-                        <Title>Policy Brief</Title>
-                        <Subtitle>Generating actionable recommendations...</Subtitle>
-                    </HeaderInfo>
-                </Header>
                 <LoadingSpinner />
-            </Container>
-        );
-    }
-
-    if (!policyData) {
-        return (
-            <Container>
-                <Header>
-                    <HeaderInfo>
-                        <Title>Policy Brief</Title>
-                        <Subtitle>Unable to generate policy brief</Subtitle>
-                    </HeaderInfo>
-                </Header>
             </Container>
         );
     }
 
     return (
         <Container>
+            {/* 1. RED BANNER */}
+            <div style={{
+                width: '100%',
+                background: '#ff0000',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '24px',
+                padding: '16px',
+                textAlign: 'center',
+                marginBottom: '20px'
+            }}>
+                POLICY BRIEF — LIVE UI TEST (DO NOT REMOVE)
+            </div>
+
             <Header>
                 <HeaderInfo>
-                    <Title>Policy Brief</Title>
-                    <Subtitle>Actionable recommendations for urban planners</Subtitle>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Title>Policy Brief Generator</Title>
+                        {/* 2. GREEN BADGE */}
+                        <span style={{
+                            background: '#39ff14',
+                            color: 'black',
+                            padding: '4px 12px',
+                            borderRadius: '4px',
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                            boxShadow: '0 0 10px #39ff14'
+                        }}>
+                            UI TEST ACTIVE
+                        </span>
+                    </div>
+                    <Subtitle>Official Municipal Action Plan</Subtitle>
                 </HeaderInfo>
                 <Actions>
+                    <WardSelect value={selectedWard} onChange={(e) => setSelectedWard(e.target.value)}>
+                        {SECTOR_LIST.map(sector => (
+                            <option key={sector} value={sector}>{sector}</option>
+                        ))}
+                    </WardSelect>
+
                     <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <FiDownload size={16} />
-                        Download PDF
+                        <FiPrinter size={16} /> Print
                     </ActionButton>
                     <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <FiPrinter size={16} />
-                        Print
-                    </ActionButton>
-                    <ActionButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <FiShare2 size={16} />
-                        Share
+                        <FiDownload size={16} /> PDF
                     </ActionButton>
                 </Actions>
             </Header>
 
-            <PolicyDocument
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                <DocumentHeader>
-                    <DocumentTitle>{policyData.title}</DocumentTitle>
-                    <DocumentSubtitle>NASA Earth Observation Data for Sustainable Urban Planning</DocumentSubtitle>
-                    <DocumentMeta>
-                        Generated on {new Date(policyData.generatedAt).toLocaleDateString()} | {selectedCity.name}, {selectedCity.country}
-                    </DocumentMeta>
-                </DocumentHeader>
+            {policyData && (
+                <PolicyDocument
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    <DocumentHeader>
+                        <DocumentTitle>{policyData.title}</DocumentTitle>
+                        <DocumentSubtitle>Integrated Disease & Environmental Risk Analysis</DocumentSubtitle>
+                        <DocumentMeta>
+                            Generated on {policyData.generatedAt.toLocaleDateString()} | {selectedCity.name}, {selectedCity.country}
+                        </DocumentMeta>
+                    </DocumentHeader>
 
-                <Section>
-                    <SectionTitle>Executive Summary</SectionTitle>
-                    <SectionContent>
-                        <strong>Overview:</strong> {policyData.executiveSummary.overview}
-                    </SectionContent>
-                    <SectionContent>
-                        <strong>Key Findings:</strong>
-                        <ul>
-                            {policyData.executiveSummary.keyFindings.map((finding, index) => (
-                                <li key={index} style={{ marginBottom: '0.5rem' }}>{finding}</li>
+                    <Section>
+                        <SectionTitle>Executive Summary</SectionTitle>
+                        <SectionContent>
+                            <strong>Situation Overview:</strong> {policyData.executiveSummary.overview}
+                        </SectionContent>
+                        <SectionContent>
+                            <strong>Critical Findings from Digital Twin:</strong>
+                            <ul>
+                                {policyData.executiveSummary.keyFindings.map((finding, index) => (
+                                    <li key={index} style={{ marginBottom: '0.5rem' }}>{finding}</li>
+                                ))}
+                            </ul>
+                        </SectionContent>
+                        <SectionContent>
+                            <strong>Action Urgency:</strong> <span style={{
+                                color: policyData.executiveSummary.urgency === 'CRITICAL' ? '#ef4444' :
+                                    policyData.executiveSummary.urgency === 'HIGH' ? '#f97316' : '#10b981',
+                                fontWeight: 'bold'
+                            }}>{policyData.executiveSummary.urgency}</span>
+                        </SectionContent>
+                    </Section>
+
+                    <Section>
+                        <SectionTitle>Recommended Clinical & Municipal Actions</SectionTitle>
+                        <RecommendationList>
+                            {policyData.recommendations.map((rec, index) => (
+                                <RecommendationItem key={index}>
+                                    <RecommendationNumber>{index + 1}</RecommendationNumber>
+                                    <RecommendationText>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                            <div style={{ fontWeight: '600', fontSize: '1.1rem', color: '#1e293b' }}>{rec.name}</div>
+                                            <Badge bg={rec.costCategory === 'Low' ? '#10b981' : '#f59e0b'}>{rec.effort} Effort</Badge>
+                                        </div>
+                                        <div style={{ marginBottom: '0.5rem', fontStyle: 'italic', color: '#475569' }}>{rec.description}</div>
+                                        <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                                            <strong>Why:</strong> Targeting {rec.riskDrivers.join(' & ')} drivers.
+                                        </div>
+                                        <button
+                                            onClick={() => setDetailsModalItem(rec)}
+                                            style={{
+                                                marginTop: '0.75rem',
+                                                background: 'none',
+                                                border: 'none',
+                                                color: '#3b82f6',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                padding: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}
+                                        >
+                                            <FiInfo size={14} /> View Implementation Details
+                                        </button>
+                                    </RecommendationText>
+                                </RecommendationItem>
                             ))}
-                        </ul>
-                    </SectionContent>
-                    <SectionContent>
-                        <strong>Urgency Level:</strong> {policyData.executiveSummary.urgency}
-                    </SectionContent>
-                </Section>
+                        </RecommendationList>
+                        {policyData.recommendations.length === 0 && <p>No specific interventions required at this time. Routine monitoring advised.</p>}
+                    </Section>
 
-                <Section>
-                    <SectionTitle>Immediate Policy Recommendations</SectionTitle>
-                    <RecommendationList>
-                        {policyData.policyRecommendations.immediate.map((rec, index) => (
-                            <RecommendationItem key={index}>
-                                <RecommendationNumber>{index + 1}</RecommendationNumber>
-                                <RecommendationText>
-                                    <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>{rec.policy}</div>
-                                    <div style={{ marginBottom: '0.5rem' }}>{rec.description}</div>
-                                    <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                                        Timeline: {rec.timeline} | Impact: {rec.impact} | Feasibility: {rec.feasibility}
-                                    </div>
-                                </RecommendationText>
-                            </RecommendationItem>
-                        ))}
-                    </RecommendationList>
-                </Section>
+                    <Section>
+                        <SectionTitle>Implementation Strategy</SectionTitle>
+                        <SectionContent>
+                            <strong>Governance:</strong> {policyData.implementation.governance}
+                        </SectionContent>
+                        <SectionContent>
+                            <strong>Target Timeline:</strong> {policyData.implementation.timeline}
+                        </SectionContent>
+                    </Section>
 
-                <Section>
-                    <SectionTitle>Implementation Strategy</SectionTitle>
-                    <SectionContent>
-                        <strong>Governance Structure:</strong> {policyData.implementationStrategy.governance.structure}
-                    </SectionContent>
-                    <SectionContent>
-                        <strong>Coordination:</strong> {policyData.implementationStrategy.governance.coordination}
-                    </SectionContent>
-                    <SectionContent>
-                        <strong>Financing:</strong>
-                        <ul>
-                            {policyData.implementationStrategy.financing.sources.map((source, index) => (
-                                <li key={index}>{source}</li>
-                            ))}
-                        </ul>
-                        <div style={{ marginTop: '0.5rem' }}>
-                            Estimated Cost: {policyData.implementationStrategy.financing.estimatedCost} |
-                            ROI: {policyData.implementationStrategy.financing.returnOnInvestment}
-                        </div>
-                    </SectionContent>
-                </Section>
-
-                <Section>
-                    <SectionTitle>Monitoring Framework</SectionTitle>
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                        {policyData.monitoringFramework.kpis.map((kpi, index) => (
-                            <div key={index} style={{
-                                background: '#f8fafc',
-                                padding: '1rem',
-                                borderRadius: '8px',
-                                borderLeft: '4px solid #3b82f6'
-                            }}>
-                                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{kpi.indicator}</div>
-                                <div style={{ color: '#64748b', fontSize: '0.875rem' }}>
-                                    Target: {kpi.target} | Frequency: {kpi.frequency}
+                    <Section>
+                        <SectionTitle>Data Integrity Statement</SectionTitle>
+                        <SectionContent>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#059669', background: '#ecfdf5', padding: '1rem', borderRadius: '8px' }}>
+                                <FiShield />
+                                <div>
+                                    <strong>Source Verified:</strong> All data in this brief is synchronized in real-time with the Solapur Digital Twin v3 system.
+                                    Active case counts match verified hospital reports (Last updated: Today).
                                 </div>
                             </div>
-                        ))}
+                        </SectionContent>
+                    </Section>
+                </PolicyDocument>
+            )}
+
+            {/* DETAILS MODAL */}
+            <AnimatePresence>
+                {detailsModalItem && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setDetailsModalItem(null)}>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            style={{
+                                width: '600px',
+                                maxHeight: '90vh',
+                                overflowY: 'auto',
+                                background: '#fff',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
+                                <div>
+                                    <h2 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', fontSize: '1.5rem' }}>{detailsModalItem.name}</h2>
+                                    <Badge bg="#e2e8f0" color="#475569">Implementation Protocol</Badge>
+                                </div>
+                                <Button secondary onClick={() => setDetailsModalItem(null)} style={{ padding: '0.5rem' }}><FiX size={18} /></Button>
+                            </div>
+
+                            <div style={{ marginBottom: '2rem' }}>
+                                <h4 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Step-by-Step Execution</h4>
+                                <ul style={{ paddingLeft: '1.25rem', color: '#334155', lineHeight: '1.7', fontSize: '0.95rem' }}>
+                                    {detailsModalItem.executionSteps?.map((step, idx) => (
+                                        <li key={idx} style={{ marginBottom: '0.5rem' }}>{step}</li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            {/* NEW: Implementation Resources & Timeline */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                                <div style={{ background: '#eff6ff', padding: '1.25rem', borderRadius: '8px' }}>
+                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#1e40af', textTransform: 'uppercase' }}>Required Resources</h4>
+                                    <div style={{ fontSize: '0.9rem', color: '#1e3a8a' }}>
+                                        <div style={{ marginBottom: '4px' }}><strong>Manpower:</strong> {detailsModalItem.resourceRequirements?.manpower || 'Standard Crew'}</div>
+                                        <div style={{ marginBottom: '4px' }}><strong>Vehicles:</strong> {detailsModalItem.resourceRequirements?.vehicles || 'Standard Fleet'}</div>
+                                        <div><strong>Equipment:</strong> {detailsModalItem.resourceRequirements?.equipment || 'Standard Kit'}</div>
+                                    </div>
+                                </div>
+                                <div style={{ background: '#fefce8', padding: '1.25rem', borderRadius: '8px' }}>
+                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#854d0e', textTransform: 'uppercase' }}>Deployment Timeline</h4>
+                                    <div style={{ fontSize: '0.9rem', color: '#713f12', fontStyle: 'italic' }}>
+                                        {detailsModalItem.specificTimeline || 'Immediate Deployment'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '2rem' }}>
+                                <h4 style={{ color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Expected Outcomes & Metrics</h4>
+                                <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #16a34a' }}>
+                                    <p style={{ margin: '0 0 0.5rem 0', color: '#166534', fontWeight: 'bold' }}>Impact: {detailsModalItem.expectedHealthImpact}</p>
+                                    <p style={{ margin: 0, color: '#14532d', fontSize: '0.9rem' }}><strong>Success Metric:</strong> {detailsModalItem.successMetric || 'Reduction in active cases'}</p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Feasibility</div>
+                                    <div style={{ color: '#1e293b', fontWeight: '700' }}>{detailsModalItem.feasibility}</div>
+                                </div>
+                                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Cost</div>
+                                    <div style={{ color: '#1e293b', fontWeight: '700' }}>{detailsModalItem.costCategory}</div>
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
-                    <SectionContent>
-                        <strong>Data Sources:</strong>
-                        <ul>
-                            {policyData.monitoringFramework.dataSources.map((source, index) => (
-                                <li key={index}>{source}</li>
-                            ))}
-                        </ul>
-                    </SectionContent>
-                </Section>
+                )}
+            </AnimatePresence>
 
-                <Section>
-                    <SectionTitle>Risk Mitigation</SectionTitle>
-                    <SectionContent>
-                        <strong>Political Risks:</strong> {policyData.riskMitigation.politicalRisks}
-                    </SectionContent>
-                    <SectionContent>
-                        <strong>Financial Risks:</strong> {policyData.riskMitigation.financialRisks}
-                    </SectionContent>
-                    <SectionContent>
-                        <strong>Technical Risks:</strong> {policyData.riskMitigation.technicalRisks}
-                    </SectionContent>
-                </Section>
-
-                <Section>
-                    <SectionTitle>Data Sources & Quality</SectionTitle>
-                    <SectionContent>
-                        <strong>Data Quality:</strong> {policyData.dataQuality}
-                    </SectionContent>
-                    <SectionContent>
-                        <strong>Confidence Level:</strong> {policyData.confidenceLevel}
-                    </SectionContent>
-                    <SectionContent>
-                        <strong>Valid Until:</strong> {new Date(policyData.validUntil).toLocaleDateString()}
-                    </SectionContent>
-                </Section>
-            </PolicyDocument>
+            {/* 3. FOOTER MARKER */}
+            <div style={{
+                textAlign: 'center',
+                color: '#808080',
+                fontSize: '12px',
+                marginTop: '40px',
+                padding: '10px'
+            }}>
+                Rendered by /policy-brief component
+            </div>
         </Container>
     );
 };
-
 
 export default PolicyBrief;

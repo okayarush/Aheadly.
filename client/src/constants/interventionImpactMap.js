@@ -13,18 +13,27 @@ export const INTERVENTION_IMPACT_MAP = {
         description: "Deploying rapid response medical teams to high, acute-risk zones.",
         riskDrivers: ['vectorDensity', 'sanitationStress'],
         affectedComponents: {
-            vectorDensity: -2.0, // High impact on immediate risk
+            vectorDensity: -2.0,
             sanitationStress: -1.0
         },
         feasibility: "High",
         costCategory: "Low",
         effort: "Immediate",
+        responsibleDepartment: "Health Dept. (Epidemic Cell)",
+        target: "Symptomatic fever & gastro cases in high-density pockets",
+        impactRationale: "Early diagnosis isolates carriers, preventing secondary cluster formation.",
         executionSteps: [
-            "Identify cluster of recent fever/gastro cases.",
-            "Deploy mobile van with diagnostic kits (RDTs) and basic meds.",
-            "Distribute ORS/Zinc and conduct on-spot awareness.",
-            "Refer severe cases to nearest Urban Health Center (UHC)."
+            "Step 1: Setup triage tents in community center/school.",
+            "Step 2: Rapid Testing (RDT) for all febrile patients.",
+            "Step 3: Distribute free meds & refer criticals to UHC."
         ],
+        resourceRequirements: {
+            manpower: "2 Doctors, 3 Nurses, 4 Volunteers",
+            vehicles: "1 Mobile Health Van (Equipped with PA System)",
+            equipment: "500 RDT Kits, Basic Medicine Stock, ORS/Zinc"
+        },
+        specificTimeline: "Day 0: Setup | Day 1-3: Active Screening | Day 7: Impact Review",
+        successMetric: ">80% screening of symptomatic residents within 3 days",
         expectedHealthImpact: "Immediate reduction in untreated morbidity; prevents progression of acute outbreaks."
     },
     'disease-surveillance': {
@@ -38,12 +47,21 @@ export const INTERVENTION_IMPACT_MAP = {
         feasibility: "Medium",
         costCategory: "Low",
         effort: "Ongoing",
+        responsibleDepartment: "Health Dept. (Surveillance Unit)",
+        target: "Hidden/Unreported cases & indoor breeding sites",
+        impactRationale: "Identifies micro-clusters before they expand into outbreaks.",
         executionSteps: [
-            "Deploy health workers for House-to-House (H2H) surveys.",
-            "Map active breeding sites using GIS mobile app.",
-            "Report daily fever count to Municipal surveillance unit.",
-            "Issue immediate notices to households with breeding spots."
+            "Step 1: House-to-House (H2H) survey by ASHA workers.",
+            "Step 2: Collect blood smears/samples from fever cases.",
+            "Step 3: GIS tagging of positive households."
         ],
+        resourceRequirements: {
+            manpower: "10 ASHA Workers, 2 Sanitary Inspectors",
+            vehicles: "2 Two-wheelers for supervisors",
+            equipment: "Tablets for Data Entry, Sample Collection Kits"
+        },
+        specificTimeline: "Day 0: Team briefing | Day 1-5: 100% Ward Coverage | Day 7: Data Analysis",
+        successMetric: "100% household coverage; Identification of all fever cases",
         expectedHealthImpact: "Early detection of outbreak clusters allows for preemptive containment."
     },
     'fogging-campaign': {
@@ -56,12 +74,21 @@ export const INTERVENTION_IMPACT_MAP = {
         feasibility: "High",
         costCategory: "Medium",
         effort: "Immediate",
+        responsibleDepartment: "Vector Control Dept.",
+        target: "Adult Aedes aegypti / Anopheles mosquitoes",
+        impactRationale: "Instantly knocks down adult vector population, breaking transmission chain.",
         executionSteps: [
-            "Delimit high-risk zones based on active disease signals.",
-            "Schedule fogging during peak mosquito activity (dusk/dawn).",
-            "Notify residents to cover water and food sources.",
-            "Conduct follow-up larval survey after 48 hours."
+            "Step 1: Vehicle-mounted fogging in main streets.",
+            "Step 2: Hand-held thermal fogging in narrow lanes.",
+            "Step 3: Resident advisory to keep doors/windows open."
         ],
+        resourceRequirements: {
+            manpower: "4 Fogging Operators, 1 Supervisor",
+            vehicles: "1 Pickup Truck (Mount), 2 Hand-foggers",
+            equipment: "Malathion/Cyphenothrin solution, PPE Kits"
+        },
+        specificTimeline: "Day 0: Evening Fogging | Day 1: Morning Fogging | Day 3: Repeat Cycle",
+        successMetric: ">90% reduction in adult mosquito density (Landing Rate)",
         expectedHealthImpact: "Rapidly knocks down adult mosquito population, breaking immediate disease transmission cycles."
     },
     'sanitation-response': {
@@ -75,12 +102,21 @@ export const INTERVENTION_IMPACT_MAP = {
         feasibility: "High",
         costCategory: "Medium",
         effort: "Immediate",
+        responsibleDepartment: "Solid Waste Management (SWM) Dept.",
+        target: "Garbage blackspots & overflowing bacterial sources",
+        impactRationale: "Removes breeding substrate for flies and mosquitoes.",
         executionSteps: [
-            "Deploy fast-response sanitation squad to reported blackspots.",
-            "Clear open waste piles and sprinkle bleaching powder.",
-            "Unclog critical drain choke points manually.",
-            "Install temporary bins if needed."
+            "Step 1: JCB removal of accumulated waste piles.",
+            "Step 2: Bleaching powder dusting on cleared sites.",
+            "Step 3: Repair of broken community bins."
         ],
+        resourceRequirements: {
+            manpower: "8 Sanitation Workers, 1 Mukadam",
+            vehicles: "1 Refuse Compactor, 1 Mini-Tipper",
+            equipment: "Shovels, Brooms, Bleaching Powder (50kg)"
+        },
+        specificTimeline: "Day 0: Clearance | Day 1: Disinfection | Day 2: Monitoring",
+        successMetric: "Zero visible garbage piles; cleared drainage flow",
         expectedHealthImpact: "Removes immediate pathogen sources and breeding grounds, reducing enteric and vector risk."
     },
     'drain-desilting': {
@@ -95,12 +131,21 @@ export const INTERVENTION_IMPACT_MAP = {
         feasibility: "High",
         costCategory: "Low",
         effort: "Short-term",
+        responsibleDepartment: "Drainage / Civil Works Dept.",
+        target: "Stagnant water in stormwater drains (Nallahs)",
+        impactRationale: "Restores flow, eliminating stable breeding surface for larvae.",
         executionSteps: [
-            "Identify blockage points using ward map.",
-            "Deploy manual/mechanical desilting crews pre-monsoon.",
-            "Ensure safe disposal of silt at designated landfills.",
-            "Install wire mesh guards to prevent solid waste entry."
+            "Step 1: Manual/Mechanical removal of silt & debris.",
+            "Step 2: Transport of sludge to landfill.",
+            "Step 3: Anti-larval spraying on remaining pockets."
         ],
+        resourceRequirements: {
+            manpower: "6 Contract Labours, 1 Site Supervisor",
+            vehicles: "1 Desilting Machine / JCB",
+            equipment: "Gumboots, Gloves, Spade, Sludge Pump"
+        },
+        specificTimeline: "Day 0-2: Desilting | Day 3: Disposal",
+        successMetric: "Free flow of water in major ward arteries",
         expectedHealthImpact: "Reduces standing water, lowering dengue/malaria vector breeding potential."
     },
     'cool-roofing': {
@@ -113,12 +158,21 @@ export const INTERVENTION_IMPACT_MAP = {
         feasibility: "High",
         costCategory: "Low",
         effort: "Short-term",
+        responsibleDepartment: "Urban Planning / Slum Improvement Dept.",
+        target: "High-density slum households with tin roofs",
+        impactRationale: "Passive cooling reduces heat stress morbidity.",
         executionSteps: [
-            "Identify low-income households with tin/asbestos roofs.",
-            "Apply high-albedo white reflective coating (lime-based or synthetic).",
-            "Monitor indoor surface temperature reduction.",
-            "Re-apply coating annually pre-summer."
+            "Step 1: Identify eligible low-income households.",
+            "Step 2: Surface cleaning & primer application.",
+            "Step 3: Two coats of high-albedo white paint."
         ],
+        resourceRequirements: {
+            manpower: "4 Painters, 2 Volunteers",
+            vehicles: "1 Material Transport Tempo",
+            equipment: "Paint Brushes, Rollers, Safety Harness"
+        },
+        specificTimeline: "Day 0: Survey | Day 1-5: Application",
+        successMetric: "3-5°C reduction in indoor temperature",
         expectedHealthImpact: "Lowers indoor temperatures by 3-5°C, significantly reducing heat stress."
     }
 };

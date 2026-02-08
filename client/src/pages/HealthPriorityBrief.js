@@ -21,11 +21,15 @@ import {
     FiCheckCircle,
     FiArrowRight,
     FiEdit3,
-    FiInfo
+    FiInfo,
+    FiX
 } from 'react-icons/fi';
 import { hriBridgeService } from '../services/hriBridgeService';
 import BoundaryService from '../services/boundaryService';
 import { getSectorID } from '../utils/HospitalRegistry';
+import { DiseaseDataManager } from '../utils/DiseaseDataManager';
+import { formatDiseaseSignalFromData } from '../services/diseaseService';
+import { rankInterventions } from '../utils/interventionLogic';
 
 // --- STYLED COMPONENTS ---
 
@@ -68,10 +72,40 @@ const HeaderSubtitle = styled.div`
   line-height: 1.5;
 `;
 
+const HeaderBottomRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+`;
+
+const HeaderCTAButton = styled.button`
+  background: ${props => props.disabled ? '#1e293b' : '#3b82f6'};
+  color: ${props => props.disabled ? '#64748b' : 'white'};
+  border: 1px solid ${props => props.disabled ? '#334155' : 'transparent'};
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.2s;
+  box-shadow: ${props => props.disabled ? 'none' : '0 4px 6px -1px rgba(59, 130, 246, 0.4)'};
+  opacity: ${props => props.disabled ? 0.6 : 1};
+
+  &:hover {
+    background: ${props => props.disabled ? '#1e293b' : '#2563eb'};
+    transform: ${props => props.disabled ? 'none' : 'translateY(-1px)'};
+    box-shadow: ${props => props.disabled ? 'none' : '0 6px 8px -1px rgba(59, 130, 246, 0.5)'};
+  }
+`;
+
 const ExplainerRow = styled.div`
   display: flex;
   gap: 2rem;
-  margin-top: 0.5rem;
+  /* margin-top managed by container */
 `;
 
 const ExplainerStep = styled.div`
@@ -244,35 +278,71 @@ const DriverIcon = styled.div`
   flex-shrink: 0;
 `;
 
-const ActionTable = styled.table`
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.9rem;
+const ActionCard = styled.div`
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s;
   
-  th {
-    text-align: left;
-    padding: 1rem;
-    color: #94a3b8;
-    border-bottom: 2px solid #334155;
+  &:hover {
+    border-color: #3b82f6;
+    background: #0f172a;
+  }
+`;
+
+const ActionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+`;
+
+const ActionTitle = styled.div`
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+`;
+
+const ActionDept = styled.div`
+  font-size: 0.8rem;
+  color: #94a3b8;
+  background: #0f172a;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  text-transform: uppercase;
+  font-weight: 600;
+`;
+
+const ActionDetailRow = styled.div`
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+
+  label {
+    color: #64748b;
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 0.05em;
+    padding-top: 3px;
   }
-  
-  td {
-    padding: 1rem;
-    border-bottom: 1px solid #1e293b;
-    color: #e2e8f0;
-    vertical-align: top;
-    background: #1e293b;
-    
-    &:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
-    &:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+
+  div {
+    color: #cbd5e1;
+    line-height: 1.5;
   }
-  
-  tr { margin-bottom: 0.5rem; display: table-row; }
+`;
+
+const ActionFooter = styled.div`
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #334155;
+  display: flex;
+  justify-content: flex-end;
 `;
 
 const PrimaryButton = styled.button`
@@ -354,80 +424,6 @@ const getRiskColor = (score) => {
     return '#10b981';
 };
 
-// Strict Priority Logic
-const getClinicalPriority = (clinicalData) => {
-    const { activeCases, trend, cluster, hri } = clinicalData;
-
-    // URGENT: Evidence of transmission
-    if (activeCases > 0 && (trend === 'Rising' || trend === 'Rapidly Rising' || cluster === 'Confirmed Cluster')) {
-        return {
-            level: 'URGENT RESPONSE',
-            color: '#ef4444',
-            reason: `Active transmission detected (${activeCases} cases) with ${trend.toLowerCase()} trend.`
-        };
-    }
-
-    // HIGH: Active cases but stable
-    if (activeCases > 0) {
-        return {
-            level: 'HIGH PRIORITY',
-            color: '#f97316',
-            reason: `Active cases present (${activeCases}) but currently stable. Monitoring required.`
-        };
-    }
-
-    // MODERATE: No cases, but high environmental risk
-    if (activeCases === 0 && hri >= 7) {
-        return {
-            level: 'MODERATE RISK',
-            color: '#eab308',
-            reason: `Zero reported cases, but high environmental risk (HRI ${hri ? hri.toFixed(1) : 'N/A'}) supports vector breeding.`
-        };
-    }
-
-    // ROUTINE: No cases, low risk
-    return {
-        level: 'ROUTINE MONITORING',
-        color: '#10b981',
-        reason: 'No active cases and manageable environmental risk profile.'
-    };
-};
-
-const getClinicalData = (hri, wardName) => {
-    // Deterministic mock based on ward name
-    const seed = wardName.charCodeAt(0) + wardName.charCodeAt(wardName.length - 1);
-
-    let disease = 'Dengue';
-    let type = 'Vector-Borne';
-    let transmission = 'Aedes aegypti mosquito';
-
-    // Introduce variety
-    if (seed % 3 === 0) { disease = 'Malaria'; transmission = 'Anopheles mosquito'; }
-    if (seed % 3 === 1) { disease = 'Cholera'; type = 'Waterborne'; transmission = 'Contaminated water sources'; }
-
-    let activeCases = 0;
-    let trend = 'Stable';
-    let cluster = 'None';
-
-    // Logic: High HRI correlates with cases, but not always (some high HRI areas might just be lucky/prevented)
-    // To fix the "0 cases = Urgent" bug, we explicitly separate Risk from Current Status.
-
-    if (hri >= 8.5) {
-        // High Risk Area
-        activeCases = (seed % 10) > 2 ? (seed % 15) + 5 : 0; // 70% chance of cases
-        if (activeCases > 0) {
-            trend = (seed % 2 === 0) ? 'Rising' : 'Stable';
-            cluster = (activeCases > 10) ? 'Confirmed Cluster' : 'Suspected Cluster';
-        }
-    } else if (hri >= 5) {
-        // Moderate Risk Area
-        activeCases = (seed % 10) > 7 ? (seed % 5) + 1 : 0; // 30% chance of cases
-        if (activeCases > 0) trend = 'Stable';
-    }
-
-    return { disease, type, transmission, activeCases, trend, cluster, hri };
-};
-
 // --- COMPONENT ---
 
 const HealthPriorityBrief = () => {
@@ -435,8 +431,19 @@ const HealthPriorityBrief = () => {
     const [selectedWard, setSelectedWard] = useState(null);
     const [clinicalData, setClinicalData] = useState(null);
     const [priorityInfo, setPriorityInfo] = useState(null);
+    const [interventions, setInterventions] = useState([]);
     const [viewMode, setViewMode] = useState('landing');
+    const [detailsModalItem, setDetailsModalItem] = useState(null);
     const mapRef = useRef(null);
+
+    // Force re-render on global data update (SST Sync)
+    useEffect(() => {
+        const handleDataUpdate = () => {
+            if (selectedWard) handleWardSelect(selectedWard);
+        };
+        window.addEventListener('urbanome-data-update', handleDataUpdate);
+        return () => window.removeEventListener('urbanome-data-update', handleDataUpdate);
+    }, [selectedWard]);
 
     useEffect(() => {
         async function load() {
@@ -452,15 +459,70 @@ const HealthPriorityBrief = () => {
         setSelectedWard(feature);
         setViewMode('analysis');
 
-        try {
-            const baseline = await hriBridgeService.getBaselineHRIFromTwin(feature.properties.Name);
-            const clinical = baseline.disease.primary;
-            const priority = getClinicalPriority({ ...clinical, hri: baseline.score });
+        const rawName = feature.properties.Name;
+        const sectorId = getSectorID(rawName);
 
-            setClinicalData({ ...baseline, ...clinical, secondary: baseline.disease.secondary });
-            setPriorityInfo(priority);
+        try {
+            // STEP 3 â€” SINGLE SOURCE OF TRUTH (EXACT)
+            const aggregates = DiseaseDataManager.getWardAggregates();
+            const wardData = aggregates[sectorId] || { dengue: 0, total: 0 };
+
+            // STEP 4 â€” DISEASE DISPLAY RULES (ABSOLUTE)
+            const signal = formatDiseaseSignalFromData(sectorId, wardData);
+            const primary = signal.primary;
+
+            // STEP 7 â€” FAIL-SAFE GUARD
+            if (!primary || typeof primary.activeCases === 'undefined') {
+                console.error("DATA_MISMATCH_DETECTED: Policy Brief is not receiving expected structure from Digital Twin.");
+                alert("CRITICAL ERROR: Data Sync Failed. Refresh.");
+                return;
+            }
+
+            const hriData = await hriBridgeService.getBaselineHRIFromTwin(sectorId);
+            const ranked = rankInterventions(hriData.contributors, signal);
+            const topActions = ranked.slice(0, 4);
+
+            setClinicalData({
+                ...primary, // Flatten primary for easy access
+                type: primary.type,
+                name: primary.name,
+                activeCases: primary.activeCases,
+                trend: primary.trend,
+                cluster: primary.cluster,
+                transmission: primary.transmission,
+                secondary: signal.secondary,
+                score: hriData.score,
+                contributors: hriData.contributors
+            });
+
+            setInterventions(topActions);
+
+            // Determine Priority Level (Visual only, data uses strict fields)
+            let level = 'ROUTINE MONITORING';
+            let color = '#10b981';
+            let reason = 'No active transmission chains detected.';
+
+            if (primary.activeCases > 0) {
+                if (primary.trend === 'Rising' || primary.trend === 'Surge') {
+                    level = 'URGENT RESPONSE';
+                    color = '#ef4444';
+                    reason = `Active ${primary.name} transmission (${primary.activeCases} cases) with ${primary.trend} trend requires immediate intervention.`;
+                } else {
+                    level = 'HIGH PRIORITY';
+                    color = '#f97316';
+                    reason = `Active ${primary.name} cases (${primary.activeCases}) present but stable. Containment required.`;
+                }
+            } else if (hriData.score >= 7) {
+                level = 'MODERATE RISK';
+                color = '#eab308';
+                reason = `High environmental risk (HRI ${hriData.score.toFixed(1)}) supports vector breeding despite zero current cases.`;
+            }
+
+            setPriorityInfo({ level, color, reason });
+
         } catch (e) {
             console.error(e);
+            alert("CRITICAL ERROR: Data Sync Failed. Refresh.");
         }
     };
 
@@ -480,6 +542,19 @@ const HealthPriorityBrief = () => {
 
     return (
         <Container>
+            {/* STEP 1 â€” HARD VISUAL VERIFICATION */}
+            <div style={{
+                background: "#ff0033",
+                color: "white",
+                padding: "12px",
+                fontWeight: "bold",
+                textAlign: "center",
+                letterSpacing: "1px",
+                zIndex: 9999
+            }}>
+                ✅ HEALTHPRIORITYBRIEF â€” VERIFIED OWNER OF /policy-brief
+            </div>
+
             <LandingHeader>
                 <HeaderTitle>
                     <FiShield /> Ward Health Decision & Policy Brief System
@@ -488,19 +563,29 @@ const HealthPriorityBrief = () => {
                     AI-assisted public health risk assessment and decision documentation. Analyzes disease signals, vector density, and sanitation data to guide municipal response.
                 </HeaderSubtitle>
 
-                <ExplainerRow>
-                    <ExplainerStep active={!selectedWard}>
-                        <StepNumber active={!selectedWard}>1</StepNumber> Select a Ward
-                    </ExplainerStep>
-                    <FiArrowRight style={{ color: '#334155' }} />
-                    <ExplainerStep active={selectedWard && viewMode === 'analysis'}>
-                        <StepNumber active={selectedWard && viewMode === 'analysis'}>2</StepNumber> Review Clinical Risk
-                    </ExplainerStep>
-                    <FiArrowRight style={{ color: '#334155' }} />
-                    <ExplainerStep active={viewMode === 'preview'}>
-                        <StepNumber active={viewMode === 'preview'}>3</StepNumber> Generate Brief
-                    </ExplainerStep>
-                </ExplainerRow>
+                <HeaderBottomRow>
+                    <ExplainerRow>
+                        <ExplainerStep active={!selectedWard} muted={selectedWard}>
+                            <StepNumber active={!selectedWard}>1</StepNumber> Select a Ward
+                        </ExplainerStep>
+                        <FiArrowRight style={{ color: '#334155' }} />
+                        <ExplainerStep active={selectedWard && viewMode === 'analysis'}>
+                            <StepNumber active={selectedWard && viewMode === 'analysis'}>2</StepNumber> Review Clinical Risk
+                        </ExplainerStep>
+                        <FiArrowRight style={{ color: '#334155' }} />
+                        <ExplainerStep active={viewMode === 'preview'}>
+                            <StepNumber active={viewMode === 'preview'}>3</StepNumber> Generate Brief
+                        </ExplainerStep>
+                    </ExplainerRow>
+
+                    <HeaderCTAButton
+                        disabled={!selectedWard}
+                        onClick={() => selectedWard && setViewMode('preview')}
+                        title={!selectedWard ? "Select a ward to enable policy generation" : "Generate Official Brief"}
+                    >
+                        <FiFileText /> Generate Ward Policy Brief
+                    </HeaderCTAButton>
+                </HeaderBottomRow>
             </LandingHeader>
 
             <ContentGrid>
@@ -525,7 +610,6 @@ const HealthPriorityBrief = () => {
 
                 {/* 2. MAIN CONTENT (Gated) */}
                 <MainPanel>
-                    {/* STATE 0: LANDING */}
                     {!selectedWard && (
                         <EmptyState>
                             <FiMapPin />
@@ -534,7 +618,6 @@ const HealthPriorityBrief = () => {
                         </EmptyState>
                     )}
 
-                    {/* STATE 1: ANALYSIS */}
                     {selectedWard && clinicalData && priorityInfo && viewMode === 'analysis' && (
                         <BriefContent>
                             <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -542,7 +625,7 @@ const HealthPriorityBrief = () => {
                                     <div style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ward Analysis</div>
                                     <h2 style={{ fontSize: '2rem', fontWeight: '800', color: '#fff', margin: 0 }}>{selectedWard.properties.Name}</h2>
                                     <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: '0.5rem' }}>
-                                        Sector ID: {getSectorID(selectedWard.properties.Name)} • Population Density: High
+                                        Sector ID: {getSectorID(selectedWard.properties.Name)} • Digital Twin Live Feed
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
@@ -566,9 +649,9 @@ const HealthPriorityBrief = () => {
                                     <DataPoint>
                                         <label>Transmission Mode</label>
                                         <div className="value" style={{ fontSize: '1.1rem', color: '#e2e8f0' }}>
-                                            {clinicalData.transmission}
+                                            {clinicalData.transmission || 'None'}
                                         </div>
-                                        <div className="sub">{clinicalData.type}</div>
+                                        <div className="sub">{clinicalData.type || 'N/A'}</div>
                                     </DataPoint>
                                     <DataPoint>
                                         <label>Environmental Risk</label>
@@ -598,13 +681,12 @@ const HealthPriorityBrief = () => {
                                         </div>
                                         <div style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.5' }}>
                                             {clinicalData.activeCases > 0
-                                                ? `Confirmed ${clinicalData.activeCases} active cases. ${clinicalData.cluster === 'Confirmed Cluster' ? 'Local clustering suggests sustained transmission.' : 'Sporadic cases detected.'}`
+                                                ? `Confirmed ${clinicalData.activeCases} active cases. ${clinicalData.cluster === 'Cluster' ? 'Local clustering suggests sustained transmission.' : 'Sporadic cases detected.'}`
                                                 : `No active cases reported, but surveillance is required due to environmental favorability.`
                                             }
                                         </div>
                                     </div>
                                 </DriverRow>
-
 
                                 {clinicalData.secondary && clinicalData.secondary.map((signal, idx) => (
                                     <DriverRow key={idx}>
@@ -617,78 +699,67 @@ const HealthPriorityBrief = () => {
                                         </div>
                                     </DriverRow>
                                 ))}
-
-                                {clinicalData.contributors.sanitationStress > 1.5 && (
-                                    <DriverRow>
-                                        <DriverIcon bg="rgba(249, 115, 22, 0.2)" color="#f97316"><FiTrash2 /></DriverIcon>
-                                        <div>
-                                            <div style={{ fontWeight: '600', color: '#fdba74', marginBottom: '0.25rem' }}>Secondary: Sanitation & Waste Stress</div>
-                                            <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>
-                                                Existing waste accumulation supports bacterial growth and vector breeding.
-                                            </div>
-                                        </div>
-                                    </DriverRow>
-                                )}
                             </Section>
 
                             <Section>
                                 <SectionTitle><FiTarget /> Recommended Clinical Actions</SectionTitle>
-                                <ActionTable>
-                                    <thead><tr><th>Action</th><th>Target Disease</th><th>Mechanism</th><th>Dept.</th></tr></thead>
-                                    <tbody>
-                                        {clinicalData.type === 'Vector-Borne' ? (
-                                            <>
-                                                <tr>
-                                                    <td style={{ color: '#fff', fontWeight: '600' }}>Targeted Fogging & Larvicide</td>
-                                                    <td>{clinicalData.name} (Vector)</td>
-                                                    <td>Interrupts adult mosquito lifecycle instantly.</td>
-                                                    <td style={{ color: '#93c5fd' }}>Health / Malaria</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style={{ color: '#fff', fontWeight: '600' }}>Source Reduction Drive</td>
-                                                    <td>{clinicalData.name} (Larvae)</td>
-                                                    <td>Removal of stagnation points preventing breeding.</td>
-                                                    <td style={{ color: '#93c5fd' }}>SWM / Health</td>
-                                                </tr>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <tr>
-                                                    <td style={{ color: '#fff', fontWeight: '600' }}>Water Quality Testing</td>
-                                                    <td>{clinicalData.name} (Bacterial)</td>
-                                                    <td>Identify contamination source in supply lines.</td>
-                                                    <td style={{ color: '#93c5fd' }}>Health / Water</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style={{ color: '#fff', fontWeight: '600' }}>Chlorine Tablet Distribution</td>
-                                                    <td>{clinicalData.name}</td>
-                                                    <td>Immediate point-of-use water purification.</td>
-                                                    <td style={{ color: '#93c5fd' }}>Health (ASHA)</td>
-                                                </tr>
-                                            </>
-                                        )}
-                                        {clinicalData.activeCases > 0 && (
-                                            <tr>
-                                                <td style={{ color: '#fff', fontWeight: '600' }}>Fever Screening & Isolation</td>
-                                                <td>{clinicalData.name}</td>
-                                                <td>Identify symptomatic individuals to stop spread.</td>
-                                                <td style={{ color: '#93c5fd' }}>Medical Officer</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </ActionTable>
+
+                                {interventions.map((action, idx) => (
+                                    <ActionCard key={idx}>
+                                        <ActionHeader>
+                                            <div>
+                                                <ActionTitle>{action.name}</ActionTitle>
+                                                <div style={{ color: '#6ee7b7', fontSize: '0.85rem', marginTop: '4px' }}>
+                                                    <FiCheckCircle style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                                    Validated for {clinicalData.name} ({clinicalData.type})
+                                                </div>
+                                            </div>
+                                            <ActionDept>{action.responsibleDepartment}</ActionDept>
+                                        </ActionHeader>
+
+                                        <ActionDetailRow>
+                                            <label>Target</label>
+                                            <div>{action.target || 'General Risk Reduction'}</div>
+                                        </ActionDetailRow>
+
+                                        <ActionDetailRow>
+                                            <label>How</label>
+                                            <div>
+                                                {action.executionSteps ? (
+                                                    <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                                                        {action.executionSteps.slice(0, 3).map((s, i) => <li key={i}>{s}</li>)}
+                                                    </ul>
+                                                ) : 'Standard Protocol'}
+                                            </div>
+                                        </ActionDetailRow>
+
+                                        <ActionDetailRow>
+                                            <label>Why</label>
+                                            <div style={{ color: '#93c5fd' }}>{action.impactRationale || action.description}</div>
+                                        </ActionDetailRow>
+
+                                        <ActionFooter>
+                                            <PrimaryButton
+                                                onClick={() => setDetailsModalItem(action)}
+                                                style={{ width: 'auto', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}
+                                            >
+                                                <FiFileText size={16} /> View Implementation Plan
+                                            </PrimaryButton>
+                                        </ActionFooter>
+                                    </ActionCard>
+                                ))}
+
+                                {interventions.length === 0 && (
+                                    <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', background: '#1e293b', borderRadius: '8px' }}>
+                                        No specific interventions required. Routine monitoring only.
+                                    </div>
+                                )}
                             </Section>
 
-                            <div style={{ marginTop: '4rem', padding: '2rem', background: '#1e293b', borderRadius: '12px', textAlign: 'center' }}>
-                                <h3 style={{ color: 'white', marginBottom: '1rem' }}>Ready to Formalize Decision?</h3>
-                                <PrimaryButton onClick={() => setViewMode('preview')}>
-                                    <FiFileText /> Generate Ward Policy Brief
-                                </PrimaryButton>
-                            </div>
+
                         </BriefContent>
                     )}
 
-                    {/* STATE 2: PREVIEW & DOWNLOAD */}
                     {selectedWard && clinicalData && priorityInfo && viewMode === 'preview' && (
                         <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <div style={{ width: '100%', maxWidth: '800px', display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -708,7 +779,7 @@ const HealthPriorityBrief = () => {
                                     </div>
                                     <div style={{ textAlign: 'right', fontSize: '12px' }}>
                                         <div><strong>Date:</strong> {new Date().toLocaleDateString()}</div>
-                                        <div><strong>Ref:</strong> SMC-{selectedWard.properties.Name.substring(0, 3).toUpperCase()}-2026-001</div>
+                                        <div><strong>Ref:</strong> SMC-{getSectorID(selectedWard.properties.Name).replace('Sector-', 'S')}-2026-001</div>
                                     </div>
                                 </div>
 
@@ -734,25 +805,33 @@ const HealthPriorityBrief = () => {
 
                                 <div style={{ marginBottom: '4rem' }}>
                                     <h3 style={{ fontSize: '14px', textTransform: 'uppercase', borderBottom: '1px solid #ddd', paddingBottom: '5px' }}>3. Mandated Actions</h3>
+
+                                    <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1rem', borderLeft: '4px solid #3b82f6', fontSize: '13px' }}>
+                                        <strong style={{ display: 'block', marginBottom: '0.5rem', color: '#1e293b' }}>Implementation Timeline</strong>
+                                        Current disease severity and trend urgency mandate immediate multi-departmental response.
+                                        <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.2rem', color: '#475569', lineHeight: '1.5' }}>
+                                            <li><strong>Day 0–1:</strong> Rapid field deployment and surveillance initiation</li>
+                                            <li><strong>Day 2–4:</strong> Infrastructure correction and sanitation response</li>
+                                            <li><strong>Day 5–7:</strong> Monitoring, reassessment, and containment validation</li>
+                                        </ul>
+                                    </div>
+
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginTop: '10px' }}>
                                         <thead>
                                             <tr style={{ borderBottom: '1px solid #000' }}>
-                                                <th style={{ textAlign: 'left', padding: '8px' }}>Action Item</th>
-                                                <th style={{ textAlign: 'left', padding: '8px' }}>Department</th>
-                                                <th style={{ textAlign: 'left', padding: '8px' }}>Target</th>
+                                                <th style={{ textAlign: 'left', padding: '8px', width: '25%' }}>Action Item</th>
+                                                <th style={{ textAlign: 'left', padding: '8px', width: '30%' }}>Department</th>
+                                                <th style={{ textAlign: 'left', padding: '8px', width: '45%' }}>Target</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {clinicalData.type === 'Vector-Borne' ? (
-                                                <>
-                                                    <tr><td style={{ padding: '8px' }}>Targeted Fogging</td><td style={{ padding: '8px' }}>Health / Malaria</td><td style={{ padding: '8px' }}>Adult Mosquitoes</td></tr>
-                                                    <tr><td style={{ padding: '8px' }}>Source Reduction</td><td style={{ padding: '8px' }}>SWM / Health</td><td style={{ padding: '8px' }}>Larval Breeding</td></tr>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <tr><td style={{ padding: '8px' }}>Chlorine Distribution</td><td style={{ padding: '8px' }}>Health (ASHA)</td><td style={{ padding: '8px' }}>Water Safety</td></tr>
-                                                </>
-                                            )}
+                                            {interventions.map((action, idx) => (
+                                                <tr key={idx}>
+                                                    <td style={{ padding: '8px', verticalAlign: 'top' }}>{action.name}</td>
+                                                    <td style={{ padding: '8px', verticalAlign: 'top' }}>{action.responsibleDepartment}</td>
+                                                    <td style={{ padding: '8px', verticalAlign: 'top', color: '#444' }}>{action.target}</td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
@@ -767,13 +846,70 @@ const HealthPriorityBrief = () => {
                 </MainPanel>
             </ContentGrid>
 
-            <style>{`
-                @media print {
-                    body * { visibility: hidden; }
-                    .print-content, .print-content * { visibility: visible; }
-                    .print-content { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 40px; box-shadow: none; border-radius: 0; }
-                }
-            `}</style>
+            {/* IMPLEMENTATION DETAILS MODAL */}
+            <AnimatePresence>
+                {detailsModalItem && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setDetailsModalItem(null)}>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            style={{
+                                width: '600px',
+                                maxHeight: '90vh',
+                                overflowY: 'auto',
+                                background: '#0f172a',
+                                border: '1px solid #334155',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                color: '#e2e8f0',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
+                                <div>
+                                    <h2 style={{ margin: '0 0 0.5rem 0', color: '#fff', fontSize: '1.5rem' }}>{detailsModalItem.name}</h2>
+                                    <div style={{ background: '#1e293b', color: '#94a3b8', padding: '0.2rem 0.6rem', borderRadius: '4px', display: 'inline-block', fontSize: '0.8rem', fontWeight: 'bold' }}>IMPLEMENTATION PROTOCOL</div>
+                                </div>
+                                <button onClick={() => setDetailsModalItem(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><FiX size={24} /></button>
+                            </div>
+
+                            <div style={{ marginBottom: '2rem' }}>
+                                <h4 style={{ color: '#cbd5e1', borderBottom: '1px solid #334155', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Step-by-Step Execution</h4>
+                                <ul style={{ paddingLeft: '1.25rem', color: '#94a3b8', lineHeight: '1.7', fontSize: '0.95rem' }}>
+                                    {detailsModalItem.executionSteps?.map((step, idx) => (
+                                        <li key={idx} style={{ marginBottom: '0.5rem' }}>{step}</li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                                <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1.25rem', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#60a5fa', textTransform: 'uppercase' }}>Required Resources</h4>
+                                    <div style={{ fontSize: '0.9rem', color: '#bfdbfe' }}>
+                                        <div style={{ marginBottom: '4px' }}><strong>Manpower:</strong> {detailsModalItem.resourceRequirements?.manpower || 'Standard Crew'}</div>
+                                        <div style={{ marginBottom: '4px' }}><strong>Vehicles:</strong> {detailsModalItem.resourceRequirements?.vehicles || 'Standard Fleet'}</div>
+                                        <div><strong>Equipment:</strong> {detailsModalItem.resourceRequirements?.equipment || 'Standard Kit'}</div>
+                                    </div>
+                                </div>
+                                <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '1.25rem', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
+                                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#facc15', textTransform: 'uppercase' }}>Deployment Timeline</h4>
+                                    <div style={{ fontSize: '0.9rem', color: '#fef08a', fontStyle: 'italic' }}>
+                                        {detailsModalItem.specificTimeline || 'Immediate Deployment (Day 0)'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '2rem' }}>
+                                <h4 style={{ color: '#cbd5e1', borderBottom: '1px solid #334155', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Expected Outcomes & Metrics</h4>
+                                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
+                                    <p style={{ margin: '0 0 0.5rem 0', color: '#34d399', fontWeight: 'bold' }}>Impact: {detailsModalItem.expectedHealthImpact}</p>
+                                    <p style={{ margin: 0, color: '#6ee7b7', fontSize: '0.9rem' }}><strong>Success Metric:</strong> {detailsModalItem.successMetric || 'Reduction in active cases'}</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </Container>
     );
 };

@@ -1,6 +1,6 @@
 import { SECTOR_LIST } from './HospitalRegistry';
 
-const STORAGE_KEY = 'urbanome_disease_state_v2'; // Versioned to force clear old data
+const STORAGE_KEY = 'urbanome_disease_state_v3'; // Versioned to force clear old data
 
 export class DiseaseDataManager {
 
@@ -14,35 +14,58 @@ export class DiseaseDataManager {
         // 1. HARDCODED PRESET DATA (Ensures variance)
         // We explicitly define some sectors to have specific risks
         const presets = {
-            "Sector-01": { fever: 140, diarrhea: 30, respiratory: 50 }, // Total: 220 -> HIGH
-            "Sector-02": { fever: 40, diarrhea: 10, respiratory: 20 },  // Total: 70 -> MEDIUM
-            "Sector-03": { fever: 90, diarrhea: 25, respiratory: 35 },  // Total: 150 -> HIGH
-            "Sector-04": { fever: 15, diarrhea: 5, respiratory: 8 },    // Total: 28 -> LOW
-            "Sector-05": { fever: 100, diarrhea: 100, respiratory: 20 },// Total: 220 -> HIGH (Diarrhea Dominant)
-            "Sector-06": { fever: 10, diarrhea: 10, respiratory: 30 },  // Total: 50 -> LOW
-            "Sector-12": { fever: 20, diarrhea: 80, respiratory: 20 }   // Total: 120 -> MEDIUM (Diarrhea Dominant)
+            "Sector-01": { dengue: 8, malaria: 2, chikungunya: 0, ari: 5, ili: 3, add: 1, typhoid: 0, cholera: 0, heat: 0 }, // Moderate Cluster (~19 total)
+            "Sector-02": { dengue: 0, malaria: 0, chikungunya: 0, ari: 2, ili: 1, add: 0, typhoid: 0, cholera: 0, heat: 0 },      // Green (Routine)
+            "Sector-03": { dengue: 10, malaria: 3, chikungunya: 1, ari: 4, ili: 2, add: 1, typhoid: 0, cholera: 0, heat: 1 },  // High Vector (~22 total)
+            "Sector-04": { dengue: 0, malaria: 0, chikungunya: 0, ari: 0, ili: 0, add: 0, typhoid: 0, cholera: 0, heat: 0 },        // Green (Clean)
+            "Sector-05": { dengue: 1, malaria: 0, chikungunya: 0, ari: 2, ili: 1, add: 15, typhoid: 5, cholera: 2, heat: 0 },  // Water Outbreak (~26 total - Max)
+            "Sector-06": { dengue: 1, malaria: 0, chikungunya: 0, ari: 3, ili: 1, add: 0, typhoid: 0, cholera: 0, heat: 0 },       // Green/Yellow
+            "Sector-12": { dengue: 3, malaria: 1, chikungunya: 0, ari: 2, ili: 1, add: 2, typhoid: 0, cholera: 0, heat: 0 },     // Yellow (Watch)
         };
 
         SECTOR_LIST.forEach((sector) => {
             let data = presets[sector];
 
-            if (!data) {
-                // Fallback for others: Random LOW/MEDIUM
-                const fever = Math.floor(Math.random() * 30);
-                const diarrhea = Math.floor(Math.random() * 20);
-                const respiratory = Math.floor(Math.random() * 30);
-                data = { fever, diarrhea, respiratory };
+            // Fallback for others: Mostly Green/Yellow (Realism)
+            const rand = Math.random();
+            if (rand > 0.8) {
+                // 20% Yellow/Orange (3-8 cases total)
+                data = {
+                    dengue: Math.floor(Math.random() * 3),
+                    malaria: Math.floor(Math.random() * 2),
+                    chikungunya: 0,
+                    ari: Math.floor(Math.random() * 4),
+                    ili: Math.floor(Math.random() * 2),
+                    add: Math.floor(Math.random() * 2),
+                    typhoid: 0,
+                    cholera: 0,
+                    heat: Math.floor(Math.random() * 2)
+                };
+            } else {
+                // 80% Green (Healthy - 0-3 cases total)
+                data = {
+                    dengue: Math.floor(Math.random() * 2), // 0 or 1
+                    malaria: 0,
+                    chikungunya: 0,
+                    ari: Math.floor(Math.random() * 2), // 0 or 1
+                    ili: 0,
+                    add: 0, typhoid: 0, cholera: 0, heat: 0
+                };
             }
 
             // Compute Derived Stats
-            const total = data.fever + data.diarrhea + data.respiratory;
+            const total =
+                (data.dengue || 0) + (data.malaria || 0) + (data.chikungunya || 0) +
+                (data.add || 0) + (data.cholera || 0) + (data.typhoid || 0) +
+                (data.ari || 0) + (data.ili || 0) +
+                (data.heat || 0);
             const level = this.computeLevel(total);
 
             mockData[sector] = {
                 ...data,
                 total,
                 level,
-                dominantType: this.computeDominantType(data.fever, data.diarrhea, data.respiratory)
+                dominantType: this.computeDominantType(data)
             };
         });
 
@@ -64,23 +87,42 @@ export class DiseaseDataManager {
 
         if (!currentData[sector]) {
             // Should not happen, but safeguard
-            currentData[sector] = { fever: 0, diarrhea: 0, respiratory: 0, total: 0, level: "LOW", dominantType: "None" };
+            currentData[sector] = {
+                dengue: 0, malaria: 0, chikungunya: 0,
+                add: 0, cholera: 0, typhoid: 0,
+                ari: 0, ili: 0,
+                heat: 0,
+                total: 0, level: "LOW", dominantType: "None"
+            };
         }
 
-        // ADD counts
-        currentData[sector].fever += (parseInt(report.fever) || 0);
-        currentData[sector].diarrhea += (parseInt(report.diarrhea) || 0);
-        currentData[sector].respiratory += (parseInt(report.respiratory) || 0);
+        // ADD counts - Vector
+        currentData[sector].dengue = (currentData[sector].dengue || 0) + (parseInt(report.dengue) || 0);
+        currentData[sector].malaria = (currentData[sector].malaria || 0) + (parseInt(report.malaria) || 0);
+        currentData[sector].chikungunya = (currentData[sector].chikungunya || 0) + (parseInt(report.chikungunya) || 0);
 
-        // Recompute
-        const total = currentData[sector].fever + currentData[sector].diarrhea + currentData[sector].respiratory;
+        // ADD counts - Water
+        currentData[sector].add = (currentData[sector].add || 0) + (parseInt(report.add) || 0);
+        currentData[sector].cholera = (currentData[sector].cholera || 0) + (parseInt(report.cholera) || 0);
+        currentData[sector].typhoid = (currentData[sector].typhoid || 0) + (parseInt(report.typhoid) || 0);
+
+        // ADD counts - Respiratory
+        currentData[sector].ari = (currentData[sector].ari || 0) + (parseInt(report.ari) || 0);
+        currentData[sector].ili = (currentData[sector].ili || 0) + (parseInt(report.ili) || 0);
+
+        // ADD counts - Heat
+        currentData[sector].heat = (currentData[sector].heat || 0) + (parseInt(report.heat) || 0);
+
+        // Recompute Total
+        const total =
+            currentData[sector].dengue + currentData[sector].malaria + currentData[sector].chikungunya +
+            currentData[sector].add + currentData[sector].cholera + currentData[sector].typhoid +
+            currentData[sector].ari + currentData[sector].ili +
+            currentData[sector].heat;
+
         currentData[sector].total = total;
         currentData[sector].level = this.computeLevel(total);
-        currentData[sector].dominantType = this.computeDominantType(
-            currentData[sector].fever,
-            currentData[sector].diarrhea,
-            currentData[sector].respiratory
-        );
+        currentData[sector].dominantType = this.computeDominantType(currentData[sector]);
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
 
@@ -92,16 +134,24 @@ export class DiseaseDataManager {
 
     // --- HELPERS ---
     static computeLevel(total) {
-        if (total >= 150) return "HIGH";
-        if (total >= 60) return "MEDIUM";
+        if (total >= 16) return "HIGH";
+        if (total >= 8) return "MEDIUM";
         return "LOW";
     }
 
-    static computeDominantType(f, d, r) {
-        const max = Math.max(f, d, r);
+    static computeDominantType(data) {
+        // Group totals
+        const vector = (data.dengue || 0) + (data.malaria || 0) + (data.chikungunya || 0);
+        const water = (data.add || 0) + (data.cholera || 0) + (data.typhoid || 0);
+        const respiratory = (data.ari || 0) + (data.ili || 0);
+        const heat = (data.heat || 0);
+
+        const max = Math.max(vector, water, respiratory, heat);
+
         if (max === 0) return "None";
-        if (f === max) return "Fever";
-        if (d === max) return "Diarrhea";
-        return "Respiratory";
+        if (vector === max) return "Vector-Borne";
+        if (water === max) return "Water-Borne";
+        if (respiratory === max) return "Respiratory";
+        return "Heat-Related";
     }
 }

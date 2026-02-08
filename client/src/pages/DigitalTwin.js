@@ -14,7 +14,7 @@ import { FiMap, FiActivity, FiLayers, FiSun, FiAlertCircle, FiUsers, FiTrash2, F
 import { DiseaseDataManager } from "../utils/DiseaseDataManager";
 import { CommunitySanitationManager } from "../utils/CommunitySanitationManager";
 import { getSectorID } from "../utils/HospitalRegistry"; // Import Sector Mapper
-import { generateDiseaseSignal, generateDiseaseTimeline, getWardDiseaseProfile } from "../services/diseaseService";
+import { generateDiseaseSignal, generateDiseaseTimeline, getWardDiseaseProfile, formatDiseaseSignalFromData } from "../services/diseaseService";
 import "leaflet/dist/leaflet.css";
 
 /* ===================== ICONS ===================== */
@@ -586,27 +586,30 @@ const DigitalTwin = () => {
 
       const { score } = getHRIScore(dData.level, hData.risk, sData.level, nData.mean, cData.level);
 
-      const diseaseSignal = generateDiseaseSignal(
-        rawName,
-        score,
-        cData.level === "HIGH" ? 0.9 : 0.4,
-        nData.mean < 0.3 ? 0.8 : 0.2
-      );
+
+
+      // USE REAL DATA
+      const diseaseSignal = formatDiseaseSignalFromData(sectorId, dData);
 
       const primary = diseaseSignal.primary;
       const hasCases = primary.activeCases > 0;
 
       // PRIORITY COLORING
-      if (hasCases && (primary.trend === 'Explosive' || primary.trend === 'Rising' || primary.trend === 'Rapidly Rising')) {
+      // PRIORITY COLORING (User Requested Distribution)
+      // Red: Rising Trend OR > 20 cases
+      if (hasCases && (primary.trend.includes('Rising') || primary.trend.includes('Surge') || primary.activeCases > 20)) {
         return { fillColor: "#ef4444", weight: 2, color: "#7f1d1d", fillOpacity: 0.8 }; // Red (Urgent)
       }
-      if (hasCases) {
-        return { fillColor: "#f97316", weight: 2, color: "#7c2d12", fillOpacity: 0.75 }; // Orange (High Priority)
+      // Orange: > 8 cases
+      if (primary.activeCases > 8) {
+        return { fillColor: "#f97316", weight: 2, color: "#7c2d12", fillOpacity: 0.75 }; // Orange (Action Needed)
       }
-      if (score >= 7) {
-        return { fillColor: "#eab308", weight: 1.5, color: "#713f12", fillOpacity: 0.6 }; // Yellow (Environment Risk)
+      // Yellow: 3-8 cases OR High HRI Risk
+      if (primary.activeCases >= 3 || score >= 7) {
+        return { fillColor: "#eab308", weight: 1.5, color: "#713f12", fillOpacity: 0.6 }; // Yellow (Watch)
       }
-      return { fillColor: "#22c55e", weight: 1, color: "#14532d", fillOpacity: 0.5 }; // Green (Stable)
+      // Green: 0-2 cases (Routine)
+      return { fillColor: "#22c55e", weight: 1, color: "#14532d", fillOpacity: 0.5 }; // Green (Safe)
     }
 
     // 3. Health Rate Index (HRI) - VISUAL EMPHASIS
@@ -715,25 +718,15 @@ const DigitalTwin = () => {
 
       const { score } = getHRIScore(dData.level, hData.risk, sData.level, nData.mean, cData.level);
 
-      const signal = generateDiseaseSignal(
-        wardName,
-        score,
-        cData.level === "HIGH" ? 0.9 : 0.4,
-        nData.mean < 0.3 ? 0.8 : 0.2
-      );
 
-      const profile = getWardDiseaseProfile(
-        wardName,
-        score,
-        cData.level === "HIGH" ? 0.9 : 0.4,
-        nData.mean < 0.3 ? 0.8 : 0.2
-      );
+
+      const signal = formatDiseaseSignalFromData(wardName, dData);
 
       setSelectedWardDetail({
         wardName,
         sectorId,
         signal,
-        profile,
+        profile: signal.profile, // STRICT MAPPING: Use the same profile as the signal
         score
       });
     };
@@ -779,12 +772,9 @@ const DigitalTwin = () => {
 
         const { score } = getHRIScore(dData.level, hData.risk, sData.level, nData.mean, cData.level);
 
-        const signal = generateDiseaseSignal(
-          rawName,
-          score,
-          cData.level === "HIGH" ? 0.9 : 0.4,
-          nData.mean < 0.3 ? 0.8 : 0.2
-        );
+
+
+        const signal = formatDiseaseSignalFromData(sectorId, dData);
 
         const p = signal.primary;
         const isUrgent = p.activeCases > 0 && (p.trend.includes('Rising') || p.cluster.includes('Cluster'));
@@ -818,7 +808,7 @@ const DigitalTwin = () => {
                         </span>
                     </div>
                     <div style="font-size: 0.85rem; color: #475569;">
-                        Trend: <b>${p.trend}</b> • Transmission: <b>${p.transmission}</b>
+                        Trend: <b>${p.trend}</b> ${p.activeCases > 0 ? `• Transmission: <b>${p.transmission}</b>` : ''}
                     </div>
                 </div>
               </div>
@@ -840,19 +830,19 @@ const DigitalTwin = () => {
               </div>` : ''}
 
               <!-- Transmission Context -->
+              ${p.activeCases > 0 ? `
               <div style="margin-bottom: 14px;">
                 <div style="font-size: 0.75rem; color: #475569; text-transform: uppercase; font-weight: 700; margin-bottom: 6px;">
                     Transmission Context
                 </div>
                 <div style="font-size: 0.85rem; color: #334155; line-height: 1.4; background: #f1f5f9; padding: 8px; border-radius: 4px;">
-                    ${p.activeCases > 0 ? `
-                        ${p.type === 'Vector-Borne' ? `Likely vector breeding supported by HRI score of <b>${score.toFixed(1)}</b>.` : ''}
-                        ${p.type === 'Water-Borne' ? `Sanitation stress indicates fecal-oral risk.` : ''}
-                        ${p.type === 'Respiratory' ? `Seasonal transmission likely.` : ''}
-                        ${p.type === 'Heat-Related' ? `High environmental thermal stress.` : ''}
-                    ` : 'No active disease transmission detected. Maintain routine surveillance.'}
+                        ${p.activeCases > 0 && p.type === 'Vector-Borne' ? `Likely vector breeding supported by HRI score of <b>${score.toFixed(1)}</b>.` : ''}
+                        ${p.activeCases > 0 && p.type === 'Water-Borne' ? `Sanitation stress indicates fecal-oral risk.` : ''}
+                        ${p.activeCases > 0 && p.type === 'Respiratory' ? `Seasonal transmission likely.` : ''}
+                        ${p.activeCases > 0 && p.type === 'Heat-Related' ? `High environmental thermal stress.` : ''}
+                        ${p.activeCases > 0 && p.type === 'None' ? `No specific transmission context.` : ''}
                 </div>
-              </div>
+              </div>` : ''}
 
               <!-- Actionable Insight -->
                <div style="background: #fff; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
@@ -1229,8 +1219,8 @@ const DigitalTwin = () => {
 
               {/* GENERATE LIST OF DISEASES - ALL DISEASES (Profile) */}
               {selectedWardDetail.profile && selectedWardDetail.profile.map((disease, idx) => {
-                // Use cached timeline if available, else regenerate (though profile should have it)
-                const history = disease.timeline || generateDiseaseTimeline(disease, selectedWardDetail.wardName);
+                // Use cached timeline from profile (Single Source of Truth)
+                const history = disease.timeline || [];
                 const isZero = disease.activeCases === 0;
 
                 return (
@@ -1295,16 +1285,18 @@ const DigitalTwin = () => {
                 );
               })}
 
-              <DetailSection style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Public Health Interpretation
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.5', fontStyle: 'italic' }}>
-                  "This ward shows sustained {selectedWardDetail.signal.primary?.name.toLowerCase()} transmission over the last 30 days,
-                  indicating active {selectedWardDetail.signal.primary?.type === 'Vector-Borne' ? 'vector breeding' : 'environmental exposure'} and local transmission.
-                  Immediate containment and surveillance escalation are advised."
-                </div>
-              </DetailSection>
+              {selectedWardDetail.signal.primary?.activeCases > 0 && (
+                <DetailSection style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Public Health Interpretation
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.5', fontStyle: 'italic' }}>
+                    "This ward shows sustained {selectedWardDetail.signal.primary?.name.toLowerCase()} transmission over the last 30 days,
+                    indicating active {selectedWardDetail.signal.primary?.type === 'Vector-Borne' ? 'vector breeding' : 'environmental exposure'} and local transmission.
+                    Immediate containment and surveillance escalation are advised."
+                  </div>
+                </DetailSection>
+              )}
 
             </DetailPanel>
           )}

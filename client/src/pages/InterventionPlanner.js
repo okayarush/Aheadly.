@@ -27,6 +27,7 @@ import SolapurWards from "../components/SolapurWards";
 import BoundaryService from "../services/boundaryService";
 import { hriBridgeService } from "../services/hriBridgeService";
 import { INTERVENTION_IMPACT_MAP, getAvailableInterventions } from "../constants/interventionImpactMap";
+import { rankInterventions } from "../utils/interventionLogic";
 import AnalysisModal from "../components/AnalysisModal";
 
 // --- GLOBAL STYLES & LAYOUT ---
@@ -456,39 +457,9 @@ const InterventionPlanner = () => {
       setPrimaryDrivers(getPrimaryDrivers(data.contributors));
 
       const contributors = data.contributors;
-      const all = getAvailableInterventions();
 
-      // CRITICAL: Boost interventions based on SPECIFIC DISEASE SIGNAL
-      const primaryDisease = data.disease?.primary;
-
-      const ranked = all.map(i => {
-        let r = 0;
-
-        // 1. Environmental Driver Match
-        i.riskDrivers?.forEach(d => { if (contributors[d]) r += contributors[d]; });
-
-        // 2. Clinical Match (Disease Specific)
-        if (primaryDisease) {
-          if (primaryDisease.type === 'Vector-Borne') {
-            if (i.id === 'fogging-campaign') r += 1.5; // High priority for active vector transmission
-            if (i.id === 'disease-surveillance') r += 1.0;
-            if (i.id === 'source-reduction') r += 0.8;
-          }
-          if (primaryDisease.type === 'Water-Borne') {
-            if (i.id === 'sanitation-response') r += 1.5; // Immediate sanitation fix
-            if (i.id === 'chlorine-distribution') r += 1.0; // Assume exists or map to similar
-            if (i.id === 'drain-desilting') r += 0.8;
-          }
-          if (primaryDisease.type === 'Respiratory') {
-            if (i.id === 'mobile-health-camp') r += 1.0; // Symptomatic relief
-          }
-        }
-
-        // 3. Generic Health boost
-        if (i.name.toLowerCase().includes('health')) r += 0.2;
-
-        return { ...i, relevance: r };
-      }).sort((a, b) => b.relevance - a.relevance);
+      // USE SHARED RANKING LOGIC (Single Source of Truth)
+      const ranked = rankInterventions(contributors, data.disease);
 
       setAvailableInterventions(ranked);
       setRecommendedInterventions(ranked.slice(0, 2).map(i => i.id));

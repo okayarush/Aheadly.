@@ -124,54 +124,142 @@ export const generateDiseaseTimeline = (disease, wardName) => {
     const seed = wardName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const today = new Date();
 
-    let currentCases = disease.activeCases;
+    // TARGET: sum must exactly equal disease.activeCases
+    let remainingCases = disease.activeCases;
+    const days = 30;
+    const dailyCounts = new Array(days).fill(0);
 
-    // Helper for deterministic random
-    const pseudoRandom = (dayOffset) => {
-        const x = Math.sin(seed + dayOffset) * 10000;
+    // Helper for deterministic random seeding
+    const pseudoRandom = (seed, offset) => {
+        const x = Math.sin(seed + offset) * 10000;
         return x - Math.floor(x);
     };
 
-    for (let i = 29; i >= 0; i--) {
+    // Distribute cases based on trend
+    // Strategy: Assign cases one by one to days based on probability distribution
+    for (let c = 0; c < remainingCases; c++) {
+        let dayIndex = -1;
+
+        // Distribution weights based on trend
+        // Rising: Higher probability for recent days (index 0 is Today)
+        // Stable: Uniform probability
+        // No Activity: Should not happen if cases > 0
+
+        const rand = pseudoRandom(seed, c * 13); // Varied random per case
+
+        if (disease.trend === 'Rising' || disease.trend === 'Surge') {
+            // Skew towards 0 (Today)
+            // Weight ~ 1 / (day + 1)
+            // Simple approach: pick two random days, choose the smaller index (closer to today)
+            const r1 = Math.floor(pseudoRandom(seed, c * 7) * days);
+            const r2 = Math.floor(pseudoRandom(seed, c * 19) * days);
+            dayIndex = Math.min(r1, r2);
+        } else {
+            // Uniform distribution
+            dayIndex = Math.floor(rand * days);
+        }
+
+        dailyCounts[dayIndex]++;
+    }
+
+    // Convert to history array
+    for (let i = 0; i < days; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() - i);
 
-        let count = 0;
-        const noise = Math.floor(pseudoRandom(i) * 3) - 1; // -1, 0, 1
-
-        if (disease.trend === 'Rising' || disease.trend === 'Rapidly Rising' || disease.trend === 'Explosive') {
-            // Logarithmic ramp up: cases were lower 30 days ago
-            // Formula: cases * (1 - (i / 35)) roughly
-            // Day 0 (30 days ago) -> small fraction
-            // Day 29 (Today) -> full cases
-            const progress = (30 - i) / 30; // 0 to 1
-            const base = Math.max(0, Math.floor(disease.activeCases * Math.pow(progress, 2))); // Exponential growth reverse look
-            count = Math.max(0, base + noise);
-        }
-        else if (disease.cluster && disease.cluster.includes('Cluster')) {
-            // Sudden spike in last 7 days
-            if (i < 7) {
-                count = Math.max(1, disease.activeCases - (i * 1) + noise); // High recently
-            } else {
-                count = Math.max(0, Math.floor(disease.activeCases * 0.2) + noise); // Low baseline
-            }
-        }
-        else {
-            // Stable / Seasonal: Fluctuation around mean
-            count = Math.max(0, disease.activeCases + noise);
-        }
-
-        // Status logic
-        let status = 'Suspected';
-        if (i < 5) status = 'Confirmed'; // Recent ones confirmed
-        if (count === 0) status = '-';
+        const count = dailyCounts[i];
+        let status = '-';
+        if (count > 0) status = i < 5 ? 'Confirmed' : 'Suspected';
 
         history.push({
             date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             cases: count,
-            status: count > 0 ? status : '-'
+            status
         });
     }
 
-    return history.reverse(); // Newest first
+    // existing code returned history.reverse() but our loop builds today -> past (history[0] is today)
+    // The previous implementation built past->present (reverse loop 29 to 0) and then returned history.reverse() => trend was generic.
+    // Here we built 0 (Today) to 29 (Past). 
+    // If the UI expects [Yesterday, Today], or [Day -29 ... Today], we need to check.
+    // Looking at the table rendering: map(row => tr) suggests order matters.
+    // Usually tables show recent first.
+    // Let's return it as is (Today first).
+    return history;
+};
+
+/**
+ * Converts stored flat report data (from DiseaseDataManager) into the UI Signal format.
+ * Replaces mock generation with Real Data for Digital Twin dashboard.
+ */
+export const formatDiseaseSignalFromData = (wardName, data) => {
+    // Basic structural data structure if data is missing
+    const safeData = data || { dengue: 0, malaria: 0, chikungunya: 0, add: 0, cholera: 0, typhoid: 0, ari: 0, ili: 0, heat: 0 };
+
+    // 1. Create Array of all diseases with current counts
+    const allDiseases = [
+        { ...DISEASES.DENGUE, activeCases: safeData.dengue || 0 },
+        { ...DISEASES.MALARIA, activeCases: safeData.malaria || 0 },
+        { ...DISEASES.CHIKUNGUNYA, activeCases: safeData.chikungunya || 0 },
+        { ...DISEASES.ADD, activeCases: safeData.add || 0 },
+        { ...DISEASES.CHOLERA, activeCases: safeData.cholera || 0 },
+        { ...DISEASES.TYPHOID, activeCases: safeData.typhoid || 0 },
+        { ...DISEASES.ARI, activeCases: safeData.ari || 0 },
+        { ...DISEASES.ILI, activeCases: safeData.ili || 0 },
+        { ...DISEASES.HEAT_STRESS, activeCases: safeData.heat || 0 }
+    ];
+
+    // 2. Add Trend/Cluster Logic (Simple thresholds for now)
+    const processed = allDiseases.map(d => {
+        let trend = 'Stable';
+        let cluster = 'None';
+
+        if (d.activeCases > 50) {
+            trend = 'Surge';
+            cluster = 'Outbreak';
+        } else if (d.activeCases > 15) {
+            trend = 'Rising';
+            cluster = 'Cluster';
+        } else if (d.activeCases === 0) {
+            trend = 'No Activity';
+        }
+
+        // Hydrate timeline for charts
+        d.timeline = generateDiseaseTimeline({ ...d, trend, cluster }, wardName);
+        d.trend = trend;
+        d.cluster = cluster;
+
+        return d;
+    });
+
+    // 3. Filter & Sort for "Active" display
+    const activeDetails = processed.filter(d => d.activeCases > 0).sort((a, b) => {
+        // 1. Case Count (Descending)
+        if (b.activeCases !== a.activeCases) return b.activeCases - a.activeCases;
+
+        // 2. Trend (Rising > Stable > No Activity)
+        const trendScore = { 'Surge': 3, 'Rising': 2, 'Stable': 1, 'No Activity': 0 };
+        if (trendScore[b.trend] !== trendScore[a.trend]) return trendScore[b.trend] - trendScore[a.trend];
+
+        // 3. Type Priority (Vector > Water > Respiratory > Heat)
+        const typeScore = { 'Vector-Borne': 4, 'Water-Borne': 3, 'Respiratory': 2, 'Heat-Related': 1, 'None': 0 };
+        if (typeScore[b.type] !== typeScore[a.type]) return typeScore[b.type] - typeScore[a.type];
+
+        // 4. Name (Alphabetical fallback for absolute determinism)
+        return a.name.localeCompare(b.name);
+    });
+
+    // 4. Determine Primary (Headline) Disease
+    const primary = activeDetails.length > 0
+        ? activeDetails[0]
+        : { name: 'No Active Signal', type: 'None', activeCases: 0, trend: 'No Activity', cluster: 'None', timeline: [], transmission: 'None', vector: 'None' };
+
+    const secondary = activeDetails.length > 1 ? activeDetails.slice(1) : [];
+
+    return {
+        primary,
+        secondary,
+        summary: `${primary.name}: ${primary.activeCases} active cases`,
+        profile: processed // Return full list for deep dive
+    };
 };
