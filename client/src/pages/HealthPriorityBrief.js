@@ -22,7 +22,8 @@ import {
     FiArrowRight,
     FiEdit3,
     FiInfo,
-    FiX
+    FiX,
+    FiArrowDown
 } from 'react-icons/fi';
 import { hriBridgeService } from '../services/hriBridgeService';
 import BoundaryService from '../services/boundaryService';
@@ -337,6 +338,42 @@ const ActionDetailRow = styled.div`
   }
 `;
 
+const VerticalGuidancePill = styled(motion.div)`
+  position: fixed;
+  right: 2rem;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 1rem 0.5rem;
+  border-radius: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  z-index: 50;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+  pointer-events: none;
+  
+  span {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #cbd5e1;
+    transform: rotate(180deg);
+  }
+
+  animation: pulse-glow 2s infinite;
+
+  @keyframes pulse-glow {
+    0% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+    100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
+  }
+`;
+
 const ActionFooter = styled.div`
   margin-top: 1rem;
   padding-top: 1rem;
@@ -431,10 +468,15 @@ const HealthPriorityBrief = () => {
     const [selectedWard, setSelectedWard] = useState(null);
     const [clinicalData, setClinicalData] = useState(null);
     const [priorityInfo, setPriorityInfo] = useState(null);
+
+    // Debug Log to confirm update
+    useEffect(() => { console.log("HealthPriorityBrief Loaded - vStrict_Data_Fix"); }, []);
     const [interventions, setInterventions] = useState([]);
     const [viewMode, setViewMode] = useState('landing');
     const [detailsModalItem, setDetailsModalItem] = useState(null);
-    const mapRef = useRef(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [scrollProgress, setScrollProgress] = useState(0);
+    const panelRef = useRef(null);
 
     // Force re-render on global data update (SST Sync)
     useEffect(() => {
@@ -444,6 +486,23 @@ const HealthPriorityBrief = () => {
         window.addEventListener('urbanome-data-update', handleDataUpdate);
         return () => window.removeEventListener('urbanome-data-update', handleDataUpdate);
     }, [selectedWard]);
+
+    const handleScroll = () => {
+        if (panelRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = panelRef.current;
+            const progress = scrollTop / (scrollHeight - clientHeight);
+            setScrollProgress(progress);
+        }
+    };
+
+    const handleGenerate = () => {
+        if (!selectedWard) return;
+        setIsGenerating(true);
+        setTimeout(() => {
+            setIsGenerating(false);
+            setViewMode('preview');
+        }, 3500);
+    };
 
     useEffect(() => {
         async function load() {
@@ -455,6 +514,31 @@ const HealthPriorityBrief = () => {
         load();
     }, []);
 
+    // --- STRICT DATA VALIDATION ---
+    const validateDataIntegrity = (signal, sourceData) => {
+        if (!sourceData) return false;
+
+        // Match Primary Disease Count
+        // Note: signal.primary might be "Dengue" but sourceData has lowercase keys.
+        // We map standard keys to check.
+        const keyMap = {
+            'Dengue': 'dengue', 'Malaria': 'malaria', 'Chikungunya': 'chikungunya',
+            'Acute Diarrheal Disease': 'add', 'Cholera': 'cholera', 'Typhoid': 'typhoid',
+            'Acute Respiratory Infection': 'ari', 'Influenza-Like Illness': 'ili',
+            'Heat Stress': 'heat'
+        };
+
+        const dbKey = keyMap[signal.primary.name];
+        const sourceCount = sourceData[dbKey] || 0;
+
+        if (signal.primary.activeCases !== sourceCount && signal.primary.name !== 'No Active Signal') {
+            console.error(`DATA INTEGRITY FAIL: Policy Brief (${signal.primary.activeCases}) != Digital Twin (${sourceCount}) for ${signal.primary.name}`);
+            return false;
+        }
+        return true;
+    };
+
+
     const handleWardSelect = async (feature) => {
         setSelectedWard(feature);
         setViewMode('analysis');
@@ -463,15 +547,21 @@ const HealthPriorityBrief = () => {
         const sectorId = getSectorID(rawName);
 
         try {
-            // STEP 3 â€” SINGLE SOURCE OF TRUTH (EXACT)
+            // STEP 3 — SINGLE SOURCE OF TRUTH (EXACT)
             const aggregates = DiseaseDataManager.getWardAggregates();
             const wardData = aggregates[sectorId] || { dengue: 0, total: 0 };
 
-            // STEP 4 â€” DISEASE DISPLAY RULES (ABSOLUTE)
+            // STEP 4 — DISEASE DISPLAY RULES (ABSOLUTE)
             const signal = formatDiseaseSignalFromData(sectorId, wardData);
             const primary = signal.primary;
 
-            // STEP 7 â€” FAIL-SAFE GUARD
+            // STEP 5 — HARD VALIDATION GUARD
+            if (!validateDataIntegrity(signal, wardData)) {
+                alert("CRITICAL ERROR: Data Sync Mismatch. The Policy Brief is out of sync with the Digital Twin. Please refresh.");
+                return;
+            }
+
+            // STEP 7 — FAIL-SAFE GUARD
             if (!primary || typeof primary.activeCases === 'undefined') {
                 console.error("DATA_MISMATCH_DETECTED: Policy Brief is not receiving expected structure from Digital Twin.");
                 alert("CRITICAL ERROR: Data Sync Failed. Refresh.");
@@ -480,7 +570,28 @@ const HealthPriorityBrief = () => {
 
             const hriData = await hriBridgeService.getBaselineHRIFromTwin(sectorId);
             const ranked = rankInterventions(hriData.contributors, signal);
-            const topActions = ranked.slice(0, 4);
+
+            // STRICT ACTION FILTERING: Primary Disease Type Only
+            const topActions = ranked.filter(action => {
+                // Manual Map of ID -> Disease Type Relevance
+                // Vector: 'fogging-campaign', 'disease-surveillance'
+                // Water: 'sanitation-response', 'drain-desilting'
+                // Respiratory: 'mobile-health-camp'
+
+                if (primary.type === 'Vector-Borne') {
+                    return ['fogging-campaign', 'disease-surveillance', 'source-reduction'].includes(action.id);
+                }
+                if (primary.type === 'Water-Borne') {
+                    return ['sanitation-response', 'drain-desilting', 'chlorine-distribution'].includes(action.id);
+                }
+                if (primary.type === 'Respiratory') {
+                    return ['mobile-health-camp', 'mask-distribution'].includes(action.id);
+                }
+                if (primary.type === 'Heat-Related') {
+                    return ['cool-roofing', 'hydration-points'].includes(action.id);
+                }
+                return false;
+            }).slice(0, 4);
 
             setClinicalData({
                 ...primary, // Flatten primary for easy access
@@ -542,19 +653,6 @@ const HealthPriorityBrief = () => {
 
     return (
         <Container>
-            {/* STEP 1 â€” HARD VISUAL VERIFICATION */}
-            <div style={{
-                background: "#ff0033",
-                color: "white",
-                padding: "12px",
-                fontWeight: "bold",
-                textAlign: "center",
-                letterSpacing: "1px",
-                zIndex: 9999
-            }}>
-                ✅ HEALTHPRIORITYBRIEF â€” VERIFIED OWNER OF /policy-brief
-            </div>
-
             <LandingHeader>
                 <HeaderTitle>
                     <FiShield /> Ward Health Decision & Policy Brief System
@@ -578,13 +676,25 @@ const HealthPriorityBrief = () => {
                         </ExplainerStep>
                     </ExplainerRow>
 
-                    <HeaderCTAButton
-                        disabled={!selectedWard}
-                        onClick={() => selectedWard && setViewMode('preview')}
-                        title={!selectedWard ? "Select a ward to enable policy generation" : "Generate Official Brief"}
-                    >
-                        <FiFileText /> Generate Ward Policy Brief
-                    </HeaderCTAButton>
+                    <div style={{ position: 'relative' }}>
+                        <HeaderCTAButton
+                            disabled={!selectedWard || isGenerating}
+                            onClick={handleGenerate}
+                            title={!selectedWard ? "Select a ward to enable policy generation" : "Generate Official Brief"}
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <FiClock className="spin" /> Generating Policy Brief...
+                                    <style>{`
+    .spin { animation: spin 1s linear infinite; }
+@keyframes spin { 100 % { transform: rotate(360deg); } }
+`}</style>
+                                </>
+                            ) : (
+                                <><FiFileText /> Generate Ward Policy Brief</>
+                            )}
+                        </HeaderCTAButton>
+                    </div>
                 </HeaderBottomRow>
             </LandingHeader>
 
@@ -598,7 +708,7 @@ const HealthPriorityBrief = () => {
                     {wardsGeo && (
                         <MapContainer
                             center={[17.6599, 75.9064]}
-                            zoom={12}
+                            zoom={11}
                             style={{ height: '100%', width: '100%', background: '#020617' }}
                             zoomControl={false}
                             whenCreated={mapInstance => (mapRef.current = mapInstance)}
@@ -606,10 +716,55 @@ const HealthPriorityBrief = () => {
                             <GeoJSON data={wardsGeo} style={wardStyle} onEachFeature={onEachStartWard} />
                         </MapContainer>
                     )}
+                    {!selectedWard && (
+                        <div style={{
+                            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                            background: 'rgba(15, 23, 42, 0.85)', padding: '1rem 2rem', borderRadius: '12px',
+                            border: '1px solid #3b82f6', color: '#fff', fontSize: '1.1rem', fontWeight: '600',
+                            textAlign: 'center', pointerEvents: 'none', zIndex: 1000
+                        }}>
+                            Click on a ward to begin clinical review
+                        </div>
+                    )}
                 </MapPanel>
 
                 {/* 2. MAIN CONTENT (Gated) */}
-                <MainPanel>
+                <MainPanel ref={panelRef} onScroll={handleScroll}>
+
+                    {/* SCROLL GUIDANCE OVERLAYS */}
+                    <AnimatePresence>
+                        {selectedWard && viewMode === 'analysis' && !isGenerating && scrollProgress < 0.2 && (
+                            <VerticalGuidancePill
+                                key="review-guidance"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                style={{ top: '50%', transform: 'translateY(-50%)' }}
+                            >
+                                <div style={{ marginBottom: '0.5rem' }}><FiArrowDown size={20} /></div>
+                                <span>Review</span>
+                                <span>Clinical</span>
+                                <span>Risks</span>
+                                <span>&</span>
+                                <span>Actions</span>
+                            </VerticalGuidancePill>
+                        )}
+                        {selectedWard && viewMode === 'analysis' && !isGenerating && scrollProgress > 0.5 && (
+                            <VerticalGuidancePill
+                                key="generate-guidance"
+                                initial={{ opacity: 0, y: -20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                style={{ top: 'auto', bottom: '120px', borderColor: '#3b82f6', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)' }}
+                            >
+                                <div style={{ marginBottom: '0.5rem', color: '#60a5fa' }}><FiFileText size={20} /></div>
+                                <span style={{ color: '#93c5fd' }}>Generate</span>
+                                <span style={{ color: '#93c5fd' }}>Official</span>
+                                <span style={{ color: '#93c5fd' }}>Brief</span>
+                            </VerticalGuidancePill>
+                        )}
+                    </AnimatePresence>
+
                     {!selectedWard && (
                         <EmptyState>
                             <FiMapPin />
@@ -681,7 +836,7 @@ const HealthPriorityBrief = () => {
                                         </div>
                                         <div style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.5' }}>
                                             {clinicalData.activeCases > 0
-                                                ? `Confirmed ${clinicalData.activeCases} active cases. ${clinicalData.cluster === 'Cluster' ? 'Local clustering suggests sustained transmission.' : 'Sporadic cases detected.'}`
+                                                ? `Confirmed ${clinicalData.activeCases} active cases.${clinicalData.cluster === 'Cluster' ? 'Local clustering suggests sustained transmission.' : 'Sporadic cases detected.'} `
                                                 : `No active cases reported, but surveillance is required due to environmental favorability.`
                                             }
                                         </div>
@@ -808,12 +963,19 @@ const HealthPriorityBrief = () => {
 
                                     <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1rem', borderLeft: '4px solid #3b82f6', fontSize: '13px' }}>
                                         <strong style={{ display: 'block', marginBottom: '0.5rem', color: '#1e293b' }}>Implementation Timeline</strong>
-                                        Current disease severity and trend urgency mandate immediate multi-departmental response.
-                                        <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.2rem', color: '#475569', lineHeight: '1.5' }}>
-                                            <li><strong>Day 0–1:</strong> Rapid field deployment and surveillance initiation</li>
-                                            <li><strong>Day 2–4:</strong> Infrastructure correction and sanitation response</li>
-                                            <li><strong>Day 5–7:</strong> Monitoring, reassessment, and containment validation</li>
-                                        </ul>
+                                        Current disease severity ({clinicalData.activeCases} active cases) mandates immediate response.
+                                        {interventions.length > 0 && interventions[0].specificTimeline && (
+                                            <div style={{ marginTop: '0.5rem', fontStyle: 'italic', color: '#444' }}>
+                                                {interventions[0].specificTimeline}
+                                            </div>
+                                        )}
+                                        {(!interventions.length || !interventions[0].specificTimeline) && (
+                                            <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.2rem', color: '#475569', lineHeight: '1.5' }}>
+                                                <li><strong>Day 0–1:</strong> Rapid field deployment and surveillance initiation</li>
+                                                <li><strong>Day 2–4:</strong> Infrastructure correction and sanitation response</li>
+                                                <li><strong>Day 5–7:</strong> Monitoring, reassessment, and containment validation</li>
+                                            </ul>
+                                        )}
                                     </div>
 
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginTop: '10px' }}>
