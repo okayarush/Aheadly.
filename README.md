@@ -1,111 +1,96 @@
-# Data Pathways to Healthy Cities and Human Settlement
-## NASA Space Apps Challenge 2025
+# 🏥 SMART SATELLITE BASED PUBLIC HEALTH MANAGEMENT SYSTEM
 
 ### 🌍 Project Overview
-A comprehensive urban planning application that leverages NASA Earth observation data to develop smart strategies for sustainable city growth while maintaining the wellbeing of people and the environment. This tool that allows users to simulate environmental actions — such as planting trees or creating waterfields — to improve urban sustainability. It visualizes the current environmental conditions of Dhaka on an interactive map and projects both financial and ecological outcomes over the next 15 years using our custom ROI calculation algorithm. Additionally, the system’s AI model predicts key environmental metrics for the next 5 years, helping policymakers and communities make informed, data-driven decisions.
+An integrated, technology-enabled Smart Public Health Management System designed for the Solapur Municipal Corporation (SMC). This comprehensive application leverages environmental data and advanced analytics to develop strategic approaches for sustainable urban health management. The system provides real-time disease surveillance, infrastructure monitoring, and localized risk assessments. By visualizing ward-wise health indicators on an interactive Digital Twin of Solapur, and predicting public health risks, the platform enables municipal authorities, health workers, and communities to make informed, data-driven decisions that improve healthcare accessibility and early outbreak detection.
 
-### 🎯 Challenge Description
-Dhaka, one of the fastest-growing megacities, faces rising temperatures, air pollution, flooding, and unplanned urbanization. Despite the availability of rich NASA Earth observation data, policymakers and communities struggle to translate this data into actionable strategies. There is no accessible tool that shows the long-term financial and environmental impact of urban interventions — such as tree planting or water management — in a way that supports sustainable planning and resilience building.
+### 🎯 Description
+**One-Line Problem Statement**
+Design and develop an integrated, technology-enabled Smart Public Health Management System for Solapur Municipal Corporation (SMC) to improve healthcare accessibility, disease surveillance, infrastructure monitoring, and citizen engagement through data-driven and real-time digital solutions.
+
+#### Context
+Solapur Municipal Corporation serves a rapidly expanding urban population with diverse healthcare needs. Despite ongoing public health initiatives, the city continues to face challenges such as unequal access to healthcare services, delayed outbreak detection, fragmented health data systems, limited preventive healthcare awareness, and lack of real-time visibility into public health infrastructure. 
+The COVID-19 pandemic further highlighted the importance of real-time, integrated, and technology-driven healthcare systems to strengthen preventive care, emergency response, and informed decision-making at the municipal level.
+
+#### Problem Description
+Solapur Municipal Corporation requires a unified digital health ecosystem to address the following challenges:
+
+1. **Fragmented Health Data and Limited Visibility**
+   • Health data is siloed across hospitals, clinics, laboratories, and government programs.
+   • Absence of standardized, real-time health data analytics for planning and monitoring.
+   • Limited ward-wise and zone-wise visibility of health indicators.
+
+2. **Delayed Disease Detection and Response**
+   • Inadequate predictive systems for early detection of disease outbreaks.
+   • Lack of real-time surveillance for communicable and non-communicable diseases.
+   • Difficulty in identifying high-risk populations and vulnerable zones.
+
+3. **Limited Citizen-Centric Digital Health Services**
+   • Insufficient digital platforms for appointments, telemedicine, vaccination alerts, and emergency services.
+   • Low awareness and engagement in preventive healthcare and wellness programs.
+   • Limited accessibility for diverse and multilingual populations.
+
+4. **Inefficient Monitoring of Public Health Infrastructure**
+   • Lack of real-time tracking of hospital bed availability, equipment condition, and medicine stocks.
+   • Manual processes reduce efficiency, transparency, and accountability.
 
 #### 🚀 Live Web Application
 
-https://urbanome-xi.vercel.app
+To view the webpage kindly visit: https://aheadlybygoddamn.netlify.app/
 
 ### 📊 Dashboard
 
 ![Dashboard](./client/public/Dashboard.png)
 
-
 ### 🚀 Key Features
 
-#### 1. City Digital Twin
-- **Heat Monitoring**: ECOSTRESS Land Surface Temperature
-- **Flood Risk Assessment**: SRTM elevation Data
-- **Air Quality Tracking**: OpenAQ Air Quality Data
-- **Green Space Analysis**: Sentinel-2 NDVI vegetation indices
-#### Greenspace Section Demo:  
-![Demo Video](./client/public/DigitalTwin.gif)
-  
-#### 2. Intervention Simulator
-- **Tree Planting**: Impact on urban heat island effect
-- **Cool Roofs**: Temperature reduction modeling
-- **Wetlands Creation**: Flood mitigation and biodiversity
-- **Green Corridors**: Air quality improvement
+#### 1. City Intelligence Center
+- **Real-Time Monitoring**: Live tracking of the Health Risk Index (HRI), Critical Wards, Heat Hotspots, and Stagnation Risks.
+- **Disease Surveillance**: Identification of active disease signals and high-risk populations.
+- **Live Metrics**: At-a-glance visualization of the city's overall health status and active citizen reports over the past 7 days.
 
-![Demo Video](./client/public/Intervention.gif)
+#### 2. Digital Twin & Risk Heatmap
+- **Ward-wise Visibility**: Interactive map detailing Solapur Wards and their specific spatial risk levels.
+- **Environmental Tracking**: Monitoring variables critical to public health like open drains and stagnant water zones.
+- **Vulnerability Zones**: Clear demarcation of high-risk areas requiring immediate municipal intervention.
 
-#### 3. Cost-Benefit Analysis
-- Budget-constrained optimization
-- ROI calculations for interventions
-- Environmental impact quantification
-- Social benefit metrics
-  
-![Demo Video](./client/public/Cost_benefit.gif)
+#### 3. Community Sanitation & Citizen Reporting
+- **Issue Tracking**: Digital platform for tracking community-reported "Uncollected Garbage", "Open Drains", "Stagnant Water", and "Overflowing Public Bins".
+- **Risk Aggregation**: Automatic calculation of sector risk (High, Medium, Low) based on the frequency and density of sanitation issues.
 
-#### 4. Future Overview
-- **Greenspace Analysis**: Forecasting the percentage of greenspace (grasses and trees) for the next five years using regression models. The analysis is based on multi-temporal GeoTIFF images (1990–2025) obtained from Landsat 5, 7, and 8 satellites.  
-- **Rainfall and Windspeed**: Estimating future average annual rainfall and windspeed using a polynomial regression model trained on 17 years of historical climate data.  
-- **Temperature**: Predicting future average annual temperature by incorporating 17 years of historical temperature, rainfall, and windspeed data into a regression model. The predicted rainfall and windspeed values are also used as key predictors in the temperature model for improved accuracy.
+#### 4. Intervention Planning & Health Strategy
+- **Simulation Tools**: Modeling the potential impact of public health and sanitation interventions.
+- **Data-Driven Strategy**: Prioritizing resources based on live data triggers and automated risk assessments.
 
-![future](./client/public/Future_Overview.png)
-
-### 📊 NASA Data Sources
-- **ECOSTRESS**: Land Surface Temperature for heat mapping
-- **Sentinel-2**: Normalized Difference Vegetation Index for green space analysis
-- **SRTM**: Shuttle Radar Topography Mission elevation data
-- **OpenAQ**: Air quality measurements
-
-### 🚀 Usage of AI
-- Coding: GPT 5.1, Claude 4.0
-- Research: ChatGPT
-
-### 🌟 ROI Calculation Algorithm Data Sources [ Modified for Dhaka ]
-
-- Wu, S., Yang, H., Luo, P., Luo, C., Li, H., Liu, M., Ruan, Y., Zhang, S., Xiang, P., Honghong, J., & Yue, C. (2021). The effects of the cooling efficiency of urban wetlands in an inland megacity: A case study of Chengdu, Southwest China. Building and Environment, 108128.
-https://doi.org/10.1016/j.buildenv.2021.108128
-        
-- Feng, X., Yu, J., Xin, C., Ye, T., Wang, T., Chen, H., Zhang, X., & Zhang, L. (2023). Quantifying and Comparing the Cooling Effects of Three Different Morphologies of Urban Parks in Chengdu. Land, 12(2), 451.
-https://doi.org/10.3390/land12020451
-
-- Wong, N. H., Tay, S. F., Wong, R., Ong, C. L., & Sia, A. (2003). Life cycle cost analysis of rooftop gardens in Singapore. Building and Environment, 38(3), 499-509.
-https://doi.org/10.1016/S0360-1323(02)00131-2
-
-- Hsu, K.-W., & Chao, J.-C. (2020). Economic Valuation of Green Infrastructure Investments in Urban Renewal: The Case of the Station District in Taichung, Taiwan. Environments, 7(8), 56.
-https://doi.org/10.3390/environments7080056
-   
-![Data Sources](./client/public/Sources.png)
-  
 ### 🛠 Tech Stack
-- **Frontend**: React.js with modern hooks and context
-- **Backend**: Express.js with RESTful APIs
-- **Maps**: Leaflet.js for interactive mapping
-- **Visualization**: Chart.js for data visualization
-- **Data Processing**: Python scripts for NASA data ingestion
+- **Frontend**: React.js with modern hooks and Context API
+- **Styling**: Styled-Components & Framer Motion for high-performance, dynamic UI animations
+- **Maps**: Leaflet.js & React-Leaflet for interactive geographic mapping and GeoJSON rendering of Solapur wards
+- **Visualization**: Chart.js & Recharts for advanced data analytics and metric tracking
+- **Deployment**: Netlify
 
 ### 🏗 Project Structure
-```
-nasa-healthy-cities/
-├── client/                 # React frontend
-├── server/                 # Express backend
-├── data-processing/        # Python NASA data processors
+```text
+smart-public-health-system/
+├── client/                 # React frontend application
+│   ├── public/             # Static assets & GeoJSON spatial data
+│   ├── src/                
+│   │   ├── components/     # Reusable UI components & Map layers
+│   │   ├── pages/          # Application views (Dashboard, Digital Twin, etc.)
+│   │   ├── services/       # Services for disease signals and data metrics
+│   │   └── utils/          # State managers & community sanitation tracking
 ```
 
 ### 🌟 Deliverables
-1. **Interactive City Dashboard**: Real-time environmental monitoring
-2. **Intervention Planning Tool**: Scenario modeling and simulation
-3. **Future Overview**: Prediction of greenspace percentage, rainfall, windspeed and temperature using previous years data.
-4. **Cost-Benefit Calculator**: Economic impact assessment
+1. **Interactive City Dashboard**: Real-time public health and environmental monitoring interface.
+2. **Citizen Reporting Mechanism**: Seamless aggregation of sanitation and civic health issues.
+3. **Digital Twin Heatmap**: Sector-wise spatial assessment for early disease outbreak detection.
+4. **Intervention Planner**: Data-enabled modeling tools for strategic resource allocation.
 
 ### 🌏 Focus Areas
-- **Dhaka, Bangladesh**: Comprehensive studies on greenspace distribution, heat stress, flood risk, and air quality within Dhaka District. These analyses aim to support sustainable urbanization, guide intervention planning, project future environmental scenarios, and conduct cost–benefit evaluations for informed decision-making.
+- **Solapur, Maharashtra**: Comprehensive integration of municipal data to ensure equitable healthcare access, rapid response capabilities, and improved overall public health outcomes across Solapur Municipal Corporation boundaries.
 
 ### 📈 Impact Metrics
-- Urban Heat Island reduction
-- Flood risk mitigation percentage
-- Air quality improvement indices
-- Green space coverage increase
-- Economic ROI of interventions
-
----
-
-Built for NASA Space Apps Challenge 2025
+- Reduction in disease outbreak detection time
+- Improved resolution rates for critical community sanitation issues
+- Enhanced real-time visibility of health and civic infrastructure
+- Increased citizen engagement through streamlined digital reporting
