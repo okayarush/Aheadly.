@@ -66,7 +66,7 @@ const Navbar = () => {
         NASA Healthy Cities
       </Logo>
       <NavLinks>
-        <NavLink to="/dashboard">Dashboard</NavLink>
+        <NavLink to="/dashboard">How It Works</NavLink>
         <NavLink to="/digital-twin">Digital Twin</NavLink>
         <NavLink to="/intervention-planner">Interventions</NavLink>
         <NavLink to="/cost-benefit">Cost-Benefit</NavLink>

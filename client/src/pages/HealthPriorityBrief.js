@@ -31,6 +31,8 @@ import { getSectorID } from '../utils/HospitalRegistry';
 import { DiseaseDataManager } from '../utils/DiseaseDataManager';
 import { formatDiseaseSignalFromData } from '../services/diseaseService';
 import { rankInterventions } from '../utils/interventionLogic';
+import PortalBanner from '../components/common/PortalBanner';
+
 
 // --- STYLED COMPONENTS ---
 
@@ -653,6 +655,7 @@ const HealthPriorityBrief = () => {
 
     return (
         <Container>
+            <PortalBanner portal="smc" />
             <LandingHeader>
                 <HeaderTitle>
                     <FiShield /> Ward Health Decision & Policy Brief System

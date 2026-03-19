@@ -174,6 +174,32 @@ export const INTERVENTION_IMPACT_MAP = {
         specificTimeline: "Day 0: Survey | Day 1-5: Application",
         successMetric: "3-5°C reduction in indoor temperature",
         expectedHealthImpact: "Lowers indoor temperatures by 3-5°C, significantly reducing heat stress."
+    },
+    'community-advisory': {
+        name: "Community Advisory",
+        description: "Public health broadcast to residents.",
+        riskDrivers: [],
+        affectedComponents: { heatExposure: -0.5 },
+        feasibility: "High", costCategory: "Low", effort: "Immediate",
+        responsibleDepartment: "PR Dept.",
+        target: "General Public",
+        impactRationale: "Increases awareness and personal protection.",
+        executionSteps: ["Step 1: Draft message.", "Step 2: Broadcast via SMS/WhatsApp.", "Step 3: Local PA system announcements."],
+        resourceRequirements: { manpower: "1 Officer", vehicles: "None", equipment: "None" },
+        specificTimeline: "Day 0", successMetric: "Reach 80% residents", expectedHealthImpact: "Reduces exposure by increasing personal protective behaviors."
+    },
+    'field-mobilization-asha': {
+        name: "Field Mobilization — ASHA",
+        description: "Deploy ASHA workers for immediate ground truth and community engagement.",
+        riskDrivers: [],
+        affectedComponents: { diseaseBurden: -0.5 },
+        feasibility: "High", costCategory: "Low", effort: "Immediate",
+        responsibleDepartment: "Health Dept.",
+        target: "High risk households",
+        impactRationale: "Improves early detection.",
+        executionSteps: ["Step 1: App alert.", "Step 2: Field route planning.", "Step 3: Door-to-door survey."],
+        resourceRequirements: { manpower: "ASHA Workers", vehicles: "None", equipment: "App" },
+        specificTimeline: "Day 0", successMetric: "100% household coverage", expectedHealthImpact: "Early detection and containment."
     }
 };
 

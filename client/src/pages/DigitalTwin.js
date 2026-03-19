@@ -16,6 +16,14 @@ import { CommunitySanitationManager } from "../utils/CommunitySanitationManager"
 import { getSectorID } from "../utils/HospitalRegistry"; // Import Sector Mapper
 import { generateDiseaseSignal, generateDiseaseTimeline, getWardDiseaseProfile, formatDiseaseSignalFromData } from "../services/diseaseService";
 import "leaflet/dist/leaflet.css";
+import {
+  getNDVIStatus, getNDVIReason, getNDVIColor,
+  getWaterStagnationSusceptibility, getStagnationReason, getStagnationColor,
+  getHeatRiskColor, getHeatRiskReason, calculateHeatRisk,
+  getTrendArrow, getDiseaseColor, getDiseaseReason,
+  getHRIScore, getHRIColor
+} from "../utils/RiskCalculator";
+import PortalBanner from "../components/common/PortalBanner";
 
 /* ===================== ICONS ===================== */
 
@@ -118,7 +126,11 @@ const Container = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #0f0f23, #1a1a3e, #2d1b69);
+  background-color: #0d0f14;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: white;
+  font-family: 'Inter', sans-serif;
 `;
 
 const ContentGrid = styled.div`
@@ -130,23 +142,27 @@ const ContentGrid = styled.div`
 `;
 
 const MapWrapper = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border-radius: 12px;
+  background: rgba(30, 33, 40, 0.6);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
   overflow: hidden;
   height: calc(100vh - 180px);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 `;
 
 const ControlPanel = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border-radius: 12px;
-  padding: 1.25rem;
+  background: rgba(30, 33, 40, 0.6);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 1.5rem;
   height: calc(100vh - 180px);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 `;
 
 /* ===================== LAYER EXPLANATIONS ===================== */
@@ -223,14 +239,14 @@ const LayerGuidePanel = styled.div`
   bottom: 20px;
   left: 20px;
   width: 300px;
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(12px);
+  background: rgba(30, 33, 40, 0.8);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.25rem;
   color: white;
   z-index: 1000;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   font-family: 'Inter', sans-serif;
   animation: fadeIn 0.3s ease-out;
 
@@ -246,11 +262,14 @@ const DetailPanel = styled.div`
   right: 20px;
   width: 400px;
   max-height: calc(100vh - 220px);
-  background: white;
-  border-radius: 12px;
+  background: rgba(30, 33, 40, 0.9);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
   overflow-y: auto;
   z-index: 2000;
-  box-shadow: -5px 0 25px rgba(0,0,0,0.2);
+  box-shadow: -10px 20px 40px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
   animation: slideIn 0.3s ease-out;
@@ -263,8 +282,8 @@ const DetailPanel = styled.div`
 
 const PanelHeader = styled.div`
   padding: 1.25rem;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -272,7 +291,7 @@ const PanelHeader = styled.div`
 
 const DetailSection = styled.div`
   padding: 1.25rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 `;
 
 const TimelineTable = styled.table`
@@ -284,16 +303,16 @@ const TimelineTable = styled.table`
   th {
     text-align: left;
     padding: 6px;
-    color: #64748b;
+    color: #94a3b8;
     font-size: 0.75rem;
     text-transform: uppercase;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
   }
   
   td {
     padding: 6px;
-    border-bottom: 1px solid #f8fafc;
-    color: #334155;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: #f8fafc;
   }
   
   tr:last-child td {
@@ -302,13 +321,13 @@ const TimelineTable = styled.table`
 `;
 
 const GuideTitle = styled.h3`
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   margin: 0 0 0.5rem 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #60a5fa;
+  color: white;
 `;
 
 const GuideDesc = styled.p`
@@ -389,13 +408,7 @@ const ToggleItem = styled.div`
   }
 `;
 
-import {
-  getNDVIStatus, getNDVIReason, getNDVIColor,
-  getWaterStagnationSusceptibility, getStagnationReason, getStagnationColor,
-  getHeatRiskColor, getHeatRiskReason, calculateHeatRisk,
-  getTrendArrow, getDiseaseColor, getDiseaseReason,
-  getHRIScore, getHRIColor
-} from "../utils/RiskCalculator";
+
 
 /* ===================== COMPONENT ===================== */
 
@@ -434,6 +447,46 @@ const DigitalTwin = () => {
   const markerRefs = useRef({});
 
   const solapurCenter = [17.6599, 75.9064];
+
+  /* ===================== CONVERGENCE HELPERS ===================== */
+  const computeCentroid = (feature) => {
+    try {
+      const coords = feature.geometry.type === 'MultiPolygon'
+        ? feature.geometry.coordinates[0][0]
+        : feature.geometry.coordinates[0];
+      const lats = coords.map(c => c[1]);
+      const lngs = coords.map(c => c[0]);
+      return [
+        lats.reduce((a, b) => a + b, 0) / lats.length,
+        lngs.reduce((a, b) => a + b, 0) / lngs.length
+      ];
+    } catch { return null; }
+  };
+
+  const getConvergenceCount = (nameKey, sectorId) => {
+    const dData = diseaseTable[sectorId] || { level: "LOW" };
+    const hData = heatTable[nameKey] || { risk: "LOW" };
+    const sData = stagnationTable[nameKey] || { level: "LOW" };
+    const nData = ndviTable[nameKey] || { mean: 0.6 };
+    const cData = sanitationRiskTable[sectorId] || { level: "LOW" };
+    let count = 0;
+    if (dData.level === "MEDIUM" || dData.level === "HIGH") count++;
+    if (hData.risk === "HIGH" || hData.risk === "EXTREME") count++;
+    if (sData.level === "HIGH" || sData.level === "MEDIUM") count++;
+    if (nData.mean < 0.3) count++;
+    if (cData.level === "MEDIUM" || cData.level === "HIGH") count++;
+    return count;
+  };
+
+  const createConvergenceBadgeIcon = (count) => {
+    const bg = count >= 4 ? '#ef4444' : count >= 3 ? '#f97316' : '#6366f1';
+    return L.divIcon({
+      html: `<div style="background:${bg};color:white;font-size:11px;font-weight:800;border-radius:20px;padding:2px 7px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.4);border:2px solid rgba(255,255,255,0.8);line-height:1.4;">${count}/5</div>`,
+      className: '',
+      iconSize: null,
+      iconAnchor: [20, 10]
+    });
+  };
 
   // NDVI overlay bounds
   const ndviBounds = [
@@ -622,12 +675,15 @@ const DigitalTwin = () => {
 
       const { category } = getHRIScore(dData.level, hData.risk, sData.level, nData.mean, cData.level);
       const color = getHRIColor(category);
+      const convergenceCount = getConvergenceCount(nameKey, sectorId);
+      const isConvergenceZone = convergenceCount >= 4;
 
       return {
         fillColor: color,
-        weight: 2,
-        color: "#1f2937",
-        fillOpacity: 0.7
+        weight: isConvergenceZone ? 4 : 2,
+        color: isConvergenceZone ? "#ef4444" : "#1f2937",
+        fillOpacity: 0.7,
+        dashArray: isConvergenceZone ? null : null,
       };
     }
 
@@ -1082,6 +1138,7 @@ const DigitalTwin = () => {
 
   return (
     <Container>
+      <PortalBanner portal="smc" />
       <div style={{ padding: "1.5rem 2rem", color: "white" }}>
         <h1>Solapur Digital Twin</h1>
         <p style={{ opacity: 0.7 }}>Ward-level Intelligence</p>
@@ -1119,6 +1176,25 @@ const DigitalTwin = () => {
             {showCityBoundary && cityBoundary && (
               <GeoJSON data={cityBoundary} style={{ fillOpacity: 0, color: "#ef4444", weight: 3 }} interactive={false} />
             )}
+
+            {/* CONVERGENCE BADGES: Show X/5 signal count on each ward when HRI layer is active */}
+            {activeLayer === "hri" && wards && wards.features && wards.features.map((feature, idx) => {
+              const rawName = feature.properties.Name;
+              const nameKey = rawName?.toLowerCase();
+              const sectorId = getSectorID(rawName);
+              const count = getConvergenceCount(nameKey, sectorId);
+              if (count === 0) return null;
+              const centroid = computeCentroid(feature);
+              if (!centroid) return null;
+              return (
+                <Marker
+                  key={`badge-${idx}`}
+                  position={centroid}
+                  icon={createConvergenceBadgeIcon(count)}
+                  interactive={false}
+                />
+              );
+            })}
 
             {/* Community Report Markers (Overlay) - Representative Only */}
             {/* FIX: Strictly unmount markers if any other layer is active */}

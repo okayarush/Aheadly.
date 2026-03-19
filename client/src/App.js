@@ -8,25 +8,54 @@ import { CityDataProvider } from './context/CityDataContext';
 import { InterventionProvider } from './context/InterventionContext';
 
 // Components
-import Navbar from './components/layout/Navbar';
 import Sidebar from './components/layout/Sidebar';
-import LoadingSpinner from './components/common/LoadingSpinner';
 
 // Pages
 import Dashboard from './pages/Dashboard';
 import DigitalTwin from './pages/DigitalTwin';
 import InterventionPlanner from './pages/InterventionPlanner';
 import FutureOverview from './pages/FutureOverview';
-import PolicyBrief from './pages/PolicyBrief';
 import HealthPriorityBrief from './pages/HealthPriorityBrief';
 import DataSources from './pages/DataSources';
-
-// Styles
 import GlobalStyles from './styles/GlobalStyles';
 import Home from './pages/Home';
 import ComingSoon from './pages/ComingSoon';
 import HospitalApp from './pages/HospitalApp';
 import CommunitySanitation from './pages/CommunitySanitation';
+import CommunitySymptoms from './pages/CommunitySymptoms';
+import ASHAField from './pages/ASHAField';
+import HealthPassport from './pages/HealthPassport';
+
+// Onboarding Pages
+import SMCOnboarding from './pages/SMCOnboarding';
+import HospitalOnboarding from './pages/HospitalOnboarding';
+import CommunityOnboarding from './pages/CommunityOnboarding';
+import ASHAOnboarding from './pages/ASHAOnboarding';
+
+// New Citizen Feature Pages
+import VaccinationTracker from './pages/VaccinationTracker';
+import WardLeaderboard from './pages/WardLeaderboard';
+import EmergencySOS from './pages/EmergencySOS';
+
+// Global Copilot
+import AheadlyCopilot from './components/AheadlyCopilot';
+
+// Pages that render without sidebar (full-screen experiences)
+const FULLSCREEN_ROUTES = [
+  '/', 
+  '/smc', 
+  '/hospital', 
+  '/hospital-reporting',
+  '/community', 
+  '/community-sanitation',
+  '/community-symptoms',
+  '/health-passport',
+  '/vaccinations',
+  '/leaderboard',
+  '/sos',
+  '/asha-welcome',
+  '/asha'
+];
 
 const AppContainer = styled.div`
   display: flex;
@@ -44,23 +73,31 @@ const MainContent = styled.div`
 const ContentArea = styled.main`
   flex: 1;
   overflow-y: auto;
-  background: ${props => props.$isHomePage ? 'transparent' : 'rgba(255, 255, 255, 0.95)'};
-  box-shadow: ${props => props.$isHomePage ? 'none' : '0 20px 40px rgba(0, 0, 0, 0.1)'};
-  backdrop-filter: ${props => props.$isHomePage ? 'none' : 'blur(10px)'};
+  background: ${props => props.$isFullscreen ? 'transparent' : 'rgba(255, 255, 255, 0.95)'};
+  box-shadow: ${props => props.$isFullscreen ? 'none' : '0 20px 40px rgba(0, 0, 0, 0.1)'};
+  backdrop-filter: ${props => props.$isFullscreen ? 'none' : 'blur(10px)'};
 `;
 
-// Layout component to handle conditional sidebar
 function AppLayout() {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
+  const isFullscreen = FULLSCREEN_ROUTES.includes(location.pathname);
 
   return (
     <AppContainer>
       <MainContent>
-        {!isHomePage && <Sidebar />}
-        <ContentArea $isHomePage={isHomePage}>
+        {!isFullscreen && <Sidebar />}
+        <ContentArea $isFullscreen={isFullscreen}>
           <Routes>
+            {/* Landing */}
             <Route path="/" element={<Home />} />
+
+            {/* Portal Onboarding Pages (full-screen, no sidebar) */}
+            <Route path="/smc" element={<SMCOnboarding />} />
+            <Route path="/hospital" element={<HospitalOnboarding />} />
+            <Route path="/community" element={<CommunityOnboarding />} />
+            <Route path="/asha-welcome" element={<ASHAOnboarding />} />
+
+            {/* SMC Command Center */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/digital-twin" element={<DigitalTwin />} />
             <Route path="/intervention-planner" element={<InterventionPlanner />} />
@@ -68,13 +105,28 @@ function AppLayout() {
             <Route path="/policy-brief" element={<HealthPriorityBrief />} />
             <Route path="/health-priority" element={<HealthPriorityBrief />} />
             <Route path="/data-sources" element={<DataSources />} />
+
+            {/* Hospital */}
+            <Route path='/hospital-reporting' element={<HospitalApp />} />
+
+            {/* Community / Citizens */}
+            <Route path='/community-sanitation' element={<CommunitySanitation />} />
+            <Route path='/community-symptoms' element={<CommunitySymptoms />} />
+            <Route path='/health-passport' element={<HealthPassport />} />
+            <Route path='/vaccinations' element={<VaccinationTracker />} />
+            <Route path='/leaderboard' element={<WardLeaderboard />} />
+            <Route path='/sos' element={<EmergencySOS />} />
+
+            {/* ASHA Field */}
+            <Route path='/asha' element={<ASHAField />} />
+
+            {/* Other */}
             <Route path='/ngo' element={<ComingSoon />} />
             <Route path='/govt' element={<ComingSoon />} />
-            <Route path='/hospital-reporting' element={<HospitalApp />} />
-            <Route path='/community-sanitation' element={<CommunitySanitation />} />
           </Routes>
         </ContentArea>
       </MainContent>
+      {!isFullscreen && <AheadlyCopilot />}
     </AppContainer>
   );
 }
@@ -99,16 +151,10 @@ function App() {
                 fontWeight: '500',
               },
               success: {
-                iconTheme: {
-                  primary: '#10B981',
-                  secondary: '#fff',
-                },
+                iconTheme: { primary: '#10B981', secondary: '#fff' },
               },
               error: {
-                iconTheme: {
-                  primary: '#EF4444',
-                  secondary: '#fff',
-                },
+                iconTheme: { primary: '#EF4444', secondary: '#fff' },
               },
             }}
           />

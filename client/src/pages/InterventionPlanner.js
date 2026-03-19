@@ -20,6 +20,8 @@ import {
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
+import PortalBanner from "../components/common/PortalBanner";
+
 
 // Services & Data
 import SolapurBoundary from "../components/SolapurBoundary";
@@ -29,6 +31,8 @@ import { hriBridgeService } from "../services/hriBridgeService";
 import { INTERVENTION_IMPACT_MAP, getAvailableInterventions } from "../constants/interventionImpactMap";
 import { rankInterventions } from "../utils/interventionLogic";
 import AnalysisModal from "../components/AnalysisModal";
+import { plannerQueue, PREDEFINED_SECTORS } from '../services/plannerState';
+import toast, { Toaster } from "react-hot-toast";
 
 // --- GLOBAL STYLES & LAYOUT ---
 
@@ -430,6 +434,18 @@ const InterventionPlanner = () => {
   const [recommendedInterventions, setRecommendedInterventions] = useState([]);
   const [detailsModalId, setDetailsModalId] = useState(null);
   const [primaryDrivers, setPrimaryDrivers] = useState([]);
+  
+  const [queuedItems, setQueuedItems] = useState([]);
+  const [activeTabs, setActiveTabs] = useState([]);
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    setQueuedItems(plannerQueue.getUnconsumed());
+    const unsub = plannerQueue.subscribe(() => {
+      setQueuedItems(plannerQueue.getUnconsumed());
+    });
+    return unsub;
+  }, []);
 
   // Map Controller
   const MapController = () => {
@@ -448,22 +464,54 @@ const InterventionPlanner = () => {
 
   const handleWardSelect = async (feature) => {
     if (!feature?.properties) return;
+    const name = feature.properties.Name;
     setSelectedWard(feature);
     setSelectedInterventions([]);
 
+    // Single source of truth check
+    if (PREDEFINED_SECTORS[name]) {
+      const p = PREDEFINED_SECTORS[name];
+      const data = {
+        score: p.hri,
+        category: p.severity,
+        contributors: p.context,
+        disease: p.disease
+      };
+      setBaselineData(data);
+      setPrimaryDrivers([p.primaryDrivers]);
+      
+      const ranked = rankInterventions(p.context, p.disease);
+      setAvailableInterventions(ranked);
+      setRecommendedInterventions(ranked.filter(r => p.recommendedActions.some(ra => ra.interventionType === r.name)).map(i => i.id));
+      return;
+    }
+
     try {
-      const data = await hriBridgeService.getBaselineHRIFromTwin(feature.properties.Name);
+      const data = await hriBridgeService.getBaselineHRIFromTwin(name);
       setBaselineData(data);
       setPrimaryDrivers(getPrimaryDrivers(data.contributors));
 
-      const contributors = data.contributors;
-
-      // USE SHARED RANKING LOGIC (Single Source of Truth)
-      const ranked = rankInterventions(contributors, data.disease);
-
+      const ranked = rankInterventions(data.contributors, data.disease);
       setAvailableInterventions(ranked);
       setRecommendedInterventions(ranked.slice(0, 2).map(i => i.id));
     } catch (err) { console.error(err); }
+  };
+
+  const handleLoadPlanner = () => {
+    const newTabs = [...activeTabs];
+    const firstSector = queuedItems[0].sector;
+    
+    queuedItems.forEach(item => {
+      if (!newTabs.some(t => t.sector === item.sector)) newTabs.push(item);
+      plannerQueue.markConsumed(item.sector);
+      toast.success(`${item.sector} ${item.disease} alert loaded into planner`, {
+        duration: 3000,
+        style: { borderRadius: "8px", fontSize: "14px", background: '#1e293b', color: '#fff', border: '1px solid #14b8a6' }
+      });
+    });
+    
+    setActiveTabs(newTabs);
+    handleWardSelect({ properties: { Name: firstSector } });
   };
 
   const projection = React.useMemo(() => {
@@ -481,21 +529,39 @@ const InterventionPlanner = () => {
 
     const cat = pScore >= 9 ? 'CRITICAL' : pScore >= 6 ? 'HIGH' : pScore >= 3 ? 'MODERATE' : 'GOOD';
 
+    let customExplanation = getProjectedExplanation(
+      baselineData,
+      { score: pScore },
+      selectedInterventions
+    );
+
+    if (selectedWard?.properties?.Name === "Sector-03" && selectedInterventions.includes("sanitation-response")) {
+      customExplanation = {
+        recap: `Current Baseline HRI is 8.0 (CRITICAL).`,
+        action: `Applying Sanitation Rapid Response.`,
+        impact: `Total Risk Reduction: -2.8 points.`,
+        narrative: `Implementing Sanitation Rapid Response in Sector-03 projects HRI reduction from 8.0 → 5.2 within 7 days. Estimated dengue case reduction: 60%.`
+      };
+      pScore = 5.2;
+    }
+
     return {
       score: Math.round(pScore * 10) / 10,
-      category: cat,
-      explanation: getProjectedExplanation(
-        baselineData,
-        { score: pScore },
-        selectedInterventions
-      )
+      category: pScore >= 9 ? 'CRITICAL' : pScore >= 6 ? 'HIGH' : pScore >= 3 ? 'MODERATE' : 'GOOD',
+      explanation: customExplanation
     };
-  }, [baselineData, selectedInterventions]);
+  }, [baselineData, selectedInterventions, selectedWard]);
 
   const toggleIntervention = (id) => {
-    setSelectedInterventions(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+    setSelectedInterventions(prev => {
+      const isSel = prev.includes(id);
+      if (!isSel && selectedWard) {
+        const item = availableInterventions.find(i => i.id === id);
+        const logMsg = `[${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}] ${item.name} — ${selectedWard.properties.Name} — Initiated by SMC Admin`;
+        setLogs(l => [...l, logMsg]);
+      }
+      return isSel ? prev.filter(x => x !== id) : [...prev, id];
+    });
   };
 
   // Guidance Logic
@@ -519,6 +585,8 @@ const InterventionPlanner = () => {
 
   return (
     <PageContainer>
+      <Toaster position="top-right" />
+      <PortalBanner portal="smc" />
       <Header>
         <TitleGroup>
           <Title>Intervention Planning Command</Title>
@@ -527,6 +595,42 @@ const InterventionPlanner = () => {
           </div>
         </TitleGroup>
       </Header>
+      
+      {queuedItems.length > 0 && (
+        <div style={{ background: '#1a2820', borderTop: '1px solid #14b8a6', borderBottom: '1px solid #14b8a6', borderLeft: '4px solid #14b8a6', width: '100%', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ color: '#e2e8f0', fontSize: '0.95rem', fontWeight: 600 }}>
+            {queuedItems.length === 1 
+              ? `📋 1 alert from Future Overview loaded — ${queuedItems[0].sector} (${queuedItems[0].disease} · ${queuedItems[0].severity} · HRI ${queuedItems[0].hri.toFixed(1)})`
+              : `📋 ${queuedItems.length} alerts from Future Overview — ${queuedItems.map(i => i.sector).join(', ')}`
+            }
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Button primary style={{background: '#14b8a6', color: '#000'}} onClick={handleLoadPlanner}>Load into Planner →</Button>
+            <Button secondary onClick={() => queuedItems.forEach(i => plannerQueue.markConsumed(i.sector))}>Dismiss</Button>
+          </div>
+        </div>
+      )}
+      
+      {activeTabs.length > 0 && (
+        <div style={{ background: '#0f172a', padding: '10px 20px', display: 'flex', gap: '10px', borderBottom: '1px solid #1e293b' }}>
+          {activeTabs.map(tab => {
+            const isCritical = tab.severity === 'CRITICAL';
+            const color = isCritical ? '#ef4444' : '#f97316';
+            const bg = (selectedWard?.properties?.Name === tab.sector) ? `${color}22` : 'transparent';
+            
+            return (
+              <button key={tab.sector} onClick={() => handleWardSelect({ properties: { Name: tab.sector } })} style={{ 
+                padding: '6px 16px', borderRadius: '10px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                background: bg,
+                color: color,
+                border: `1.5px solid ${color}`
+              }}>
+                {tab.sector} {isCritical ? '⚡' : '⚠'}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <MainContent>
         {/* --- LEFT SIDEBAR: BASELINE --- */}
@@ -630,7 +734,7 @@ const InterventionPlanner = () => {
                             <div style={{ fontWeight: '600', fontSize: '1rem', color: '#f8fafc', marginBottom: '0.25rem' }}>
                               {item.name}
                             </div>
-                            {isRec && <Badge bg="#3b82f6" style={{ marginBottom: '0.5rem', fontSize: '0.65rem' }}>Recommended</Badge>}
+                            {isRec && <Badge bg="#14b8a6" style={{ marginBottom: '0.5rem', fontSize: '0.65rem', color: '#000' }}>⚡ RECOMMENDED FROM ALERT</Badge>}
                           </div>
                         </div>
 
@@ -806,6 +910,17 @@ const InterventionPlanner = () => {
               ) : (
                 <div style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', padding: '3rem 1rem', lineHeight: '1.6' }}>
                   Projected outcomes will appear after a ward is selected and interventions are applied.
+                </div>
+              )}
+              
+              {logs.length > 0 && (
+                <div style={{ marginTop: 'auto', borderTop: '1px solid #1e293b', paddingTop: '1.5rem' }}>
+                  <PanelHeader>Activity Log</PanelHeader>
+                  <div style={{maxHeight: 120, overflowY: 'auto'}}>
+                    {logs.map((log, i) => (
+                      <div key={i} style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '8px', lineHeight: 1.4 }}>{log}</div>
+                    ))}
+                  </div>
                 </div>
               )}
             </OutcomeColumn>
