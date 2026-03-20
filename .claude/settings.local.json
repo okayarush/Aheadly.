@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(CI=false npm run build)"
-    ]
-  }
-}
