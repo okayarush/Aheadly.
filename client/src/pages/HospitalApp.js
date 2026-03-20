@@ -15,7 +15,8 @@ import {
   FiClipboard,
   FiTrendingUp,
   FiAlertCircle,
-  FiX
+  FiX,
+  FiShield
 } from "react-icons/fi";
 
 // --- THEME & ANIMATIONS ---
@@ -136,7 +137,6 @@ export default function HospitalApp() {
   const [depts, setDepts] = useState(INITIAL_DEPARTMENTS);
   const [lastSynced, setLastSynced] = useState("Just now");
   const [alerts, setAlerts] = useState(INITIAL_ALERTS);
-  const [selectedAlert, setSelectedAlert] = useState(null);
   const [dismissSurgeBanner, setDismissSurgeBanner] = useState(false);
   const [showSurgePlan, setShowSurgePlan] = useState(false);
   
@@ -277,7 +277,7 @@ export default function HospitalApp() {
               </div>
               {alert.status === 'pending' && (
                 <div style={{display:'flex', flexDirection:'column', gap:'0.5rem'}}>
-                  <button onClick={() => setSelectedAlert(alert)} style={{background:t.color, color:'#000', border:'none', padding:'0.6rem 1rem', borderRadius:'4px', fontWeight:'bold', cursor:'pointer'}}>Compliance Action →</button>
+
                   <button onClick={() => setAlerts(alerts.map(a => a.id === alert.id ? { ...a, status: 'acknowledged' } : a))} style={{background:'transparent', border:`1px solid ${t.color}`, color:t.color, padding:'0.6rem 1rem', borderRadius:'4px', fontWeight:'bold', cursor:'pointer'}}>Acknowledge Quick</button>
                 </div>
               )}
@@ -623,6 +623,12 @@ export default function HospitalApp() {
           {alerts.filter(a => a.status === 'pending').length > 0 && <span style={{background:'#ff4444', color:'white', padding:'2px 6px', borderRadius:'10px', fontSize:'0.65rem', marginLeft:'auto'}}>{alerts.filter(a => a.status === 'pending').length}</span>}
         </NavItem>
         <NavItem><FiSettings/> Integration Settings</NavItem>
+
+        <div style={{ marginTop: "auto", borderTop: `1px solid ${BORDER}`, paddingTop: "1rem" }}>
+          <NavItem onClick={() => navigate("/dashboard")}>
+            <FiShield color={ACCENT} /> SMC Admin Portal
+          </NavItem>
+        </div>
       </Sidebar>
 
       <MainArea>

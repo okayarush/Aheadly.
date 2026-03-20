@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { motion } from 'framer-motion';
-import { getCityMetrics } from '../data/unifiedHealthData';
 
 const PORTAL_COLOR = '#0D7377';
 const PORTAL_COLOR_LIGHT = 'rgba(13,115,119,0.15)';
@@ -165,30 +164,7 @@ const CardDesc = styled.div`
   line-height: 1.5;
 `;
 
-const StatsStrip = styled.div`
-  background: ${PORTAL_COLOR_LIGHT};
-  border: 1px solid ${PORTAL_COLOR_BORDER};
-  border-radius: 12px;
-  padding: 1.25rem 1.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  align-items: center;
-  margin-bottom: 2.5rem;
-`;
 
-const StatItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.8);
-
-  strong {
-    color: white;
-    font-weight: 800;
-  }
-`;
 
 const EnterButton = styled(motion.button)`
   background: linear-gradient(135deg, ${PORTAL_COLOR}, #14919B);
@@ -218,7 +194,6 @@ const fadeSlide = {
 
 export default function SMCOnboarding() {
   const navigate = useNavigate();
-  const metrics = getCityMetrics();
 
   const featureCards = [
     { icon: '🗺️', title: 'Digital Twin', desc: 'Ward-level health map with HRI scoring and 5 intelligence layers', route: '/digital-twin' },
@@ -262,13 +237,7 @@ export default function SMCOnboarding() {
       </Hero>
 
       <Section>
-        <StatsStrip>
-          <StatItem>📡 Monitoring <strong>{metrics.wardsMonitored} wards</strong></StatItem>
-          <StatItem>🔴 <strong>{metrics.highRiskCount}</strong> at HIGH risk</StatItem>
-          <StatItem>📊 Avg HRI: <strong>{metrics.avgHRI}/12</strong></StatItem>
-          <StatItem>🦟 <strong>{metrics.totalDiseaseSignals}</strong> active disease signals</StatItem>
-          <StatItem>🏥 City bed occupancy: <strong>{metrics.occupancyPercent}%</strong></StatItem>
-        </StatsStrip>
+
 
         <SectionLabel>YOUR ROLE IN AHEADLY</SectionLabel>
         <SectionTitle>How you fit into the system</SectionTitle>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes, createGlobalStyle } from 'styled-components';
 import { motion, useInView } from 'framer-motion';
@@ -6,7 +6,7 @@ import { FiActivity, FiUsers, FiHeart } from 'react-icons/fi';
 
 // --- Global Styles for Fonts & Scroll ---
 const GlobalStyle = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@900&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@900&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=Outfit:wght@900&display=swap');
 
   body {
     margin: 0;
@@ -45,6 +45,12 @@ const orbPulse = keyframes`
   50% { box-shadow: 0 0 60px rgba(0, 212, 170, 0.8), 0 0 100px rgba(0, 212, 170, 0.2); }
 `;
 
+const gradientMove = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
 const spinNumbers = keyframes`
   from { transform: translateY(0); }
   to { transform: translateY(-100%); }
@@ -56,10 +62,8 @@ const ScrollContainer = styled.div`
   height: 100vh;
   width: 100vw;
   overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
-  
-  /* Hide scrollbar for cleanly snapping */
+
+  /* Hide scrollbar */
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
   &::-webkit-scrollbar {
@@ -92,10 +96,13 @@ const NavBar = styled(motion.nav)`
 `;
 
 const Brandmark = styled.div`
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Outfit', sans-serif;
   font-weight: 900;
-  font-size: 1.5rem;
-  letter-spacing: 1px;
+  font-size: 1.8rem;
+  letter-spacing: -1px;
+  background: linear-gradient(to bottom, #FFD700 0%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 `;
 
 const NavLinks = styled.div`
@@ -119,7 +126,7 @@ const NavLinks = styled.div`
 const Section = styled.section`
   height: 100vh;
   width: 100vw;
-  scroll-snap-align: start;
+  scroll-margin-top: 0;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -158,19 +165,56 @@ const ParticleCanvasContainer = styled.div`
 
 // --- Typography ---
 
+const HeroOverline = styled.div`
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  z-index: 10;
+`;
+
 const HeroWordmark = styled.h1`
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Outfit', sans-serif;
   font-weight: 900;
-  font-size: clamp(80px, 10vw, 120px);
+  font-size: clamp(100px, 15vw, 180px);
   margin: 0;
-  line-height: 1;
-  letter-spacing: 2px;
+  line-height: 0.9;
+  letter-spacing: -2px;
+  z-index: 10;
+  background: linear-gradient(
+    45deg, 
+    #FFD700 0%, 
+    #FFFACD 25%, 
+    #FFD700 50%, 
+    #FFFACD 75%, 
+    #FFD700 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: ${gradientMove} 3s linear infinite;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+  text-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+`;
+
+const HeroTeamSubtitle = styled.div`
+  font-family: 'Inter', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #FFD700;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
   z-index: 10;
 `;
 
 const HeroSubline = styled.p`
   font-family: 'DM Serif Display', serif;
-  font-size: clamp(20px, 2.5vw, 28px);
+  font-size: clamp(24px, 3.5vw, 36px);
   color: rgba(255, 255, 255, 0.8);
   margin-top: 10px;
   z-index: 10;
@@ -430,6 +474,289 @@ const PrimaryButton = styled.button`
 
 // --- Portal Selector (Section 6) ---
 
+// --- Problems We Solved (Section 4.5) ---
+
+const ProblemsSection = styled.section`
+  width: 100vw;
+  height: auto;
+  min-height: 100vh;
+  scroll-margin-top: 0;
+  position: relative;
+  background: #080a0f;
+  padding: 100px 5% 120px;
+  box-sizing: border-box;
+  overflow: visible;
+`;
+
+const ProblemsSectionHeader = styled.div`
+  text-align: center;
+  margin-bottom: 80px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+`;
+
+const ProblemsSmallLabel = styled.div`
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #ff4444;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+`;
+
+const ProblemsTitle = styled.h2`
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(36px, 5vw, 60px);
+  margin: 0 0 1.25rem;
+  color: white;
+  line-height: 1.1;
+`;
+
+const ProblemsSubtitle = styled.p`
+  font-size: 1rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.6;
+  max-width: 700px;
+  margin: 0 auto;
+`;
+
+const ProblemCardsStack = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+`;
+
+const ProblemCard = styled(motion.div)`
+  display: grid;
+  grid-template-columns: 2fr 1px 3fr;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.05);
+  position: relative;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1px auto;
+  }
+`;
+
+const ChallengeLeft = styled.div`
+  background: #1a0f0f;
+  padding: 3rem 2.5rem;
+  position: relative;
+  border-left: 3px solid #ff4444;
+  overflow: hidden;
+`;
+
+const ProblemNumber = styled.div`
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 120px;
+  font-weight: 900;
+  color: rgba(255,68,68,0.05);
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+`;
+
+const ChallengeLabel = styled.div`
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #ff4444;
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+`;
+
+const ChallengeTitle = styled.h3`
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 1.6rem;
+  color: white;
+  margin: 0 0 1rem;
+  line-height: 1.2;
+`;
+
+const ChallengeBody = styled.p`
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.7;
+  margin: 0;
+`;
+
+const ConnectorDivider = styled.div`
+  background: rgba(255,255,255,0.06);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::after {
+    content: '→';
+    position: absolute;
+    color: rgba(255,255,255,0.2);
+    font-size: 1.2rem;
+    background: #080a0f;
+    padding: 4px 6px;
+    border-radius: 50%;
+  }
+
+  @media (max-width: 768px) {
+    height: 1px;
+    width: 100%;
+    &::after { content: '↓'; }
+  }
+`;
+
+const SolutionRight = styled.div`
+  background: #0a1a14;
+  padding: 3rem 2.5rem;
+  border-left: 3px solid #00d4aa;
+  position: relative;
+`;
+
+const SolutionLabel = styled.div`
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #00d4aa;
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+`;
+
+const SolutionBullets = styled.ul`
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+`;
+
+const SolutionBullet = styled.li`
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.5;
+
+  &::before {
+    content: '✓';
+    color: #00d4aa;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  strong { color: white; }
+`;
+
+const FeatureTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+`;
+
+const FeatureTag = styled.span`
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border: 1px solid rgba(0, 212, 170, 0.3);
+  border-radius: 4px;
+  color: #00d4aa;
+  background: rgba(0,212,170,0.05);
+`;
+
+// === PROBLEM CARD COMPONENT ===
+const PROBLEM_DATA = [
+  {
+    num: '01',
+    title: 'Fragmented Health Data',
+    challenge: 'Health data is siloed across hospitals, clinics, laboratories, and government programs. No standardized real-time analytics. Limited ward-wise visibility of health indicators.',
+    bullets: [
+      <><strong>Unified Data Fusion Layer</strong> — Aheadly's FHIR R4 adapter pulls from every hospital HMS automatically, merging with satellite, community, and ASHA data into one real-time intelligence layer</>,
+      <><strong>Ward-level HRI Dashboard</strong> — every ward gets a live Health Risk Index updated every 15 minutes — visible to SMC at a glance</>,
+      <><strong>Data Sources page</strong> — complete transparency into every signal feeding the system</>,
+    ],
+    tags: ['FHIR R4 Integration', 'Live HRI Scoring', '16 Ward Visibility'],
+  },
+  {
+    num: '02',
+    title: 'Delayed Disease Detection',
+    challenge: 'Inadequate predictive systems for early outbreak detection. No real-time surveillance for communicable and non-communicable diseases. Difficulty identifying high-risk populations.',
+    bullets: [
+      <><strong>Outbreak Prediction Engine</strong> — ensemble AI model (LSTM + XGBoost) predicts outbreaks 5–8 days before hospital confirmation with 84% accuracy</>,
+      <><strong>Real-time Syndromic Surveillance</strong> — ASHA symptom reports + community checker submissions create a live disease signal layer updated on every submission</>,
+      <><strong>HRI Risk Clustering</strong> — spatial-temporal clustering identifies high-risk households and vulnerable zones automatically</>,
+    ],
+    tags: ['84% Prediction Accuracy', '5-Day Early Warning', 'Real-time Surveillance'],
+  },
+  {
+    num: '03',
+    title: 'Limited Citizen-Centric Services',
+    challenge: 'Insufficient digital platforms for appointments, telemedicine, vaccination alerts, and emergency services. Low preventive healthcare awareness. Limited accessibility for multilingual populations.',
+    bullets: [
+      <><strong>Community Portal</strong> — Sanitation Reporter, Symptom Checker, Family Vaccination Insights, Emergency SOS, and Hospital Finder</>,
+      <><strong>Multilingual Support</strong> — full Marathi and English interface across Community Portal and ASHA Field app</>,
+      <><strong>AI Health Assistant</strong> — answers health questions in plain language with ward-specific disease context</>,
+      <><strong>Emergency SOS</strong> — one-tap emergency that shares location and health profile with the nearest hospital instantly</>,
+    ],
+    tags: ['Marathi + English', 'Emergency SOS', 'AI Symptom Triage', 'Family Vaccination Tracker'],
+  },
+  {
+    num: '04',
+    title: 'Inefficient Infrastructure Monitoring',
+    challenge: 'No real-time tracking of hospital bed availability, equipment condition, and medicine stocks. Manual processes reduce efficiency, transparency, and accountability.',
+    bullets: [
+      <><strong>Hospital Connect Portal</strong> — live bed occupancy, ICU status, medicine stock levels — auto-synced from HMS every 15 minutes, zero manual entry</>,
+      <><strong>Critical Stock Alerts</strong> — medicines crossing LOW or CRITICAL threshold trigger automatic alerts to hospital admin and SMC simultaneously</>,
+      <><strong>Shift Handover System</strong> — AI-compiled digital handover summaries eliminate paper-based processes entirely</>,
+      <><strong>SMC Alert Broadcast</strong> — SMC can push replenishment orders and compliance deadlines directly to hospitals with acknowledgement tracking</>,
+    ],
+    tags: ['15-min Auto-sync', 'Zero Manual Entry', 'Live Bed Tracking', 'Stock Alert Engine'],
+  },
+];
+
+function ProblemSolvedCard({ data, index }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  return (
+    <ProblemCard
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+      transition={{ duration: 0.7, delay: index * 0.12, ease: 'easeOut' }}
+    >
+      <ChallengeLeft>
+        <ProblemNumber>{data.num}</ProblemNumber>
+        <ChallengeLabel>THE CHALLENGE</ChallengeLabel>
+        <ChallengeTitle>{data.title}</ChallengeTitle>
+        <ChallengeBody>{data.challenge}</ChallengeBody>
+      </ChallengeLeft>
+      <ConnectorDivider />
+      <SolutionRight>
+        <SolutionLabel>HOW AHEADLY SOLVES IT</SolutionLabel>
+        <SolutionBullets>
+          {data.bullets.map((b, i) => <SolutionBullet key={i}>{b}</SolutionBullet>)}
+        </SolutionBullets>
+        <FeatureTags>
+          {data.tags.map((t, i) => <FeatureTag key={i}>{t}</FeatureTag>)}
+        </FeatureTags>
+      </SolutionRight>
+    </ProblemCard>
+  );
+}
+
+
 const PortalSection = styled.section`
   min-height: 100vh;
   width: 100vw;
@@ -668,37 +995,114 @@ const TypewriterText = ({ text, delay = 0 }) => {
 };
 
 // Main Component
+const TOTAL_SECTIONS = 7; // 0–4: cinematic, 5: Problems, 6: Invitation
+
 export default function Home() {
   const navigate = useNavigate();
   const containerRef = useRef(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [showNav, setShowNav] = useState(false);
   const [showPortal, setShowPortal] = useState(false);
-  
+  const showPortalRef = useRef(false);
+  useEffect(() => { showPortalRef.current = showPortal; }, [showPortal]);
+
+  // JS-controlled section navigation
+  const [currentSection, setCurrentSection] = useState(0);
+  const currentSectionRef = useRef(0);
+  const isScrollingRef = useRef(false);
+  const sectionRefs = useRef([]);
+
+  const goToSection = useCallback((index) => {
+    if (index < 0 || index >= TOTAL_SECTIONS) return;
+    const container = containerRef.current;
+    const target = sectionRefs.current[index];
+    if (!container || !target) return;
+
+    isScrollingRef.current = true;
+    currentSectionRef.current = index;
+    setCurrentSection(index);
+
+    // Reset any internal scroll within the target section before navigating to it
+    target.scrollTop = 0;
+
+    // Calculate exact top position relative to the container's scroll space
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const targetTop = container.scrollTop + (targetRect.top - containerRect.top);
+
+    container.scrollTo({ top: targetTop, behavior: 'smooth' });
+    setTimeout(() => { isScrollingRef.current = false; }, 900);
+  }, []);
+
   useEffect(() => {
-    const handleScroll = () => {
-      if (!containerRef.current) return;
-      
-      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-      const progress = (scrollTop / (scrollHeight - clientHeight)) * 100;
-      setScrollProgress(progress);
-      
-      // Show nav when reaching Section 5 (approx 95% of scroll)
-      if (progress > 95) {
-        setShowNav(true);
-      } else {
-        setShowNav(false);
+    let touchStartY = 0;
+
+    const handleWheel = (e) => {
+      if (showPortalRef.current) return;
+
+      const currentEl = sectionRefs.current[currentSectionRef.current];
+      if (!currentEl) return;
+
+      const isScrollable = currentEl.scrollHeight > currentEl.clientHeight + 5
+        && !currentEl.dataset.noInternalScroll;
+
+      if (isScrollable) {
+        const atBottom = currentEl.scrollTop + currentEl.clientHeight >= currentEl.scrollHeight - 5;
+        const atTop = currentEl.scrollTop <= 5;
+        if ((e.deltaY > 30 && atBottom) || (e.deltaY < -30 && atTop)) {
+          e.preventDefault();
+          if (isScrollingRef.current) return;
+          if (e.deltaY > 30) goToSection(currentSectionRef.current + 1);
+          else goToSection(currentSectionRef.current - 1);
+        }
+        return;
       }
+
+      e.preventDefault();
+      if (isScrollingRef.current) return;
+      if (e.deltaY > 30) goToSection(currentSectionRef.current + 1);
+      else if (e.deltaY < -30) goToSection(currentSectionRef.current - 1);
     };
 
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-    }
-    return () => {
-      if (container) container.removeEventListener('scroll', handleScroll);
+    const handleTouchStart = (e) => {
+      touchStartY = e.touches[0].clientY;
     };
-  }, []);
+
+    const handleTouchEnd = (e) => {
+      if (isScrollingRef.current || showPortalRef.current) return;
+      const delta = touchStartY - e.changedTouches[0].clientY;
+      if (Math.abs(delta) < 50) return;
+
+      const currentEl = sectionRefs.current[currentSectionRef.current];
+      if (currentEl && currentEl.scrollHeight > currentEl.clientHeight + 5 && !currentEl.dataset.noInternalScroll) {
+        const atBottom = currentEl.scrollTop + currentEl.clientHeight >= currentEl.scrollHeight - 5;
+        const atTop = currentEl.scrollTop <= 5;
+        if ((delta > 0 && !atBottom) || (delta < 0 && !atTop)) return;
+      }
+
+      if (delta > 0) goToSection(currentSectionRef.current + 1);
+      else goToSection(currentSectionRef.current - 1);
+    };
+
+    const handleKeyDown = (e) => {
+      if (isScrollingRef.current || showPortalRef.current) return;
+      if (e.key === 'ArrowDown') goToSection(currentSectionRef.current + 1);
+      if (e.key === 'ArrowUp') goToSection(currentSectionRef.current - 1);
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [goToSection]);
+
+  const scrollProgress = TOTAL_SECTIONS > 1 ? (currentSection / (TOTAL_SECTIONS - 1)) * 100 : 0;
+  const showNav = currentSection >= TOTAL_SECTIONS - 1;
 
   // Section visibility hooks for animations
   const probRef = useRef(null);
@@ -741,15 +1145,17 @@ export default function Home() {
         <ScrollContainer ref={containerRef}>
         
         {/* SECTION 0 — COLD OPEN */}
-        <Section>
-          <ParticleCanvasContainer>
-            <ParticleField />
-          </ParticleCanvasContainer>
-          <HeroWordmark>AHEADLY</HeroWordmark>
-          <HeroSubline>Urban Health Intelligence for Solapur</HeroSubline>
-          <HeroStat>
-            <TypewriterText text="847 disease signals processed in the last hour" delay={1500} />
-          </HeroStat>
+          <Section ref={el => { sectionRefs.current[0] = el; }}>
+            <ParticleCanvasContainer>
+              <ParticleField />
+            </ParticleCanvasContainer>
+            <HeroOverline>SAMVED 2026 | MIT-VPU | SMC</HeroOverline>
+            <HeroWordmark>AHEADLY</HeroWordmark>
+            <HeroTeamSubtitle>BY TEAM GODDAMN.</HeroTeamSubtitle>
+            <HeroSubline>Urban Health Intelligence for Solapur</HeroSubline>
+            <HeroStat>
+              <TypewriterText text="847 disease signals processed in the last hour" delay={1500} />
+            </HeroStat>
           
           <ScrollPrompt>
             <span>↓</span> scroll
@@ -757,7 +1163,7 @@ export default function Home() {
         </Section>
 
         {/* SECTION 1 — THE PROBLEM */}
-        <Section ref={probRef}>
+        <Section ref={el => { sectionRefs.current[1] = el; probRef.current = el; }}>
           <ProblemText>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -790,7 +1196,7 @@ export default function Home() {
         </Section>
 
         {/* SECTION 2 — THE SIGNAL MOMENT */}
-        <Section ref={splitRef}>
+        <Section ref={el => { sectionRefs.current[2] = el; splitRef.current = el; }}>
           <SplitContainer>
             <Divider 
               initial={{ scaleY: 0 }}
@@ -849,7 +1255,7 @@ export default function Home() {
         </Section>
 
         {/* SECTION 3 — THE DATA PULSE */}
-        <Section ref={pulseRef}>
+        <Section ref={el => { sectionRefs.current[3] = el; pulseRef.current = el; }}>
           <PulseContainer>
             {/* Streams SVG */}
             <StreamLine viewBox="0 0 800 600">
@@ -905,7 +1311,7 @@ export default function Home() {
         </Section>
 
         {/* SECTION 4 — THE PROOF */}
-        <Section ref={proofRef}>
+        <Section ref={el => { sectionRefs.current[4] = el; proofRef.current = el; }}>
           <ProofLabel>WHAT AHEADLY HAS ALREADY DONE</ProofLabel>
           
           <StatsContainer>
@@ -934,8 +1340,22 @@ export default function Home() {
           </ScrollPrompt>
         </Section>
 
+        {/* SECTION 4.5 — PROBLEMS WE SOLVED */}
+        <ProblemsSection ref={el => { sectionRefs.current[5] = el; }} data-no-internal-scroll="true">
+          <ProblemsSectionHeader>
+            <ProblemsSmallLabel>SAMVED HACKATHON · PROBLEM STATEMENT</ProblemsSmallLabel>
+            <ProblemsTitle>Every problem.<br />A precise solution.</ProblemsTitle>
+            <ProblemsSubtitle>Solapur Municipal Corporation identified 4 critical public health failures. Here's exactly how Aheadly addresses each one.</ProblemsSubtitle>
+          </ProblemsSectionHeader>
+          <ProblemCardsStack>
+            {PROBLEM_DATA.map((d, i) => (
+              <ProblemSolvedCard key={d.num} data={d} index={i} />
+            ))}
+          </ProblemCardsStack>
+        </ProblemsSection>
+
         {/* SECTION 5 — THE INVITATION */}
-        <Section>
+        <Section ref={el => { sectionRefs.current[6] = el; }}>
           <CTAHeadline>Ready to see inside the system?</CTAHeadline>
           <CTASubline>Choose your role. Enter Aheadly.</CTASubline>
           

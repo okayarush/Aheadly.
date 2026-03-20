@@ -180,16 +180,57 @@ const SubmitButton = styled.button`
 `;
 
 /* ===================== MAP LOGIC ===================== */
-function LocationMarker({ position, setPosition }) {
+
+// Custom pin icon — avoids broken default Leaflet image paths in webpack
+const pinIcon = L.divIcon({
+  className: '',
+  html: `<div style="
+    width:22px;height:22px;
+    background:#ff4444;
+    border-radius:50% 50% 50% 0;
+    transform:rotate(-45deg);
+    border:3px solid #fff;
+    box-shadow:0 2px 8px rgba(0,0,0,0.6);
+  "></div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 22],
+});
+
+// Simple ray-casting point-in-polygon (GeoJSON coords are [lng, lat])
+function pointInRing(lng, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if ((yi > lat) !== (yj > lat) && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function findWardName(lat, lng, wardsGeoJSON) {
+  if (!wardsGeoJSON?.features) return null;
+  for (const feature of wardsGeoJSON.features) {
+    const { type, coordinates } = feature.geometry;
+    const polygons = type === 'Polygon' ? [coordinates] : coordinates;
+    for (const poly of polygons) {
+      if (pointInRing(lng, lat, poly[0])) return feature.properties.Name;
+    }
+  }
+  return null;
+}
+
+function LocationMarker({ position, wards, onMapClick }) {
   useMapEvents({
     click(e) {
-      setPosition(e.latlng);
+      const { lat, lng } = e.latlng;
+      const wardName = findWardName(lat, lng, wards);
+      onMapClick(e.latlng, wardName);
     },
   });
 
-  return position === null ? null : (
-    <Marker position={position} />
-  );
+  return position === null ? null : <Marker position={position} icon={pinIcon} />;
 }
 
 const CommunitySanitation = () => {
@@ -223,8 +264,8 @@ const CommunitySanitation = () => {
         };
     };
 
-    const handleMapClick = (latlng, featureName) => {
-      const sectorId = featureName ? getSectorID(featureName) : "Unknown Sector";
+    const handleMapClick = (latlng, wardName) => {
+      const sectorId = getSectorID(wardName);
       setActiveSector(sectorId);
       setFormData(prev => ({
           ...prev,
@@ -232,10 +273,6 @@ const CommunitySanitation = () => {
           latitude: latlng.lat,
           longitude: latlng.lng
       }));
-    };
-
-    const onWardClick = (e) => {
-        handleMapClick(e.latlng, e.target.feature.properties.Name);
     };
 
     const handleSubmit = (e) => {
@@ -283,12 +320,11 @@ const CommunitySanitation = () => {
               <MapContainer center={solapurCenter} zoom={13} style={{ height: "100%", width: "100%", background: "#0a0c10" }} zoomControl={false}>
                   <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                   {cityBoundary && <GeoJSON data={cityBoundary} style={{ color: "#94a3b8", weight: 2, fill: false }} />}
-                  {wards && <GeoJSON data={wards} style={getWardStyle} onEachFeature={(feature, layer) => {
-                      layer.on({ click: onWardClick });
-                  }} />}
-                  <LocationMarker 
-                    position={formData.latitude ? {lat: formData.latitude, lng: formData.longitude} : null} 
-                    setPosition={(latlng) => handleMapClick(latlng, null)} 
+                  {wards && <GeoJSON data={wards} style={getWardStyle} />}
+                  <LocationMarker
+                    position={formData.latitude ? { lat: formData.latitude, lng: formData.longitude } : null}
+                    wards={wards}
+                    onMapClick={handleMapClick}
                   />
               </MapContainer>
             </MapSection>

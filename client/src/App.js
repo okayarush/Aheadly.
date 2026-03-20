@@ -17,6 +17,7 @@ import InterventionPlanner from './pages/InterventionPlanner';
 import FutureOverview from './pages/FutureOverview';
 import HealthPriorityBrief from './pages/HealthPriorityBrief';
 import DataSources from './pages/DataSources';
+import ProblemStatement from './pages/ProblemStatement';
 import GlobalStyles from './styles/GlobalStyles';
 import Home from './pages/Home';
 import ComingSoon from './pages/ComingSoon';
@@ -105,6 +106,7 @@ function AppLayout() {
             <Route path="/policy-brief" element={<HealthPriorityBrief />} />
             <Route path="/health-priority" element={<HealthPriorityBrief />} />
             <Route path="/data-sources" element={<DataSources />} />
+            <Route path="/problem-statement" element={<ProblemStatement />} />
 
             {/* Hospital */}
             <Route path='/hospital-reporting' element={<HospitalApp />} />

@@ -599,12 +599,10 @@ const HowItWorks = () => {
   const [activeWeight, setActiveWeight] = useState(null);
 
   const weightages = [
-    { label: "ASHA Field Surveys", pct: 31, tip: "Only real-time ground-truth signal." },
-    { label: "Hospital HMS Data", pct: 24, tip: "Clinical case velocity." },
-    { label: "NASA Satellite Signals", pct: 22, tip: "Identify disease-breeding conditions before they start." },
-    { label: "Community Reports", pct: 14, tip: "Citizen-driven problem spotting." },
-    { label: "Govt. Health Programs", pct: 6, tip: "Vaccination and preventative historical data." },
-    { label: "Weather & Environment", pct: 3, tip: "Macro seasonal triggers." }
+    { label: "Hospital HMS Data", pct: 35, tip: "Clinical case velocity — the most direct signal of active disease burden." },
+    { label: "NASA Satellite Signals", pct: 27, subtitle: "We measure environmental stress over a ward — environmental stress precedes disease outbreak.", tip: "Identify disease-breeding environmental conditions before they turn into cases." },
+    { label: "ASHA Field Surveys", pct: 25, tip: "Real-time ground-truth signal from field workers." },
+    { label: "Community Reports", pct: 13, tip: "Citizen-driven problem spotting." },
   ];
 
   const checks = [
@@ -656,20 +654,27 @@ const HowItWorks = () => {
       {/* SECTION 1 - HRI */}
       <Section data-index="1" ref={el => sectionsRef.current[1] = el}>
         <FadeUp $visible={visibilities[1]}>
-          <Title>One number that tells you everything about a ward's health risk</Title>
-          <Subtitle>Every ward in Solapur gets a Health Risk Index score from 0–100. Higher means higher risk. It's calculated every 15 minutes by fusing 6 data streams. When a ward crosses 70, SMC gets an automatic alert.</Subtitle>
+          <Title>One number — the <span style={{ color: '#00d4aa', fontStyle: 'italic' }}>HRI (Health Risk Index)</span> — tells you everything about a ward's health risk</Title>
+          <Subtitle>Every ward in Solapur gets an HRI score from 0–100. Higher means higher risk. It's calculated every 15 minutes by fusing 4 data streams. When a ward crosses 70, SMC gets an automatic alert.</Subtitle>
           
           <HRIGrid>
             <HRICircle>73</HRICircle>
             <div>
               {weightages.map((w, i) => (
-                <WeightBar key={i} onMouseEnter={() => setActiveWeight(i)} onMouseLeave={() => setActiveWeight(null)}>
-                  <WeightLabel>{w.label}</WeightLabel>
-                  <WeightTrack>
-                    <WeightFill $visible={visibilities[1]} $pct={w.pct} $active={activeWeight === i || activeWeight === null} />
-                  </WeightTrack>
-                  <WeightValue>{w.pct}%</WeightValue>
-                </WeightBar>
+                <div key={i}>
+                  <WeightBar onMouseEnter={() => setActiveWeight(i)} onMouseLeave={() => setActiveWeight(null)}>
+                    <WeightLabel>{w.label}</WeightLabel>
+                    <WeightTrack>
+                      <WeightFill $visible={visibilities[1]} $pct={w.pct} $active={activeWeight === i || activeWeight === null} />
+                    </WeightTrack>
+                    <WeightValue>{w.pct}%</WeightValue>
+                  </WeightBar>
+                  {w.subtitle && (
+                    <div style={{ fontSize: '12px', color: 'rgba(0,212,170,0.6)', marginBottom: '10px', marginTop: '-8px', paddingLeft: '180px', fontStyle: 'italic' }}>
+                      {w.subtitle}
+                    </div>
+                  )}
+                </div>
               ))}
               {activeWeight !== null && (
                 <div style={{ fontSize: '13px', color: TEAL, marginTop: '16px', fontStyle: 'italic' }}>
@@ -686,7 +691,7 @@ const HowItWorks = () => {
                 HRI(w) = Σ(wᵢ × Sᵢ(w)) × seasonalMultiplier(w)<br/><br/>
                 Where:<br/>
                 - w = ward identifier<br/>
-                - wᵢ = <span className="highlight">weight of signal i</span> (ASHA=0.31, HMS=0.24...)<br/>
+                - wᵢ = <span className="highlight">weight of signal i</span> (HMS=0.35, NASA=0.27, ASHA=0.25, Community=0.13)<br/>
                 - Sᵢ(w) = normalized score [0-100] for signal i in ward w<br/>
                 - seasonalMultiplier = 1.0–1.4 (elevated during monsoon/summer)<br/><br/>
                 Normalization: Min-max scaling per signal type<br/>
@@ -888,7 +893,7 @@ const HowItWorks = () => {
       <Section $dark data-index="6" ref={el => sectionsRef.current[6] = el}>
         <FadeUp $visible={visibilities[6]}>
           <Title>Predicting outbreaks before they happen</Title>
-          <Subtitle>Aheadly's outbreak prediction model combines all 6 data streams to forecast disease surges 7–30 days in advance. It doesn't just react — it predicts.</Subtitle>
+          <Subtitle>Aheadly's outbreak prediction model combines all 4 data streams to forecast disease surges 7–30 days in advance. It doesn't just react — it predicts.</Subtitle>
 
           <ChartContainer>
             <PredictionBand />

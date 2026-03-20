@@ -11,7 +11,8 @@ import {
   FiMenu,
   FiX,
   FiArrowRight,
-  FiZap
+  FiZap,
+  FiTarget
 } from 'react-icons/fi';
 
 const BREAKPOINT = '768px';
@@ -248,6 +249,9 @@ const Sidebar = () => {
           <SidebarLink to="/dashboard" end onClick={closeSidebar}>
             <FiHome size={16} /> How It Works
           </SidebarLink>
+          <SidebarLink to="/problem-statement" onClick={closeSidebar}>
+            <FiTarget size={16} /> Problem Statement
+          </SidebarLink>
           <SidebarLink to="/digital-twin" onClick={closeSidebar}>
             <FiMap size={16} /> Digital Twin
           </SidebarLink>
@@ -268,7 +272,7 @@ const Sidebar = () => {
         <ExternalPortalContainer>
           <NavDivider style={{ margin: '1rem 0 0 0' }}>PORTALS</NavDivider>
 
-          <ExternalPortalLink to="/hospital-onboarding" onClick={closeSidebar}>
+          <ExternalPortalLink to="/hospital" onClick={closeSidebar}>
             <div className="portal-title">
               <span>🏥 Hospital Connect</span>
               <FiArrowRight size={14} color="#64748b" />
@@ -276,7 +280,7 @@ const Sidebar = () => {
             <div className="portal-desc">EXTERNAL PORTAL</div>
           </ExternalPortalLink>
 
-          <ExternalPortalLink to="/community-onboarding" onClick={closeSidebar}>
+          <ExternalPortalLink to="/community" onClick={closeSidebar}>
             <div className="portal-title">
               <span>👥 Community Portal</span>
               <FiArrowRight size={14} color="#64748b" />
@@ -284,7 +288,7 @@ const Sidebar = () => {
             <div className="portal-desc">EXTERNAL PORTAL</div>
           </ExternalPortalLink>
 
-          <ExternalPortalLink to="/asha-onboarding" onClick={closeSidebar}>
+          <ExternalPortalLink to="/asha-welcome" onClick={closeSidebar}>
             <div className="portal-title">
               <span>👩‍⚕️ ASHA Field</span>
               <FiArrowRight size={14} color="#64748b" />

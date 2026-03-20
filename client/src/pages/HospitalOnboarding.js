@@ -150,11 +150,62 @@ const ImpactTitle = styled.div`
 `;
 
 const ImpactText = styled.div`
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.75);
-  line-height: 1.8;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
 
   strong { color: white; }
+`;
+
+const CascadeContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+`;
+
+const CascadeItem = styled(motion.div)`
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+`;
+
+const CascadeIcon = styled.div`
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${PORTAL_COLOR};
+  font-size: 1.1rem;
+  flex-shrink: 0;
+`;
+
+const CascadeLabel = styled.div`
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.5;
+
+  strong {
+    color: white;
+    font-weight: 700;
+  }
+
+  span.meta {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: ${PORTAL_COLOR};
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
 `;
 
 const FeatureGrid = styled.div`
@@ -667,12 +718,69 @@ export default function HospitalOnboarding() {
           transition={{ duration: 0.7 }}
         >
           <ImpactTitle>📍 When you report 1 dengue case from Sector-12...</ImpactTitle>
+          
+          <CascadeContainer>
+            <CascadeItem
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <CascadeIcon>→</CascadeIcon>
+              <CascadeLabel>
+                Aheadly <strong>cross-references it with satellite heat data</strong> 
+                <span className="meta">38°C LST</span>
+              </CascadeLabel>
+            </CascadeItem>
+
+            <CascadeItem
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <CascadeIcon>→</CascadeIcon>
+              <CascadeLabel>
+                Checks <strong>water stagnation index</strong> in that ward 
+                <span className="meta">HIGH RISK</span>
+              </CascadeLabel>
+            </CascadeItem>
+
+            <CascadeItem
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <CascadeIcon>→</CascadeIcon>
+              <CascadeLabel>
+                Sees <strong>12 community sanitation complaints</strong> nearby
+                <span className="meta">CLUSTER</span>
+              </CascadeLabel>
+            </CascadeItem>
+
+            <CascadeItem
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <CascadeIcon>→</CascadeIcon>
+              <CascadeLabel>
+                <strong>HRI jumps from 3.0 → 5.0</strong> 
+                <span className="meta">MODERATE</span>
+              </CascadeLabel>
+            </CascadeItem>
+
+            <CascadeItem
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <CascadeIcon>🚨</CascadeIcon>
+              <CascadeLabel>
+                Health officers get an alert <strong>5 days before more cases appear</strong>
+              </CascadeLabel>
+            </CascadeItem>
+          </CascadeContainer>
+
           <ImpactText>
-            → Aheadly <strong>cross-references it with satellite heat data</strong> (38°C LST)<br />
-            → Checks <strong>water stagnation index</strong> in that ward (HIGH)<br />
-            → Sees <strong>12 community sanitation complaints</strong> nearby<br />
-            → <strong>HRI jumps from 3.0 → 5.0 (MODERATE)</strong><br />
-            → Health officers get an alert <strong>5 days before more cases appear</strong><br /><br />
             <strong>Your single report triggers a cascade of early warning intelligence.</strong>
           </ImpactText>
         </ImpactCard>

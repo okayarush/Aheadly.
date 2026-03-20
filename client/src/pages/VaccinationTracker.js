@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiArrowRight, FiShield, FiClock, FiCalendar, FiCheckCircle, FiUserPlus, FiMapPin } from 'react-icons/fi';
+import { FiPlus, FiArrowRight, FiShield, FiClock, FiCalendar, FiCheckCircle, FiUserPlus, FiMapPin, FiAlertTriangle } from 'react-icons/fi';
 import CommunityLayout from '../components/layout/CommunityLayout';
 import CommunityHeader from '../components/common/CommunityHeader';
 
@@ -221,6 +221,40 @@ const VaccineDate = styled.div`
   margin-top: 0.2rem;
 `;
 
+const StatusBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  padding: 3px 8px;
+  border-radius: 20px;
+  margin-top: 0.4rem;
+  background: ${props => props.$type === 'verified'
+    ? 'rgba(16,185,129,0.12)'
+    : props.$type === 'pending'
+    ? 'rgba(245,158,11,0.12)'
+    : 'rgba(59,130,246,0.12)'};
+  color: ${props => props.$type === 'verified'
+    ? '#10b981'
+    : props.$type === 'pending'
+    ? '#f59e0b'
+    : '#3b82f6'};
+  border: 1px solid ${props => props.$type === 'verified'
+    ? 'rgba(16,185,129,0.3)'
+    : props.$type === 'pending'
+    ? 'rgba(245,158,11,0.3)'
+    : 'rgba(59,130,246,0.3)'};
+`;
+
+const VaccineSource = styled.div`
+  font-size: 0.72rem;
+  color: #4b5563;
+  font-weight: 500;
+  margin-top: 0.15rem;
+`;
+
 const FloatingActionButton = styled.button`
   position: fixed;
   bottom: 85px;  // Above the bottom nav
@@ -252,14 +286,17 @@ const MOCK_FAMILY = [
     avatarColor: '#16a34a',
     vaccines: {
       completed: [
-        { name: 'COVID-19 Booster', date: 'Jan 2025' },
-        { name: 'Hepatitis B (Series)', date: 'Mar 2024' },
+        { name: 'COVID-19 Booster (3rd Dose)', date: '18 Jan 2025', status: 'verified', source: 'PHC Hadapsar — synced via ABHA' },
+        { name: 'Hepatitis B (Series Complete)', date: '04 Mar 2024', status: 'verified', source: 'Sassoon General Hospital' },
+        { name: 'MMR (Adult)', date: '11 Aug 2022', status: 'pending', source: 'Self-reported · Awaiting clinic confirmation' },
+        { name: 'COVID-19 (2nd Dose)', date: '09 Sep 2021', status: 'verified', source: 'PHC Wanowrie — CoWIN synced' },
       ],
       due: [
-        { name: 'Tdap (Tetanus-Diphtheria-Pertussis)', date: 'Due in 14 days' },
+        { name: 'Tdap (Tetanus-Diphtheria-Pertussis)', date: 'Due in 14 days', status: 'scheduled', source: 'Reminder set by ASHA worker Sunita Kadam' },
       ],
       upcoming: [
-        { name: 'Annual Flu Vaccine', date: 'Oct 2026' },
+        { name: 'Annual Influenza (Flu) Vaccine', date: 'Oct 2026', status: 'scheduled', source: 'Recommended by NHP seasonal schedule' },
+        { name: 'Hepatitis A (Booster)', date: 'Mar 2027', status: 'scheduled', source: 'Recommended · 3-yr cycle' },
       ]
     }
   },
@@ -271,15 +308,19 @@ const MOCK_FAMILY = [
     avatarColor: '#dc2626',
     vaccines: {
       completed: [
-        { name: 'BCG (Birth)', date: 'Sep 2019' },
-        { name: 'MMR', date: 'Sep 2020' },
+        { name: 'BCG (Birth Dose)', date: '02 Sep 2019', status: 'verified', source: 'KEM Hospital — linked to birth record' },
+        { name: 'OPV (Pulse Polio)', date: '15 Jan 2020', status: 'verified', source: 'Anganwadi Centre #47, Bibwewadi' },
+        { name: 'DPT Primary Series', date: '10 Mar 2020', status: 'verified', source: 'PHC Bibwewadi — HMIS synced' },
+        { name: 'MMR (1st Dose)', date: '22 Sep 2020', status: 'verified', source: 'PHC Bibwewadi' },
+        { name: 'Typhoid (3yr dose)', date: '05 Dec 2022', status: 'pending', source: 'Self-reported · Parent log · Unverified' },
       ],
       due: [
-        { name: 'Typhoid (6yr dose)', date: 'Due in 6 weeks' },
-        { name: 'DPT Booster', date: 'Overdue by 2 yrs' }, // Could be marked red but keeping in Due for grouping
+        { name: 'Typhoid (6yr booster)', date: 'Due in 6 weeks', status: 'scheduled', source: 'ASHA worker follow-up pending' },
+        { name: 'DPT Booster (5–6 yr)', date: 'Overdue by 2 yrs', status: 'pending', source: 'Missed — no clinic record found' },
       ],
       upcoming: [
-        { name: 'Varicella Booster', date: 'Sep 2025' },
+        { name: 'Varicella Booster (2nd Dose)', date: 'Sep 2025', status: 'scheduled', source: 'Recommended — IAP 2025 schedule' },
+        { name: 'HPV (11–12 yr, 1st Dose)', date: 'Sep 2031', status: 'scheduled', source: 'NHP adolescent schedule' },
       ]
     }
   }
@@ -358,10 +399,16 @@ export default function VaccinationTracker() {
                <TimelineGroup>
                  <GroupTitle $color="#f59e0b"><FiAlertTriangle /> Due Soon / Overdue</GroupTitle>
                  {selectedMember.vaccines.due.map(v => (
-                   <VaccineItem key={v.name} $color="#f59e0b">
+                   <VaccineItem key={v.name} $color={v.date.startsWith('Overdue') ? '#ef4444' : '#f59e0b'} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}>
                      <div>
                        <VaccineName>{v.name}</VaccineName>
-                       <VaccineDate style={{ color: '#b45309'}}>{v.date}</VaccineDate>
+                       <VaccineDate style={{ color: v.date.startsWith('Overdue') ? '#ef4444' : '#b45309'}}>{v.date}</VaccineDate>
+                       {v.source && <VaccineSource>{v.source}</VaccineSource>}
+                       <div>
+                         <StatusBadge $type={v.status === 'verified' ? 'verified' : v.status === 'pending' ? 'pending' : 'scheduled'}>
+                           {v.status === 'verified' ? '✓ VERIFIED' : v.status === 'pending' ? '⏳ PENDING' : '📅 SCHEDULED'}
+                         </StatusBadge>
+                       </div>
                      </div>
                    </VaccineItem>
                  ))}
@@ -372,10 +419,14 @@ export default function VaccinationTracker() {
                <TimelineGroup>
                  <GroupTitle $color="#3b82f6"><FiCalendar /> Upcoming</GroupTitle>
                  {selectedMember.vaccines.upcoming.map(v => (
-                   <VaccineItem key={v.name} $color="#3b82f6">
+                   <VaccineItem key={v.name} $color="#3b82f6" initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}>
                      <div>
                        <VaccineName>{v.name}</VaccineName>
                        <VaccineDate>{v.date}</VaccineDate>
+                       {v.source && <VaccineSource>{v.source}</VaccineSource>}
+                       <div>
+                         <StatusBadge $type="scheduled">📅 SCHEDULED</StatusBadge>
+                       </div>
                      </div>
                    </VaccineItem>
                  ))}
@@ -386,12 +437,21 @@ export default function VaccinationTracker() {
                <TimelineGroup>
                  <GroupTitle $color="#10b981"><FiCheckCircle /> Completed</GroupTitle>
                  {selectedMember.vaccines.completed.map(v => (
-                   <VaccineItem key={v.name} $color="#10b981">
-                     <div>
+                   <VaccineItem key={v.name} $color={v.status === 'verified' ? '#10b981' : '#f59e0b'} initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}>
+                     <div style={{ flex: 1 }}>
                        <VaccineName>{v.name}</VaccineName>
                        <VaccineDate>{v.date}</VaccineDate>
+                       {v.source && <VaccineSource>{v.source}</VaccineSource>}
+                       <div>
+                         <StatusBadge $type={v.status}>
+                           {v.status === 'verified' ? '✓ VERIFIED' : '⏳ PENDING'}
+                         </StatusBadge>
+                       </div>
                      </div>
-                     <FiCheckCircle color="#10b981" size={20} />
+                     {v.status === 'verified'
+                       ? <FiCheckCircle color="#10b981" size={20} style={{ flexShrink: 0 }} />
+                       : <FiClock color="#f59e0b" size={20} style={{ flexShrink: 0 }} />
+                     }
                    </VaccineItem>
                  ))}
                </TimelineGroup>

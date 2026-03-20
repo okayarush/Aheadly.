@@ -547,6 +547,7 @@ export default function ASHAField() {
   const [showPassport, setShowPassport] = useState(false);
   const [showEscalation, setShowEscalation] = useState(false);
   const [surveyStep, setSurveyStep] = useState(null); // null = not in survey
+  const [activeTab, setActiveTab] = useState('home');
   
   // Checklist State
   const [checks, setChecks] = useState([false, false, false, false, false]);
@@ -609,7 +610,7 @@ export default function ASHAField() {
         </TopBarContainer>
 
         {/* HOME SCROLL VIEW */}
-        {surveyStep === null && (
+        {surveyStep === null && activeTab === 'home' && (
           <ScrollContent>
             {/* Brief */}
             <BriefCard layout>
@@ -662,6 +663,106 @@ export default function ASHAField() {
               </div>
             </HHCard>
 
+          </ScrollContent>
+        )}
+
+        {/* ALERTS TAB */}
+        {surveyStep === null && activeTab === 'alerts' && (
+          <ScrollContent>
+            <SectionHeader>Notifications & Alerts</SectionHeader>
+            {[
+              { icon: '🔴', title: 'Dengue Cluster — Mangalwar Peth', time: '2h ago', desc: 'SMC Health Command flagged 3 HIGH risk households near your route.', color: RED },
+              { icon: '🟠', title: 'Vaccination Drive — Ward 12', time: '5h ago', desc: 'Polio drive scheduled for 22 March. 4 overdue households on your list.', color: AMBER },
+              { icon: '🟡', title: 'Weather Advisory', time: 'Yesterday', desc: 'High humidity forecast for next 3 days. Prioritise stagnant water checks.', color: YELLOW },
+              { icon: '✅', title: 'Sync Complete', time: 'Yesterday', desc: '3 surveys uploaded successfully to SMC Health server.', color: '#10b981' },
+            ].map((alert, i) => (
+              <div key={i} style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 16, padding: 20, marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{alert.icon} {alert.title}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', marginLeft: 8 }}>{alert.time}</div>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{alert.desc}</div>
+              </div>
+            ))}
+          </ScrollContent>
+        )}
+
+        {/* SURVEYS TAB */}
+        {surveyStep === null && activeTab === 'surveys' && (
+          <ScrollContent>
+            <SectionHeader>This Month — March 2026</SectionHeader>
+            <div style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 16, padding: 20, marginBottom: 24, display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: TEAL }}>47</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>COMPLETED</div></div>
+              <div style={{ width: 1, background: '#2a2e39' }} />
+              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: AMBER }}>8</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>PENDING</div></div>
+              <div style={{ width: 1, background: '#2a2e39' }} />
+              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: '#64748b' }}>2</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>SKIPPED</div></div>
+            </div>
+
+            <SectionHeader>Recent Surveys</SectionHeader>
+            {[
+              { hh: 'HH-2024-0847', addr: '14-B Mangalwar Peth', date: 'Today — Pending', status: 'PENDING', bg: 'rgba(251,191,36,0.15)', color: AMBER },
+              { hh: 'HH-2024-0842', addr: '7 Rajiv Nagar Colony', date: 'Today', status: 'COMPLETED', bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+              { hh: 'HH-2024-0831', addr: '3 Gandhi Chowk', date: 'Yesterday', status: 'COMPLETED', bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+              { hh: 'HH-2024-0819', addr: '22 Siddheshwar Road', date: '18 Mar', status: 'COMPLETED', bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+              { hh: 'HH-2024-0805', addr: '8 New Colony', date: '18 Mar', status: 'SKIPPED', bg: 'rgba(100,116,139,0.15)', color: '#64748b' },
+            ].map((s, i) => (
+              <div key={i} style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 14, padding: 16, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: 4 }}>{s.addr}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{s.hh} · {s.date}</div>
+                </div>
+                <HHStatus $bg={s.bg} $color={s.color}>{s.status}</HHStatus>
+              </div>
+            ))}
+          </ScrollContent>
+        )}
+
+        {/* PROFILE TAB */}
+        {surveyStep === null && activeTab === 'profile' && (
+          <ScrollContent>
+            <div style={{ textAlign: 'center', paddingTop: 20, marginBottom: 32 }}>
+              <div style={{ width: 80, height: 80, borderRadius: '50%', background: TEAL_BG, border: `2px solid ${TEAL}`, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>
+                <FiUser color={TEAL} />
+              </div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900 }}>Sunita Pawar</div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>SMC-ASHA-0142 · Ward 12</div>
+              <PassportBtn style={{ marginTop: 12 }} onClick={() => setShowPassport(true)}>🪪 View Passport</PassportBtn>
+            </div>
+
+            <SectionHeader>Work Summary</SectionHeader>
+            <div style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+              {[
+                { label: 'Surveys this month', value: '47' },
+                { label: 'Survey streak', value: '🔥 18 days' },
+                { label: 'HH coverage — Ward 12', value: '78%' },
+                { label: 'Escalations raised', value: '3' },
+              ].map((row, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < 3 ? '1px solid #2a2e39' : 'none', fontSize: '0.88rem' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.6)' }}>{row.label}</span>
+                  <span style={{ fontWeight: 800, color: 'white' }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+
+            <SectionHeader>Details</SectionHeader>
+            <div style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+              {[
+                { label: 'Supervisor', value: 'Dr. Meena Kulkarni' },
+                { label: 'Ward assignment', value: 'Ward 12 — Sector-12' },
+                { label: 'Active since', value: 'March 2021' },
+                { label: 'Helpline', value: '1800-XXX-XXXX' },
+              ].map((row, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < 3 ? '1px solid #2a2e39' : 'none', fontSize: '0.88rem' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.6)' }}>{row.label}</span>
+                  <span style={{ fontWeight: 700, color: 'white', textAlign: 'right' }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+
+            <button style={{ width: '100%', background: '#1a1d26', border: '1px solid #2a2e39', color: RED, borderRadius: 12, padding: 14, fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer' }}>
+              Sign Out
+            </button>
           </ScrollContent>
         )}
 
@@ -955,7 +1056,7 @@ export default function ASHAField() {
         )}
 
         {/* FLOATING ESCALATION BTN */}
-        {surveyStep === null && (
+        {surveyStep === null && activeTab === 'home' && (
           <EscalateBtn onClick={() => setShowEscalation(true)} whileTap={{ scale: 0.9 }}>
             <FiZap />
             <span>{t('escalate')}</span>
@@ -1021,10 +1122,10 @@ export default function ASHAField() {
 
         {/* BOTTOM NAV */}
         <BottomNav>
-          <NavItem $active><FiHome /> Home</NavItem>
-          <NavItem><FiBell /> Alerts</NavItem>
-          <NavItem><FiFileText /> Surveys</NavItem>
-          <NavItem><FiUser /> Profile</NavItem>
+          <NavItem $active={activeTab === 'home'} onClick={() => { setSurveyStep(null); setActiveTab('home'); }}><FiHome /><span>Home</span></NavItem>
+          <NavItem $active={activeTab === 'alerts'} onClick={() => { setSurveyStep(null); setActiveTab('alerts'); }}><FiBell /><span>Alerts</span></NavItem>
+          <NavItem $active={activeTab === 'surveys'} onClick={() => { setSurveyStep(null); setActiveTab('surveys'); }}><FiFileText /><span>Surveys</span></NavItem>
+          <NavItem $active={activeTab === 'profile'} onClick={() => { setSurveyStep(null); setActiveTab('profile'); }}><FiUser /><span>Profile</span></NavItem>
         </BottomNav>
 
       </MobileShell>
