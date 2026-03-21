@@ -24,6 +24,7 @@ import {
   getHRIScore, getHRIColor
 } from "../utils/RiskCalculator";
 import PortalBanner from "../components/common/PortalBanner";
+import { SECTOR_HEALTH_PROFILES, plannerQueue } from "../services/plannerState";
 
 /* ===================== ICONS ===================== */
 
@@ -174,9 +175,10 @@ const LAYER_EXPLANATIONS = {
     insight: "High-score sectors require immediate municipal intervention to prevent disease outbreaks.",
     uses: ["Disease Burden", "Heat Stress", "Sanitation & Environment"],
     legend: [
-      { color: "#10b981", label: "Low Concern" },
-      { color: "#f59e0b", label: "Moderate Risk" },
-      { color: "#ef4444", label: "High Priority" }
+      { color: "#2dd48a", label: "Low (0-44)" },
+      { color: "#ff8c42", label: "Moderate (45-64)" },
+      { color: "#ff4444", label: "High (65-79)" },
+      { color: "#cc2200", label: "Critical (80-100)" }
     ]
   },
   disease: {
@@ -185,9 +187,10 @@ const LAYER_EXPLANATIONS = {
     insight: "Rising signals indicate environmental triggers or sanitation failures needing action.",
     uses: ["Fever Trends", "Respiratory Spikes", "Diarrhea Clusters"],
     legend: [
-      { color: "#27ae60", label: "Stable Baseline" },
-      { color: "#f39c12", label: "Rising Trend" },
-      { color: "#c0392b", label: "Outbreak Alert" }
+      { color: "#cc2200", label: "Outbreak (Critical)" },
+      { color: "#ff4444", label: "Rising (High)" },
+      { color: "#ff8c42", label: "Moderate (Stable)" },
+      { color: "#2dd48a", label: "Low (Stable)" }
     ]
   },
   community: {
@@ -232,6 +235,33 @@ const LAYER_EXPLANATIONS = {
       { color: "#16a34a", label: "Healthy Cover" }
     ]
   }
+};
+
+const DISEASE_PRIORITY_COLORS = {
+  CRITICAL: "#cc2200",
+  HIGH: "#ff4444",
+  MODERATE: "#ff8c42",
+  LOW: "#2dd48a"
+};
+
+const TREND_LABELS = {
+  Outbreak: "⚠ Outbreak Alert",
+  Rising: "Rising ↑",
+  Stable: "Stable →"
+};
+
+const ACTION_INSIGHTS = {
+  Outbreak: "Immediate larviciding, fogging, and case isolation recommended.",
+  Rising: "Targeted surveillance and source reduction within 48 hours.",
+  Stable: "Continue monitoring. No immediate intervention required."
+};
+
+const normalizeDiseaseTrend = (trend) => {
+  if (!trend) return "Stable";
+  const cleaned = trend.toLowerCase();
+  if (cleaned.includes("outbreak") || cleaned === "surge") return "Outbreak";
+  if (cleaned.includes("rising")) return "Rising";
+  return "Stable";
 };
 
 const LayerGuidePanel = styled.div`
@@ -437,6 +467,7 @@ const DigitalTwin = () => {
   const [showCommunityReports, setShowCommunityReports] = useState(false); // New Overlay
   const [showWards, setShowWards] = useState(true);
   const [showCityBoundary, setShowCityBoundary] = useState(true);
+  const [plannerPill, setPlannerPill] = useState(null);
 
   // References for imperative Leaflet updates
   const geoJsonRef = useRef(null);
@@ -630,51 +661,37 @@ const DigitalTwin = () => {
 
     // 2. Disease Layer Logic
     if (activeLayer === "disease") {
-      // Reconstitute HRI factors for Signal Generation
-      const dData = diseaseTable[sectorId] || { level: "LOW" };
-      const hData = heatTable[nameKey] || { risk: "LOW" };
-      const sData = stagnationTable[nameKey] || { level: "LOW" };
-      const nData = ndviTable[nameKey] || { mean: 0.6 };
-      const cData = sanitationRiskTable[sectorId] || { level: "LOW" };
-
-      const { score } = getHRIScore(dData.level, hData.risk, sData.level, nData.mean, cData.level);
-
-
-
-      // USE REAL DATA
+      const dData = diseaseTable[sectorId] || {};
       const diseaseSignal = formatDiseaseSignalFromData(sectorId, dData);
-
       const primary = diseaseSignal.primary;
-      const hasCases = primary.activeCases > 0;
+      const priority = primary.priority || "LOW";
+      const color = DISEASE_PRIORITY_COLORS[priority] || DISEASE_PRIORITY_COLORS.LOW;
+      const opacity = priority === "CRITICAL"
+        ? 0.9
+        : priority === "HIGH"
+          ? 0.8
+          : priority === "MODERATE"
+            ? 0.7
+            : 0.55;
 
-      // PRIORITY COLORING
-      // PRIORITY COLORING (User Requested Distribution)
-      // Red: Rising Trend OR > 20 cases
-      if (hasCases && (primary.trend.includes('Rising') || primary.trend.includes('Surge') || primary.activeCases > 20)) {
-        return { fillColor: "#ef4444", weight: 2, color: "#7f1d1d", fillOpacity: 0.8 }; // Red (Urgent)
-      }
-      // Orange: > 8 cases
-      if (primary.activeCases > 8) {
-        return { fillColor: "#f97316", weight: 2, color: "#7c2d12", fillOpacity: 0.75 }; // Orange (Action Needed)
-      }
-      // Yellow: 3-8 cases OR High HRI Risk
-      if (primary.activeCases >= 3 || score >= 7) {
-        return { fillColor: "#eab308", weight: 1.5, color: "#713f12", fillOpacity: 0.6 }; // Yellow (Watch)
-      }
-      // Green: 0-2 cases (Routine)
-      return { fillColor: "#22c55e", weight: 1, color: "#14532d", fillOpacity: 0.5 }; // Green (Safe)
+      return {
+        fillColor: color,
+        weight: 2,
+        color: "#1f2937",
+        fillOpacity: opacity,
+        dashArray: null
+      };
     }
 
     // 3. Health Rate Index (HRI) - VISUAL EMPHASIS
     if (activeLayer === "hri") {
-      const dData = diseaseTable[sectorId] || { level: "LOW" };
-      const hData = heatTable[nameKey] || { risk: "LOW" };
-      const sData = stagnationTable[nameKey] || { level: "LOW" };
-      const nData = ndviTable[nameKey] || { mean: 0.6 }; // default healthy
-      const cData = sanitationRiskTable[sectorId] || { level: "LOW" };
+      const profile = SECTOR_HEALTH_PROFILES[sectorId];
+      const hriScore = profile?.hri ?? 40;
+      let color = "#2dd48a";
+      if (hriScore >= 80) color = "#cc2200";
+      else if (hriScore >= 65) color = "#ff4444";
+      else if (hriScore >= 45) color = "#ff8c42";
 
-      const { category } = getHRIScore(dData.level, hData.risk, sData.level, nData.mean, cData.level);
-      const color = getHRIColor(category);
       const convergenceCount = getConvergenceCount(nameKey, sectorId);
       const isConvergenceZone = convergenceCount >= 4;
 
@@ -788,6 +805,22 @@ const DigitalTwin = () => {
     };
   }, [diseaseTable, heatTable, stagnationTable, ndviTable, sanitationRiskTable]); // Re-bind when data changes
 
+  useEffect(() => {
+    window.addToPlanner = (sectorId) => {
+      const profile = SECTOR_HEALTH_PROFILES[sectorId];
+      if (!profile) return;
+      plannerQueue.add(profile);
+      setPlannerPill({ sector: sectorId, label: profile.sectorLabel });
+      const btn = document.getElementById(`queue-${sectorId}`);
+      if (btn) {
+        btn.innerText = "✓ Added to Planner";
+        btn.style.background = "#10b981";
+        btn.style.color = "#0b1120";
+      }
+    };
+    return () => { delete window.addToPlanner; };
+  }, []);
+
   // Track previous layer to detect switches
   const prevLayerRef = useRef(activeLayer);
 
@@ -818,119 +851,96 @@ const DigitalTwin = () => {
 
       let content = null;
 
-      if (activeLayer === "disease") {
-        // Re-construct env context for signal generation
-        const dData = diseaseTable[sectorId] || { level: "LOW" };
-        const hData = heatTable[nameKey] || { risk: "LOW" };
-        const sData = stagnationTable[nameKey] || { level: "LOW" };
-        const nData = ndviTable[nameKey] || { mean: 0.6 };
-        const cData = sanitationRiskTable[sectorId] || { level: "LOW" };
+      if (activeLayer === "hri") {
+        const profile = SECTOR_HEALTH_PROFILES[sectorId];
+        if (profile) {
+          const contributors = (profile.contributors || []).map(c => `<li>${c}</li>`).join('');
+          content = `
+            <div style="font-family:'Inter',sans-serif;min-width:320px;color:#0f172a;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div>
+                  <div style="font-size:0.75rem;letter-spacing:2px;color:#64748b;text-transform:uppercase;font-weight:700;">${profile.sector}</div>
+                  <div style="font-size:1.1rem;font-weight:800;">${profile.sectorLabel}</div>
+                  <div style="font-size:0.95rem;color:#0d9488;font-weight:700;">HRI: ${profile.hri}/100</div>
+                </div>
+                <div style="padding:6px 10px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);background:${profile.hri>=80?'#fee2e2':profile.hri>=65?'#ffe4e6':profile.hri>=45?'#fff7ed':'#ecfdf3'};color:${profile.hri>=80?'#b91c1c':profile.hri>=65?'#c2410c':profile.hri>=45?'#b45309':'#0f766e'};font-weight:800;">
+                  ${profile.severity}
+                </div>
+              </div>
 
-        const { score } = getHRIScore(dData.level, hData.risk, sData.level, nData.mean, cData.level);
+              <div style="margin-bottom:12px;padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+                <div style="font-size:0.8rem;color:#475569;font-weight:700;margin-bottom:4px;">Primary Disease Signal</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="font-weight:800;color:#111827;">${profile.disease} — ${profile.cases} Cases</div>
+                  <div style="font-size:0.85rem;color:${profile.trend==='outbreak'?'#b91c1c':(profile.trend==='rising'?'#c2410c':'#0f766e')};font-weight:700;">
+                    ${profile.trendLabel}
+                  </div>
+                </div>
+                <div style="font-size:0.85rem;color:#475569;margin-top:4px;">Trend: ${profile.trendLabel} · Transmission: ${profile.transmission}</div>
+              </div>
 
+              <div style="margin-bottom:12px;">
+                <div style="font-size:0.8rem;color:#475569;font-weight:700;margin-bottom:6px;">Score Contributors</div>
+                <ul style="margin:0;padding-left:18px;font-size:0.9rem;color:#1f2937;line-height:1.4;">${contributors}</ul>
+              </div>
 
+              <div style="margin-bottom:12px;padding:10px;border-radius:10px;background:#0f172a;color:#e2e8f0;">
+                <div style="font-size:0.78rem;letter-spacing:1px;text-transform:uppercase;color:#67e8f9;font-weight:700;margin-bottom:4px;">Actionable Insight</div>
+                <div style="font-size:0.95rem;line-height:1.5;">"${profile.insight}"</div>
+              </div>
 
+              <button id="queue-${sectorId}" onclick="window.addToPlanner && window.addToPlanner('${sectorId}')" style="width:100%;background:#0ea5e9;color:#0b1120;border:none;border-radius:12px;padding:10px 14px;font-weight:800;font-size:0.95rem;cursor:pointer;">
+                Send to Intervention Planner →
+              </button>
+            </div>
+          `;
+        }
+      }
+      else if (activeLayer === "disease") {
+        const dData = diseaseTable[sectorId] || {};
         const signal = formatDiseaseSignalFromData(sectorId, dData);
-
-        const p = signal.primary;
-        const isUrgent = p.activeCases > 0 && (p.trend.includes('Rising') || p.cluster.includes('Cluster'));
+        const primary = signal.primary;
+        const priority = primary.priority || "LOW";
+        const trendKey = normalizeDiseaseTrend(primary.trend);
+        const trendLabel = TREND_LABELS[trendKey] || TREND_LABELS.Stable;
+        const insight = ACTION_INSIGHTS[trendKey] || ACTION_INSIGHTS.Stable;
+        const caseCount = primary.activeCases || 0;
+        const caseLabel = `${caseCount} case${caseCount === 1 ? "" : "s"}`;
+        const transmission = primary.transmission || "Transmission data unavailable";
+        const color = DISEASE_PRIORITY_COLORS[priority] || DISEASE_PRIORITY_COLORS.LOW;
+        const diseaseName = primary.displayName || primary.name;
 
         content = `
-            <div style="font-family: 'Inter', sans-serif; min-width: 300px; color: #1e293b;">
-              <!-- Header -->
-              <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
-                 <div>
-                    <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Ward Analysis</div>
-                    <div style="font-size: 1.1rem; font-weight: 700; color: #0f172a;">${sectorId}</div>
-                 </div>
-                 <div style="text-align: right;">
-                    <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase;">Priority</div>
-                    <div style="font-weight: 800; color: ${isUrgent ? '#ef4444' : (p.activeCases > 0 ? '#f97316' : '#22c55e')}">
-                        ${isUrgent ? 'URGENT' : (p.activeCases > 0 ? 'HIGH' : 'ROUTINE')}
-                    </div>
-                 </div>
+            <div style="font-family: 'Inter', sans-serif; min-width: 280px; color: #0f172a;">
+              <div style="margin-bottom: 6px; font-size: 0.75rem; color: #475569; text-transform: uppercase; letter-spacing: 0.1em;">Ward</div>
+              <div style="font-size: 1rem; font-weight: 700; margin-bottom: 12px;">${rawName}</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.65rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.12em;">Priority</span>
+                <span style="font-size: 0.85rem; font-weight: 700; color: ${color};">${priority}</span>
               </div>
-
-              <!-- Primary Signal -->
-              <div style="margin-bottom: 14px;">
-                <div style="font-size: 0.75rem; color: #475569; text-transform: uppercase; font-weight: 700; margin-bottom: 6px;">
-                    Primary Disease Signal
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: #64748b; margin-bottom: 4px;">Primary Signal</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #0f172a;">${diseaseName}</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <div>
+                  <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Case Load</div>
+                  <div style="font-size: 0.95rem; font-weight: 700;">${caseLabel}</div>
                 </div>
-                <div style="background: ${p.activeCases > 0 ? 'rgba(239, 68, 68, 0.05)' : '#f8fafc'}; border-left: 4px solid ${p.activeCases > 0 ? '#ef4444' : '#cbd5e1'}; padding: 10px; border-radius: 0 4px 4px 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span style="font-weight: 700; font-size: 1rem; color: ${p.activeCases > 0 ? '#b91c1c' : '#334155'}">${p.name}</span>
-                        <span style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.75rem; font-weight: 600; color: ${p.activeCases > 0 ? '#ef4444' : '#64748b'}">
-                            ${p.activeCases} Cases
-                        </span>
-                    </div>
-                    <div style="font-size: 0.85rem; color: #475569;">
-                        Trend: <b>${p.trend}</b> ${p.activeCases > 0 ? `• Transmission: <b>${p.transmission}</b>` : ''}
-                    </div>
+                <div>
+                  <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Trend</div>
+                  <div style="font-size: 0.95rem; font-weight: 700; color: ${color};">${trendLabel}</div>
                 </div>
               </div>
-
-              <!-- Secondary Signals -->
-              ${signal.secondary && signal.secondary.length > 0 ? `
-              <div style="margin-bottom: 14px;">
-                <div style="font-size: 0.75rem; color: #475569; text-transform: uppercase; font-weight: 700; margin-bottom: 6px;">
-                    Secondary Signals
-                </div>
-                <ul style="margin: 0; padding: 0; list-style: none;">
-                    ${signal.secondary.map(s => `
-                        <li style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 8px; background: #f8fafc; border-radius: 4px; margin-bottom: 4px; border: 1px solid #f1f5f9;">
-                            <span style="font-weight: 600; color: #334155;">${s.name}</span>
-                            <span style="color: #64748b;">${s.activeCases} cases (${s.trend})</span>
-                        </li>
-                    `).join('')}
-                </ul>
-              </div>` : ''}
-
-              <!-- Transmission Context -->
-              ${p.activeCases > 0 ? `
-              <div style="margin-bottom: 14px;">
-                <div style="font-size: 0.75rem; color: #475569; text-transform: uppercase; font-weight: 700; margin-bottom: 6px;">
-                    Transmission Context
-                </div>
-                <div style="font-size: 0.85rem; color: #334155; line-height: 1.4; background: #f1f5f9; padding: 8px; border-radius: 4px;">
-                        ${p.activeCases > 0 && p.type === 'Vector-Borne' ? `Likely vector breeding supported by HRI score of <b>${score.toFixed(1)}</b>.` : ''}
-                        ${p.activeCases > 0 && p.type === 'Water-Borne' ? `Sanitation stress indicates fecal-oral risk.` : ''}
-                        ${p.activeCases > 0 && p.type === 'Respiratory' ? `Seasonal transmission likely.` : ''}
-                        ${p.activeCases > 0 && p.type === 'Heat-Related' ? `High environmental thermal stress.` : ''}
-                        ${p.activeCases > 0 && p.type === 'None' ? `No specific transmission context.` : ''}
-                </div>
-              </div>` : ''}
-
-              <!-- Actionable Insight -->
-               <div style="background: #fff; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Actionable Public Health Insight</div>
-                <div style="font-size: 0.85rem; color: #0f172a; line-height: 1.5; font-style: italic;">
-                  "${p.activeCases > 0
-            ? `Rising ${p.name.toLowerCase()} cases indicate active ${p.type.toLowerCase()} transmission in this ward. Immediate ${p.type === 'Vector-Borne' ? 'larviciding, fogging,' : 'sanitation response'} and surveillance are recommended.`
-            : `No active cases reported. Maintain routine surveillance to prevent ${p.name.toLowerCase()} outbreaks.`}"
-                </div>
+              <div style="margin-bottom: 10px;">
+                <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Transmission Vector</div>
+                <div style="font-size: 0.9rem; font-weight: 600; color: #0f172a;">${transmission}</div>
               </div>
-
-              <!-- DETAILED LOG BUTTON -->
-              <div style="margin-top: 12px; text-align: center;">
-                <button 
-                    onclick="window.handleWardDetail('${rawName}')"
-                    style="
-                        background: transparent; 
-                        border: 1px solid #94a3b8; 
-                        color: #475569; 
-                        padding: 6px 12px; 
-                        border-radius: 6px; 
-                        font-size: 0.75rem; 
-                        font-weight: 600; 
-                        cursor: pointer; 
-                        transition: all 0.2s;
-                        width: 100%;
-                    "
-                    onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#64748b'"
-                    onmouseout="this.style.background='transparent'; this.style.borderColor='#94a3b8'"
-                >
-                    View Detailed Case Log (Last 30 Days)
-                </button>
+              <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px;">Actionable Insight</div>
+                <div style="font-size: 0.9rem; font-weight: 600; color: #0f172a; line-height: 1.4;">
+                  ${insight}
+                </div>
               </div>
             </div>
         `;
@@ -1237,6 +1247,13 @@ const DigitalTwin = () => {
               </Marker>
             ))}
           </MapContainer>
+
+          {plannerPill && (
+            <div style={{ position: 'absolute', top: 16, right: 16, background: '#0ea5e9', color: '#0b1120', padding: '10px 14px', borderRadius: '999px', fontWeight: 800, boxShadow: '0 10px 30px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => { window.location.href = '/intervention-planner'; }}>
+              → Go to Intervention Planner
+              <span style={{ fontWeight: 700, color: '#022c22' }}>{plannerPill.sector}</span>
+            </div>
+          )}
 
           {/* LAYER EXPLANATION PANEL */}
           {(() => {

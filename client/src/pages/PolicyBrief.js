@@ -246,7 +246,7 @@ const PolicyBrief = () => {
                 title: `Public Health Action Brief: ${wardName}`,
                 generatedAt: new Date(),
                 executiveSummary: {
-                    overview: `Analysis of ${wardName} indicates a ${hriData.category} risk level (HRI: ${hriData.score.toFixed(1)}/12). Primary concern is ${signal.primary.name} with ${signal.primary.activeCases} active cases.`,
+                    overview: `Analysis of ${wardName} indicates a ${hriData.category} risk level (HRI: ${hriData.score.toFixed(1)}/100). Primary concern is ${signal.primary.name} with ${signal.primary.activeCases} active cases.`,
                     keyFindings: [
                         `Primary Disease Signal: ${signal.primary.name} (${signal.primary.trend})`,
                         `Transmission Context: ${signal.primary.transmission || 'None detected'}`,

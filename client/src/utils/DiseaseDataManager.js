@@ -1,6 +1,159 @@
 import { SECTOR_LIST } from './HospitalRegistry';
 
-const STORAGE_KEY = 'urbanome_disease_state_v3'; // Versioned to force clear old data
+const STORAGE_KEY = 'urbanome_disease_state_v4'; // Versioned to force clear old data
+const LEGACY_STORAGE_KEYS = ['urbanome_disease_state_v3'];
+
+const DISEASE_KEYS = ['dengue', 'malaria', 'chikungunya', 'ari', 'ili', 'add', 'typhoid', 'cholera', 'heat'];
+
+const buildCounts = (overrides = {}) => {
+    const counts = {};
+    DISEASE_KEYS.forEach((key) => {
+        counts[key] = overrides[key] || 0;
+    });
+    return counts;
+};
+
+const buildSignal = (primaryKey, cases, overrides) => ({
+    counts: buildCounts({ [primaryKey]: cases }),
+    meta: {
+        primaryKey,
+        ...overrides
+    }
+});
+
+const FIXED_SECTOR_SIGNALS = {
+    'Sector-01': buildSignal('typhoid', 14, {
+        trend: 'Rising',
+        priority: 'HIGH',
+        displayName: 'Typhoid',
+        transmission: 'Contaminated water/food',
+        cluster: 'Cluster'
+    }),
+    'Sector-02': buildSignal('malaria', 3, {
+        trend: 'Stable',
+        priority: 'MODERATE',
+        displayName: 'Malaria',
+        transmission: 'Anopheles mosquito (Night biter)',
+        cluster: 'Sporadic'
+    }),
+    'Sector-03': buildSignal('dengue', 31, {
+        trend: 'Outbreak',
+        priority: 'CRITICAL',
+        displayName: 'Dengue',
+        transmission: 'Aedes aegypti (Day biter)',
+        cluster: 'Outbreak'
+    }),
+    'Sector-05': buildSignal('add', 8, {
+        trend: 'Rising',
+        priority: 'HIGH',
+        displayName: 'Diarrhoea',
+        transmission: 'Waterborne — open drain exposure',
+        cluster: 'Cluster'
+    }),
+    'Sector-06': buildSignal('dengue', 5, {
+        trend: 'Stable',
+        priority: 'LOW',
+        displayName: 'Dengue',
+        transmission: 'Aedes aegypti (Day biter)',
+        cluster: 'Sporadic'
+    }),
+    'Sector-07': buildSignal('ari', 19, {
+        trend: 'Rising',
+        priority: 'HIGH',
+        displayName: 'Respiratory',
+        transmission: 'Airborne — high PM2.5 + humidity',
+        cluster: 'Cluster'
+    }),
+    'Sector-08': buildSignal('dengue', 27, {
+        trend: 'Outbreak',
+        priority: 'CRITICAL',
+        displayName: 'Dengue',
+        transmission: 'Aedes aegypti (Day biter)',
+        cluster: 'Outbreak'
+    }),
+    'Sector-09': buildSignal('typhoid', 11, {
+        trend: 'Rising',
+        priority: 'HIGH',
+        displayName: 'Typhoid',
+        transmission: 'Contaminated water/food',
+        cluster: 'Cluster'
+    }),
+    'Sector-10': buildSignal('dengue', 22, {
+        trend: 'Rising',
+        priority: 'HIGH',
+        displayName: 'Dengue',
+        transmission: 'Aedes aegypti (Day biter)',
+        cluster: 'Cluster'
+    }),
+    'Sector-11': buildSignal('malaria', 2, {
+        trend: 'Stable',
+        priority: 'LOW',
+        displayName: 'Malaria',
+        transmission: 'Anopheles mosquito (Night biter)',
+        cluster: 'Sporadic'
+    }),
+    'Sector-12': buildSignal('dengue', 18, {
+        trend: 'Rising',
+        priority: 'HIGH',
+        displayName: 'Dengue',
+        transmission: 'Aedes aegypti (Day biter)',
+        cluster: 'Cluster'
+    }),
+    'Sector-13': buildSignal('cholera', 6, {
+        trend: 'Rising',
+        priority: 'HIGH',
+        displayName: 'Cholera',
+        transmission: 'Contaminated water source',
+        cluster: 'Cluster'
+    }),
+    'Sector-14': buildSignal('ari', 4, {
+        trend: 'Stable',
+        priority: 'MODERATE',
+        displayName: 'Respiratory',
+        transmission: 'Airborne — high PM2.5 + humidity',
+        cluster: 'Sporadic'
+    }),
+    'Sector-15': buildSignal('add', 1, {
+        trend: 'Stable',
+        priority: 'LOW',
+        displayName: 'Diarrhoea',
+        transmission: 'Waterborne — open drain exposure',
+        cluster: 'Sporadic'
+    }),
+    'Sector-16': buildSignal('dengue', 9, {
+        trend: 'Stable',
+        priority: 'MODERATE',
+        displayName: 'Dengue',
+        transmission: 'Aedes aegypti (Day biter)',
+        cluster: 'Sporadic'
+    })
+};
+
+const buildModerateCounts = () => ({
+    dengue: Math.floor(Math.random() * 3),
+    malaria: Math.floor(Math.random() * 2),
+    chikungunya: 0,
+    ari: Math.floor(Math.random() * 4),
+    ili: Math.floor(Math.random() * 2),
+    add: Math.floor(Math.random() * 2),
+    typhoid: 0,
+    cholera: 0,
+    heat: Math.floor(Math.random() * 2)
+});
+
+const buildHealthyCounts = () => ({
+    dengue: Math.floor(Math.random() * 2),
+    malaria: 0,
+    chikungunya: 0,
+    ari: Math.floor(Math.random() * 2),
+    ili: 0,
+    add: 0,
+    typhoid: 0,
+    cholera: 0,
+    heat: 0
+});
+
+const sumCases = (counts) => DISEASE_KEYS.reduce((acc, key) => acc + (counts[key] || 0), 0);
 
 export class DiseaseDataManager {
 
@@ -8,65 +161,27 @@ export class DiseaseDataManager {
     static initializeBaselineData() {
         const existing = localStorage.getItem(STORAGE_KEY);
         if (existing) return; // Data exists, do nothing
+        // Ensure we drop the old seed whenever we bump the key so the new fixtures land
+        LEGACY_STORAGE_KEYS.forEach((legacyKey) => localStorage.removeItem(legacyKey));
 
         const mockData = {};
 
-        // 1. HARDCODED PRESET DATA (Ensures variance)
-        // We explicitly define some sectors to have specific risks
-        const presets = {
-            "Sector-01": { dengue: 8, malaria: 2, chikungunya: 0, ari: 5, ili: 3, add: 1, typhoid: 0, cholera: 0, heat: 0 }, // Moderate Cluster (~19 total)
-            "Sector-02": { dengue: 0, malaria: 0, chikungunya: 0, ari: 2, ili: 1, add: 0, typhoid: 0, cholera: 0, heat: 0 },      // Green (Routine)
-            "Sector-03": { dengue: 10, malaria: 3, chikungunya: 1, ari: 4, ili: 2, add: 1, typhoid: 0, cholera: 0, heat: 1 },  // High Vector (~22 total)
-            "Sector-04": { dengue: 0, malaria: 0, chikungunya: 0, ari: 0, ili: 0, add: 0, typhoid: 0, cholera: 0, heat: 0 },        // Green (Clean)
-            "Sector-05": { dengue: 1, malaria: 0, chikungunya: 0, ari: 2, ili: 1, add: 15, typhoid: 5, cholera: 2, heat: 0 },  // Water Outbreak (~26 total - Max)
-            "Sector-06": { dengue: 1, malaria: 0, chikungunya: 0, ari: 3, ili: 1, add: 0, typhoid: 0, cholera: 0, heat: 0 },       // Green/Yellow
-            "Sector-12": { dengue: 3, malaria: 1, chikungunya: 0, ari: 2, ili: 1, add: 2, typhoid: 0, cholera: 0, heat: 0 },     // Yellow (Watch)
-        };
-
         SECTOR_LIST.forEach((sector) => {
-            let data = presets[sector];
-
-            // Fallback for others: Mostly Green/Yellow (Realism)
-            const rand = Math.random();
-            if (rand > 0.8) {
-                // 20% Yellow/Orange (3-8 cases total)
-                data = {
-                    dengue: Math.floor(Math.random() * 3),
-                    malaria: Math.floor(Math.random() * 2),
-                    chikungunya: 0,
-                    ari: Math.floor(Math.random() * 4),
-                    ili: Math.floor(Math.random() * 2),
-                    add: Math.floor(Math.random() * 2),
-                    typhoid: 0,
-                    cholera: 0,
-                    heat: Math.floor(Math.random() * 2)
-                };
-            } else {
-                // 80% Green (Healthy - 0-3 cases total)
-                data = {
-                    dengue: Math.floor(Math.random() * 2), // 0 or 1
-                    malaria: 0,
-                    chikungunya: 0,
-                    ari: Math.floor(Math.random() * 2), // 0 or 1
-                    ili: 0,
-                    add: 0, typhoid: 0, cholera: 0, heat: 0
-                };
-            }
-
-            // Compute Derived Stats
-            const total =
-                (data.dengue || 0) + (data.malaria || 0) + (data.chikungunya || 0) +
-                (data.add || 0) + (data.cholera || 0) + (data.typhoid || 0) +
-                (data.ari || 0) + (data.ili || 0) +
-                (data.heat || 0);
+            const fixture = FIXED_SECTOR_SIGNALS[sector];
+            const counts = fixture ? { ...fixture.counts } : (Math.random() > 0.8 ? buildModerateCounts() : buildHealthyCounts());
+            const total = sumCases(counts);
             const level = this.computeLevel(total);
 
             mockData[sector] = {
-                ...data,
+                ...counts,
                 total,
                 level,
-                dominantType: this.computeDominantType(data)
+                dominantType: this.computeDominantType(counts)
             };
+
+            if (fixture && fixture.meta) {
+                mockData[sector].meta = { ...fixture.meta };
+            }
         });
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(mockData));

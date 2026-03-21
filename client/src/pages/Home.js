@@ -310,11 +310,54 @@ const TimelineItem = styled.div`
 
 const PulseContainer = styled.div`
   position: relative;
-  width: 800px;
+  width: 100%;
+  max-width: 900px;
   height: 600px;
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 0 auto;
+`;
+
+const PulseContext = styled(motion.div)`
+  position: absolute;
+  top: -220px;
+  left: 0;
+  right: 0;
+  width: min(760px, calc(100% - 40px));
+  margin: 0 auto;
+  text-align: center;
+  z-index: 25;
+
+  .label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2.8px;
+    color: #00d4aa;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .headline {
+    font-size: clamp(32px, 4vw, 42px);
+    line-height: 1.15;
+    color: white;
+    margin: 0 0 14px 0;
+    font-weight: 600;
+  }
+
+  .body {
+    margin: 0 auto;
+    max-width: 600px;
+    font-size: clamp(16px, 1.6vw, 18px);
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.68);
+  }
+
+  @media (max-width: 1100px) {
+    top: -190px;
+    width: min(92vw, 720px);
+  }
 `;
 
 const CentralOrb = styled(motion.div)`
@@ -356,12 +399,38 @@ const StreamNode = styled(motion.div)`
   font-size: 0.8rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.7);
+  cursor: default;
+  z-index: 21;
   ${props => props.position};
+
+  .tooltip {
+    position: absolute;
+    left: 50%;
+    top: -42px;
+    transform: translateX(-50%) translateY(4px);
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(9, 14, 22, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.72rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 40;
+  }
+
+  &:hover .tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 `;
 
 const OrbLabels = styled(motion.div)`
   position: absolute;
-  bottom: 100px;
+  bottom: -50px;
   display: flex;
   gap: 30px;
   color: #00d4aa;
@@ -373,20 +442,97 @@ const OrbLabels = styled(motion.div)`
 
 const ScoreDisplay = styled(motion.div)`
   position: absolute;
-  top: -80px;
+  top: 24px;
+  left: 0;
+  right: 0;
+  width: min(340px, 90vw);
+  margin: 0 auto;
+  z-index: 26;
   color: white;
   text-align: center;
   
   .score {
-    font-size: 2.5rem;
+    font-size: clamp(2rem, 4vw, 2.5rem);
     font-weight: 700;
     color: #00d4aa;
+    letter-spacing: 0.5px;
   }
   .label {
     font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.6);
     letter-spacing: 1px;
     margin-top: 5px;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.52);
+    margin-top: 8px;
+    padding-bottom: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  @media (max-width: 1200px) {
+    top: 56px;
+  }
+
+  @media (max-width: 900px) {
+    top: 88px;
+  }
+`;
+
+const HRILegend = styled(motion.div)`
+  position: absolute;
+  bottom: -120px;
+  left: 0;
+  right: 0;
+  width: 400px;
+  margin: 0 auto;
+  z-index: 22;
+
+  .ticks {
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .bar-wrap {
+    position: relative;
+    width: 400px;
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bar {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #27d36b 0%, #f3d55b 50%, #f39b3d 70%, #ef4949 100%);
+  }
+
+  .marker {
+    position: absolute;
+    top: 50%;
+    left: calc(73% - 5px);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #080a0f;
+    background: #ffffff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    transform: translateY(-50%);
+  }
+
+  .labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.68rem;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.66);
+    text-transform: uppercase;
   }
 `;
 
@@ -1257,6 +1403,19 @@ export default function Home() {
         {/* SECTION 3 — THE DATA PULSE */}
         <Section ref={el => { sectionRefs.current[3] = el; pulseRef.current = el; }}>
           <PulseContainer>
+            <PulseContext
+              initial={{ opacity: 0, y: 18 }}
+              animate={isPulseInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
+              transition={{ duration: 0.7, delay: 0.05 }}
+            >
+              <div className="label">THE HEALTH RISK INDEX</div>
+              <h3 className="headline">One number that tells you everything about a ward&apos;s health risk</h3>
+              <p className="body">
+                Aheadly&apos;s HRI Engine fuses 6 live data streams into a single score &mdash; 0 to 100 &mdash; for every ward in Solapur.
+                Updated every 15 minutes. When a ward crosses 70, SMC gets an automatic alert.
+              </p>
+            </PulseContext>
+
             {/* Streams SVG */}
             <StreamLine viewBox="0 0 800 600">
               {isPulseInView && (
@@ -1272,13 +1431,31 @@ export default function Home() {
             </StreamLine>
 
             {/* Nodes */}
-            <StreamNode position="top: 130px; left: 20px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:0.3}}>🛰 NASA Satellite</StreamNode>
-            <StreamNode position="top: 280px; left: -10px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:0.6}}>👩‍⚕️ ASHA Surveys</StreamNode>
-            <StreamNode position="top: 500px; left: 60px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:0.9}}>🏥 Hospital HMS</StreamNode>
+            <StreamNode position="top: 130px; left: 20px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:0.3}}>
+              🛰 NASA Satellite
+              <span className="tooltip">22% of HRI score</span>
+            </StreamNode>
+            <StreamNode position="top: 280px; left: -10px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:0.6}}>
+              👩‍⚕️ ASHA Surveys
+              <span className="tooltip">31% of HRI score &mdash; highest weight</span>
+            </StreamNode>
+            <StreamNode position="top: 500px; left: 60px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:0.9}}>
+              🏥 Hospital HMS
+              <span className="tooltip">24% of HRI score</span>
+            </StreamNode>
             
-            <StreamNode position="top: 500px; right: 40px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:1.2}}>👥 Community Reports</StreamNode>
-            <StreamNode position="top: 280px; right: -30px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:1.5}}>🏛 Govt. Programs</StreamNode>
-            <StreamNode position="top: 80px; right: 40px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:1.8}}>🌦 Weather Data</StreamNode>
+            <StreamNode position="top: 500px; right: 40px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:1.2}}>
+              👥 Community Reports
+              <span className="tooltip">14% of HRI score</span>
+            </StreamNode>
+            <StreamNode position="top: 280px; right: -30px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:1.5}}>
+              🏛 Govt. Programs
+              <span className="tooltip">6% of HRI score</span>
+            </StreamNode>
+            <StreamNode position="top: 80px; right: 40px" initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay:1.8}}>
+              🌦 Weather Data
+              <span className="tooltip">3% of HRI score</span>
+            </StreamNode>
 
             {/* Central Orb */}
             <CentralOrb
@@ -1292,10 +1469,34 @@ export default function Home() {
             {/* Output */}
             {isPulseInView && (
               <ScoreDisplay initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay: 2.3}}>
-                <div className="score">73</div>
+                <div className="score">73 / 100</div>
                 <div className="label">HIGH RISK · SECTOR-12</div>
+                <div className="meta">Health Risk Index &mdash; updated 2 min ago</div>
               </ScoreDisplay>
             )}
+
+            <HRILegend
+              initial={{ opacity: 0, y: 12 }}
+              animate={isPulseInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+              transition={{ duration: 0.5, delay: 2.85 }}
+            >
+              <div className="ticks">
+                <span>0</span>
+                <span>50</span>
+                <span>70</span>
+                <span>100</span>
+              </div>
+              <div className="bar-wrap">
+                <div className="bar" />
+                <div className="marker" />
+              </div>
+              <div className="labels">
+                <span>LOW RISK</span>
+                <span>MODERATE</span>
+                <span>HIGH</span>
+                <span>CRITICAL</span>
+              </div>
+            </HRILegend>
 
             <OrbLabels initial={{opacity:0}} animate={isPulseInView ? {opacity:1}:{}} transition={{delay: 2.6}}>
               <span>Outbreak Alert Sent</span>

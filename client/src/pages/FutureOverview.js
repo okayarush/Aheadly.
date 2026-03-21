@@ -928,7 +928,7 @@ const OutbreakMap = ({ selectedDisease, forecastWindow }) => {
         container.innerHTML = `
           <div style="min-width:200px;font-family:Inter,sans-serif">
             <div style="font-weight:700;font-size:14px;color:#1A1A2E;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e2e8f0">${sector || raw}</div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;color:#1e293b"><span>Current HRI:</span><strong style="color:#0D7377">${wardData.currentHRI}/12</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;color:#1e293b"><span>Current HRI:</span><strong style="color:#0D7377">${wardData.currentHRI}/100</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;color:#1e293b"><span>Outbreak probability:</span><strong style="color:${getProbabilityColor(adjProb)}">${adjProb}%</strong></div>
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;margin-top:10px;margin-bottom:4px">Key Risk Drivers</div>
             ${riskDrivers.map((d) => `<div style="font-size:12px;color:#1e293b;padding:2px 0">• ${d}</div>`).join("")}

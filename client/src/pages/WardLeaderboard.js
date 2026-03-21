@@ -206,7 +206,7 @@ export default function WardLeaderboard() {
   const ranked = Object.values(wardData).map((w, idx) => ({
     id: w.id,
     name: w.displayName || w.name,
-    score: Math.round(100 - (w.hri.total/12)*100) + Math.floor(Math.random() * 5) // Mock logic
+    score: Math.round(100 - w.hri.total) + Math.floor(Math.random() * 5) // lower HRI => higher leaderboard score
   })).sort((a,b) => b.score - a.score);
 
   const userWardId = "Sector-12";

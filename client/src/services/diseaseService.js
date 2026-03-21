@@ -12,15 +12,69 @@ const DISEASE_TYPES = {
 };
 
 const DISEASES = {
-    DENGUE: { name: 'Dengue', type: DISEASE_TYPES.VECTOR, transmission: 'Aedes aegypti (Day biter)', vector: 'Mosquito' },
-    MALARIA: { name: 'Malaria', type: DISEASE_TYPES.VECTOR, transmission: 'Anopheles (Night biter)', vector: 'Mosquito' },
-    CHIKUNGUNYA: { name: 'Chikungunya', type: DISEASE_TYPES.VECTOR, transmission: 'Aedes aegypti', vector: 'Mosquito' },
-    ADD: { name: 'Acute Diarrheal Disease', type: DISEASE_TYPES.WATER, transmission: 'Fecal-Oral Route', vector: 'Water/Food' },
-    CHOLERA: { name: 'Cholera', type: DISEASE_TYPES.WATER, transmission: 'Contaminated Water', vector: 'Water' },
-    TYPHOID: { name: 'Typhoid', type: DISEASE_TYPES.WATER, transmission: 'Fecal-Oral Route', vector: 'Food/Water' },
-    ARI: { name: 'Acute Respiratory Infection', type: DISEASE_TYPES.RESPIRATORY, transmission: 'Airborne Droplets', vector: 'Air' },
-    ILI: { name: 'Influenza-Like Illness', type: DISEASE_TYPES.RESPIRATORY, transmission: 'Airborne/Contact', vector: 'Air' },
-    HEAT_STRESS: { name: 'Heat Stress', type: DISEASE_TYPES.HEAT, transmission: 'Environmental Exposure', vector: 'Sun/Heat' }
+    DENGUE: {
+        key: 'dengue',
+        name: 'Dengue',
+        type: DISEASE_TYPES.VECTOR,
+        transmission: 'Aedes aegypti (Day biter)',
+        vector: 'Mosquito'
+    },
+    MALARIA: {
+        key: 'malaria',
+        name: 'Malaria',
+        type: DISEASE_TYPES.VECTOR,
+        transmission: 'Anopheles mosquito (Night biter)',
+        vector: 'Mosquito'
+    },
+    CHIKUNGUNYA: {
+        key: 'chikungunya',
+        name: 'Chikungunya',
+        type: DISEASE_TYPES.VECTOR,
+        transmission: 'Aedes aegypti',
+        vector: 'Mosquito'
+    },
+    ADD: {
+        key: 'add',
+        name: 'Acute Diarrheal Disease',
+        type: DISEASE_TYPES.WATER,
+        transmission: 'Waterborne — open drain exposure',
+        vector: 'Water/Food'
+    },
+    CHOLERA: {
+        key: 'cholera',
+        name: 'Cholera',
+        type: DISEASE_TYPES.WATER,
+        transmission: 'Contaminated water source',
+        vector: 'Water'
+    },
+    TYPHOID: {
+        key: 'typhoid',
+        name: 'Typhoid',
+        type: DISEASE_TYPES.WATER,
+        transmission: 'Contaminated water/food',
+        vector: 'Food/Water'
+    },
+    ARI: {
+        key: 'ari',
+        name: 'Acute Respiratory Infection',
+        type: DISEASE_TYPES.RESPIRATORY,
+        transmission: 'Airborne — high PM2.5 + humidity',
+        vector: 'Air'
+    },
+    ILI: {
+        key: 'ili',
+        name: 'Influenza-Like Illness',
+        type: DISEASE_TYPES.RESPIRATORY,
+        transmission: 'Airborne — high PM2.5 + humidity',
+        vector: 'Air'
+    },
+    HEAT_STRESS: {
+        key: 'heat',
+        name: 'Heat Stress',
+        type: DISEASE_TYPES.HEAT,
+        transmission: 'Environmental Exposure',
+        vector: 'Sun/Heat'
+    }
 };
 
 export const generateDiseaseSignal = (wardName, hriScore, sanitationStress, vectorDensity) => {
@@ -147,7 +201,7 @@ export const generateDiseaseTimeline = (disease, wardName) => {
 
         const rand = pseudoRandom(seed, c * 13); // Varied random per case
 
-        if (disease.trend === 'Rising' || disease.trend === 'Surge') {
+        if (['Rising', 'Surge', 'Outbreak'].includes(disease.trend)) {
             // Skew towards 0 (Today)
             // Weight ~ 1 / (day + 1)
             // Simple approach: pick two random days, choose the smaller index (closer to today)
@@ -192,74 +246,108 @@ export const generateDiseaseTimeline = (disease, wardName) => {
  * Converts stored flat report data (from DiseaseDataManager) into the UI Signal format.
  * Replaces mock generation with Real Data for Digital Twin dashboard.
  */
-export const formatDiseaseSignalFromData = (wardName, data) => {
-    // Basic structural data structure if data is missing
-    const safeData = data || { dengue: 0, malaria: 0, chikungunya: 0, add: 0, cholera: 0, typhoid: 0, ari: 0, ili: 0, heat: 0 };
+const derivePriorityForTrend = (trend, cases) => {
+    if (!trend) return 'LOW';
+    const normalized = String(trend).toLowerCase();
+    if (normalized.includes('outbreak') || normalized === 'surge') return 'CRITICAL';
+    if (normalized.includes('rising')) return 'HIGH';
+    if (normalized.includes('stable')) return cases >= 3 ? 'MODERATE' : 'LOW';
+    if (normalized.includes('no activity')) return 'LOW';
+    return cases > 10 ? 'HIGH' : 'LOW';
+};
 
-    // 1. Create Array of all diseases with current counts
+export const formatDiseaseSignalFromData = (wardName, data) => {
+    const safeData = data || {};
+    const meta = safeData.meta || {};
+    const counts = { ...safeData };
+    delete counts.meta;
+
     const allDiseases = [
-        { ...DISEASES.DENGUE, activeCases: safeData.dengue || 0 },
-        { ...DISEASES.MALARIA, activeCases: safeData.malaria || 0 },
-        { ...DISEASES.CHIKUNGUNYA, activeCases: safeData.chikungunya || 0 },
-        { ...DISEASES.ADD, activeCases: safeData.add || 0 },
-        { ...DISEASES.CHOLERA, activeCases: safeData.cholera || 0 },
-        { ...DISEASES.TYPHOID, activeCases: safeData.typhoid || 0 },
-        { ...DISEASES.ARI, activeCases: safeData.ari || 0 },
-        { ...DISEASES.ILI, activeCases: safeData.ili || 0 },
-        { ...DISEASES.HEAT_STRESS, activeCases: safeData.heat || 0 }
+        { key: DISEASES.DENGUE.key, ...DISEASES.DENGUE, activeCases: counts.dengue || 0 },
+        { key: DISEASES.MALARIA.key, ...DISEASES.MALARIA, activeCases: counts.malaria || 0 },
+        { key: DISEASES.CHIKUNGUNYA.key, ...DISEASES.CHIKUNGUNYA, activeCases: counts.chikungunya || 0 },
+        { key: DISEASES.ADD.key, ...DISEASES.ADD, activeCases: counts.add || 0 },
+        { key: DISEASES.CHOLERA.key, ...DISEASES.CHOLERA, activeCases: counts.cholera || 0 },
+        { key: DISEASES.TYPHOID.key, ...DISEASES.TYPHOID, activeCases: counts.typhoid || 0 },
+        { key: DISEASES.ARI.key, ...DISEASES.ARI, activeCases: counts.ari || 0 },
+        { key: DISEASES.ILI.key, ...DISEASES.ILI, activeCases: counts.ili || 0 },
+        { key: DISEASES.HEAT_STRESS.key, ...DISEASES.HEAT_STRESS, activeCases: counts.heat || 0 }
     ];
 
-    // 2. Add Trend/Cluster Logic (Simple thresholds for now)
-    const processed = allDiseases.map(d => {
+    const processed = allDiseases.map((item) => {
         let trend = 'Stable';
         let cluster = 'None';
 
-        if (d.activeCases > 50) {
+        if (item.activeCases > 50) {
             trend = 'Surge';
             cluster = 'Outbreak';
-        } else if (d.activeCases > 15) {
+        } else if (item.activeCases > 15) {
             trend = 'Rising';
             cluster = 'Cluster';
-        } else if (d.activeCases === 0) {
+        } else if (item.activeCases === 0) {
             trend = 'No Activity';
         }
 
-        // Hydrate timeline for charts
-        d.timeline = generateDiseaseTimeline({ ...d, trend, cluster }, wardName);
-        d.trend = trend;
-        d.cluster = cluster;
+        const entry = {
+            ...item,
+            trend,
+            cluster,
+            displayName: item.name
+        };
 
-        return d;
+        entry.priority = derivePriorityForTrend(trend, entry.activeCases);
+        entry.timeline = generateDiseaseTimeline(entry, wardName);
+        return entry;
     });
 
-    // 3. Filter & Sort for "Active" display
-    const activeDetails = processed.filter(d => d.activeCases > 0).sort((a, b) => {
-        // 1. Case Count (Descending)
+    if (meta.primaryKey) {
+        const override = processed.find((entry) => entry.key === meta.primaryKey);
+        if (override) {
+            if (meta.trend) override.trend = meta.trend;
+            if (meta.cluster) override.cluster = meta.cluster;
+            if (meta.displayName) override.displayName = meta.displayName;
+            if (meta.transmission) override.transmission = meta.transmission;
+            if (meta.priority) override.priority = meta.priority;
+            override.timeline = generateDiseaseTimeline(override, wardName);
+        }
+    }
+
+    const activeDetails = processed.filter((d) => d.activeCases > 0).sort((a, b) => {
         if (b.activeCases !== a.activeCases) return b.activeCases - a.activeCases;
 
-        // 2. Trend (Rising > Stable > No Activity)
-        const trendScore = { 'Surge': 3, 'Rising': 2, 'Stable': 1, 'No Activity': 0 };
+        const trendScore = { 'Outbreak': 3, 'Surge': 3, 'Rising': 2, 'Stable': 1, 'No Activity': 0 };
         if (trendScore[b.trend] !== trendScore[a.trend]) return trendScore[b.trend] - trendScore[a.trend];
 
-        // 3. Type Priority (Vector > Water > Respiratory > Heat)
         const typeScore = { 'Vector-Borne': 4, 'Water-Borne': 3, 'Respiratory': 2, 'Heat-Related': 1, 'None': 0 };
         if (typeScore[b.type] !== typeScore[a.type]) return typeScore[b.type] - typeScore[a.type];
 
-        // 4. Name (Alphabetical fallback for absolute determinism)
         return a.name.localeCompare(b.name);
     });
 
-    // 4. Determine Primary (Headline) Disease
-    const primary = activeDetails.length > 0
-        ? activeDetails[0]
-        : { name: 'No Active Signal', type: 'None', activeCases: 0, trend: 'No Activity', cluster: 'None', timeline: [], transmission: 'None', vector: 'None' };
+    const fallbackPrimary = {
+        name: 'No Active Signal',
+        displayName: 'No Active Signal',
+        type: 'None',
+        activeCases: 0,
+        trend: 'No Activity',
+        cluster: 'None',
+        timeline: [],
+        transmission: 'None',
+        vector: 'None',
+        priority: 'LOW'
+    };
+
+    const primary = activeDetails.length > 0 ? activeDetails[0] : fallbackPrimary;
+    primary.priority = primary.priority || derivePriorityForTrend(primary.trend, primary.activeCases);
+    primary.displayName = primary.displayName || primary.name;
+    primary.transmission = primary.transmission || 'Transmission data unavailable';
 
     const secondary = activeDetails.length > 1 ? activeDetails.slice(1) : [];
 
     return {
         primary,
         secondary,
-        summary: `${primary.name}: ${primary.activeCases} active cases`,
-        profile: processed // Return full list for deep dive
+        summary: `${primary.displayName}: ${primary.activeCases} active cases`,
+        profile: processed
     };
 };

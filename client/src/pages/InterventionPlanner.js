@@ -27,11 +27,15 @@ import PortalBanner from "../components/common/PortalBanner";
 import SolapurBoundary from "../components/SolapurBoundary";
 import SolapurWards from "../components/SolapurWards";
 import BoundaryService from "../services/boundaryService";
-import { hriBridgeService } from "../services/hriBridgeService";
-import { INTERVENTION_IMPACT_MAP, getAvailableInterventions } from "../constants/interventionImpactMap";
-import { rankInterventions } from "../utils/interventionLogic";
+import { INTERVENTION_IMPACT_MAP } from "../constants/interventionImpactMap";
 import AnalysisModal from "../components/AnalysisModal";
-import { plannerQueue, PREDEFINED_SECTORS } from '../services/plannerState';
+import {
+  plannerQueue,
+  SECTOR_SELECTOR_OPTIONS,
+  getSectorDataByName,
+  mapSectorInterventions,
+  calculateImpact
+} from '../services/plannerState';
 import toast, { Toaster } from "react-hot-toast";
 
 // --- GLOBAL STYLES & LAYOUT ---
@@ -345,9 +349,9 @@ const StepNumber = styled.div`
 // --- LOGIC HELPERS ---
 
 const getSeverityColor = (score) => {
-  if (score >= 9) return '#ef4444';
-  if (score >= 6) return '#f97316';
-  if (score >= 3) return '#eab308';
+  if (score >= 80) return '#ef4444';
+  if (score >= 65) return '#f97316';
+  if (score >= 45) return '#eab308';
   return '#10b981';
 };
 
@@ -429,9 +433,9 @@ const InterventionPlanner = () => {
   const [selectedWard, setSelectedWard] = useState(null);
   const [baselineData, setBaselineData] = useState(null);
   const [selectedInterventions, setSelectedInterventions] = useState([]);
-  const [availableInterventions, setAvailableInterventions] = useState(getAvailableInterventions());
+  const [currentImpact, setCurrentImpact] = useState(null); // State for impact panel
+  const [availableInterventions, setAvailableInterventions] = useState([]);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
-  const [recommendedInterventions, setRecommendedInterventions] = useState([]);
   const [detailsModalId, setDetailsModalId] = useState(null);
   const [primaryDrivers, setPrimaryDrivers] = useState([]);
   
@@ -446,6 +450,16 @@ const InterventionPlanner = () => {
     });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    if (selectedWard) return;
+    if (queuedItems.length > 0) {
+      const rankedQueue = [...queuedItems].sort((a, b) => (b.hri || 0) - (a.hri || 0));
+      handleWardSelect({ properties: { Name: rankedQueue[0].sector } });
+      return;
+    }
+    // Do not select a default ward if the queue is empty
+  }, [queuedItems, selectedWard]);
 
   // Map Controller
   const MapController = () => {
@@ -462,44 +476,31 @@ const InterventionPlanner = () => {
     return null;
   };
 
-  const handleWardSelect = async (feature) => {
+  const handleWardSelect = (feature) => {
     if (!feature?.properties) return;
     const name = feature.properties.Name;
+    const sectorData = getSectorDataByName(name);
+
     setSelectedWard(feature);
     setSelectedInterventions([]);
+    setCurrentImpact(null); // Reset impact on new ward selection
 
-    // Single source of truth check
-    if (PREDEFINED_SECTORS[name]) {
-      const p = PREDEFINED_SECTORS[name];
-      const data = {
-        score: p.hri,
-        category: p.severity,
-        contributors: p.context,
-        disease: p.disease
-      };
-      setBaselineData(data);
-      setPrimaryDrivers([p.primaryDrivers]);
-      
-      const ranked = rankInterventions(p.context, p.disease);
-      setAvailableInterventions(ranked);
-      setRecommendedInterventions(ranked.filter(r => p.recommendedActions.some(ra => ra.interventionType === r.name)).map(i => i.id));
-      return;
-    }
-
-    try {
-      const data = await hriBridgeService.getBaselineHRIFromTwin(name);
-      setBaselineData(data);
-      setPrimaryDrivers(getPrimaryDrivers(data.contributors));
-
-      const ranked = rankInterventions(data.contributors, data.disease);
-      setAvailableInterventions(ranked);
-      setRecommendedInterventions(ranked.slice(0, 2).map(i => i.id));
-    } catch (err) { console.error(err); }
+    setBaselineData({
+      score: sectorData.hri,
+      category: sectorData.severity,
+      disease: sectorData.disease,
+      contributors: sectorData.contributors
+    });
+    setPrimaryDrivers(sectorData.primaryRiskDrivers || []);
+    setAvailableInterventions(mapSectorInterventions(sectorData.name));
   };
 
   const handleLoadPlanner = () => {
     const newTabs = [...activeTabs];
-    const firstSector = queuedItems[0].sector;
+    const rankMap = SECTOR_SELECTOR_OPTIONS.reduce((acc, item, index) => {
+      acc[item.name] = index;
+      return acc;
+    }, {});
     
     queuedItems.forEach(item => {
       if (!newTabs.some(t => t.sector === item.sector)) newTabs.push(item);
@@ -509,48 +510,55 @@ const InterventionPlanner = () => {
         style: { borderRadius: "8px", fontSize: "14px", background: '#1e293b', color: '#fff', border: '1px solid #14b8a6' }
       });
     });
+
+    newTabs.sort((a, b) => {
+      const aRank = rankMap[a.sector] ?? Number.MAX_SAFE_INTEGER;
+      const bRank = rankMap[b.sector] ?? Number.MAX_SAFE_INTEGER;
+      return aRank - bRank;
+    });
     
     setActiveTabs(newTabs);
-    handleWardSelect({ properties: { Name: firstSector } });
+    if (newTabs.length > 0) handleWardSelect({ properties: { Name: newTabs[0].sector } });
   };
 
-  const projection = React.useMemo(() => {
-    if (!baselineData) return null;
-    let pScore = baselineData.score;
-
-    selectedInterventions.forEach(id => {
-      const iData = INTERVENTION_IMPACT_MAP[id];
-      if (iData) {
-        let delta = 0;
-        Object.values(iData.affectedComponents).forEach(v => delta += v);
-        pScore = Math.max(0, pScore + delta);
-      }
-    });
-
-    const cat = pScore >= 9 ? 'CRITICAL' : pScore >= 6 ? 'HIGH' : pScore >= 3 ? 'MODERATE' : 'GOOD';
-
-    let customExplanation = getProjectedExplanation(
-      baselineData,
-      { score: pScore },
-      selectedInterventions
-    );
-
-    if (selectedWard?.properties?.Name === "Sector-03" && selectedInterventions.includes("sanitation-response")) {
-      customExplanation = {
-        recap: `Current Baseline HRI is 8.0 (CRITICAL).`,
-        action: `Applying Sanitation Rapid Response.`,
-        impact: `Total Risk Reduction: -2.8 points.`,
-        narrative: `Implementing Sanitation Rapid Response in Sector-03 projects HRI reduction from 8.0 → 5.2 within 7 days. Estimated dengue case reduction: 60%.`
-      };
-      pScore = 5.2;
+  // Recalculate impact whenever applied interventions change
+  useEffect(() => {
+    if (!selectedWard || selectedInterventions.length === 0) {
+      setCurrentImpact(null);
+      return;
     }
 
-    return {
-      score: Math.round(pScore * 10) / 10,
-      category: pScore >= 9 ? 'CRITICAL' : pScore >= 6 ? 'HIGH' : pScore >= 3 ? 'MODERATE' : 'GOOD',
-      explanation: customExplanation
-    };
-  }, [baselineData, selectedInterventions, selectedWard]);
+    const sectorData = getSectorDataByName(selectedWard.properties.Name);
+    const selectedNames = availableInterventions
+      .filter((item) => selectedInterventions.includes(item.id))
+      .map((item) => item.name);
+
+    const impactResult = calculateImpact(sectorData.name, selectedNames);
+    
+    if (impactResult) {
+      let narrative = 'Initial action underway. Partial HRI reduction projected.';
+      if (impactResult.appliedCount === 2) {
+        narrative = `Combined approach projects ${impactResult.reduction}-point HRI reduction within ${impactResult.timelineDays} days. ${impactResult.caseReduction}% case reduction likely.`;
+      }
+      if (impactResult.appliedCount >= 3) {
+        narrative = `Comprehensive ${impactResult.appliedCount}-action deployment projects HRI reduction from ${impactResult.baseHRI} → ${impactResult.projectedHRI} within ${impactResult.timelineDays} days. ${impactResult.caseReduction}% case reduction. Outbreak containment probability elevated.`;
+      }
+
+      setCurrentImpact({
+        score: impactResult.projectedHRI,
+        category: impactResult.projectedSeverity,
+        explanation: {
+          action: `Applying: ${selectedNames.join(', ')}.`,
+          narrative,
+          impact: `Projected effect within ${impactResult.timelineDays} days`,
+          appliedSummary: `Applied interventions: ${impactResult.appliedCount} of ${impactResult.totalInterventions}`,
+          reduction: impactResult.reduction
+        }
+      });
+    } else {
+      setCurrentImpact(null);
+    }
+  }, [selectedInterventions, selectedWard, availableInterventions]);
 
   const toggleIntervention = (id) => {
     setSelectedInterventions(prev => {
@@ -574,7 +582,7 @@ const InterventionPlanner = () => {
     if (selectedWard && selectedInterventions.length > 0) currentStep = 3;
 
     // If impact is being shown (conceptually redundant with 3, but emphasizes the right panel)
-    if (selectedWard && selectedInterventions.length > 0 && projection) currentStep = 4;
+    if (selectedWard && selectedInterventions.length > 0 && currentImpact) currentStep = 4;
 
     if (currentStep === step) return 'active';
     if (currentStep > step) return 'completed';
@@ -659,27 +667,28 @@ const InterventionPlanner = () => {
                   </Badge>
                   <ScoreValue color={getCategoryColor(baselineData.category)}>
                     {baselineData.score.toFixed(1)}
-                    <span style={{ fontSize: '1.5rem', color: '#64748b', fontWeight: '400' }}>/12</span>
+                    <span style={{ fontSize: '1.5rem', color: '#64748b', fontWeight: '400' }}>/100</span>
                   </ScoreValue>
                   <ScoreLabel>Current Health Risk Index</ScoreLabel>
                 </HriScoreCard>
 
                 <div style={{ marginBottom: '2rem' }}>
                   <PanelHeader><FiActivity /> Risk Contributors</PanelHeader>
-                  {Object.entries(baselineData.contributors)
-                    .sort(([, a], [, b]) => b - a)
-                    .map(([key, val]) => (
-                      <ContributorRow key={key}>
+                  {[...(baselineData.contributors || [])]
+                    .sort((a, b) => (b.score || 0) - (a.score || 0))
+                    .map((item) => (
+                      <ContributorRow key={item.source}>
                         <ContributorLabel>
-                          <span style={{ textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                          <strong style={{ color: getContributorColor(val) }}>{val.toFixed(1)}</strong>
+                          <span>{item.icon} {item.source}</span>
+                          <strong style={{ color: item.color || getContributorColor(item.score || 0) }}>{(item.score || 0).toFixed(1)} / {(item.max || 0).toFixed(1)}</strong>
                         </ContributorLabel>
                         <ProgressBarBg>
                           <ProgressBarFill
-                            width={(val / 3) * 100}
-                            color={getContributorColor(val)}
+                            width={item.max ? ((item.score || 0) / item.max) * 100 : 0}
+                            color={item.color || getContributorColor(item.score || 0)}
                           />
                         </ProgressBarBg>
+                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.25rem' }}>{item.note}</div>
                       </ContributorRow>
                     ))
                   }
@@ -724,7 +733,7 @@ const InterventionPlanner = () => {
               ) : (
                 <div style={{ opacity: selectedWard ? 1 : 0.5 }}>
                   {availableInterventions.map(item => {
-                    const isRec = recommendedInterventions.includes(item.id);
+                    const isRec = Boolean(item.tag);
                     const isSel = selectedInterventions.includes(item.id);
 
                     return (
@@ -858,59 +867,48 @@ const InterventionPlanner = () => {
                 This panel shows how selected actions could improve health conditions in the ward.
               </div>
 
-              {selectedWard && projection ? (
+              {selectedWard && currentImpact ? (
                 <>
                   <HriScoreCard
-                    borderColor={getCategoryColor(projection.category)}
-                    glowColor={getCategoryColor(projection.category)}
-                    style={{ marginBottom: '1.5rem', padding: '1rem' }}
+                    borderColor={getCategoryColor(currentImpact.category)}
+                    glowColor={getCategoryColor(currentImpact.category)}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <ScoreValue color={getCategoryColor(projection.category)} style={{ fontSize: '2.5rem' }}>
-                          {projection.score.toFixed(1)}
-                        </ScoreValue>
-                        <Badge bg={getCategoryColor(projection.category)} style={{ marginBottom: 0 }}>
-                          {projection.category}
-                        </Badge>
-                      </div>
-                      {baselineData.score > projection.score && (
-                        <div style={{ textAlign: 'right', color: '#10b981' }}>
-                          <FiTrendingDown size={32} />
-                          <div style={{ fontWeight: '700', fontSize: '1.2rem' }}>
-                            -{(baselineData.score - projection.score).toFixed(1)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <Badge bg={getCategoryColor(currentImpact.category)}>
+                      PROJECTED RISK
+                    </Badge>
+                    <ScoreValue color={getCategoryColor(currentImpact.category)}>
+                      {currentImpact.score.toFixed(1)}
+                      <span style={{ fontSize: '1rem', color: '#64748b', fontWeight: '500', marginLeft: '0.5rem' }}>
+                        (↓ {currentImpact.explanation.reduction.toFixed(1)} pts)
+                      </span>
+                    </ScoreValue>
+                    <ScoreLabel>Projected Health Risk Index</ScoreLabel>
                   </HriScoreCard>
 
-                  {projection.explanation && selectedInterventions.length > 0 ? (
-                    <div style={{ animation: 'fadeIn 0.5s' }}>
-                      <div style={{ borderLeft: '2px solid #3b82f6', paddingLeft: '1rem', marginBottom: '1.5rem' }}>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '0.25rem', fontWeight: '700' }}>Action Strategy</div>
-                        <div style={{ color: '#e2e8f0', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                          {projection.explanation.action}
-                        </div>
-                      </div>
-
-                      <div style={{ borderLeft: '2px solid #10b981', paddingLeft: '1rem', marginBottom: '1.5rem' }}>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', marginBottom: '0.25rem', fontWeight: '700' }}>Health Impact Narrative</div>
-                        <div style={{ color: '#d1fae5', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                          {projection.explanation.narrative}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center', border: '1px dashed #334155', padding: '2rem', borderRadius: '6px' }}>
-                      Implement actions to see detailed health impact projections.
-                    </div>
-                  )}
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.6' }}>
+                    <p style={{ marginBottom: '0.75rem' }}>
+                      <strong>Applied Interventions:</strong> {currentImpact.explanation.appliedSummary}
+                    </p>
+                    <p style={{ marginBottom: '0.75rem' }}>
+                      <strong>Action Strategy:</strong> {currentImpact.explanation.action}
+                    </p>
+                    <p style={{ marginBottom: '1.5rem', color: '#e2e8f0', background: '#1e293b', padding: '0.75rem', borderRadius: '4px' }}>
+                      {currentImpact.explanation.narrative}
+                    </p>
+                    <p style={{ fontWeight: '600', color: '#a7f3d0' }}>
+                      {currentImpact.explanation.impact}
+                    </p>
+                  </div>
                 </>
               ) : (
-                <div style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', padding: '3rem 1rem', lineHeight: '1.6' }}>
-                  Projected outcomes will appear after a ward is selected and interventions are applied.
-                </div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  style={{ textAlign: 'center', padding: '4rem 1rem', color: '#64748b' }}
+                >
+                  <FiShield size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p>Implement actions to see detailed health impact projections.</p>
+                </motion.div>
               )}
               
               {logs.length > 0 && (

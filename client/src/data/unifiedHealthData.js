@@ -14,14 +14,14 @@ export const wardData = {
     id: 'Sector-01', name: 'Sector-01', displayName: 'Sector-01 (Ashok Chowk)',
     population: 16800,
     hri: {
-      total: 4.5, severity: 'MODERATE',
-      breakdown: { heatExposure: 1.5, waterStagnation: 1.0, vectorDensity: 1.0, diseaseBurden: 0.5, sanitationStress: 0.5 }
+      total: 71, severity: 'HIGH',
+      breakdown: { heatExposure: 18, waterStagnation: 14, vectorDensity: 12, diseaseBurden: 18, sanitationStress: 9 }
     },
-    convergenceCount: 2,
+    convergenceCount: 4,
     diseases: {
+      typhoid: { cases: 14, trend: 'rising', transmission: 'Contaminated water / food' },
       dengue: { cases: 2, trend: 'stable', transmission: 'Aedes aegypti' },
       respiratory: { cases: 3, trend: 'stable' },
-      gastro: { cases: 1, trend: 'stable' },
     },
     communityReports: { total: 6, garbage: 2, stagnantWater: 2, openDrains: 2, last7Days: 5 },
     ashaData: { totalHouseholds: 20, visited: 12, flagged: 2, symptomsReported: 3 },
@@ -30,14 +30,14 @@ export const wardData = {
     id: 'Sector-02', name: 'Sector-02', displayName: 'Sector-02 (Bhavani Peth)',
     population: 21000,
     hri: {
-      total: 6.5, severity: 'MODERATE',
-      breakdown: { heatExposure: 2.0, waterStagnation: 1.5, vectorDensity: 1.5, diseaseBurden: 1.0, sanitationStress: 0.5 }
+      total: 42, severity: 'MODERATE',
+      breakdown: { heatExposure: 10, waterStagnation: 12, vectorDensity: 8, diseaseBurden: 6, sanitationStress: 6 }
     },
-    convergenceCount: 3,
+    convergenceCount: 2,
     diseases: {
-      dengue: { cases: 5, trend: 'rising', transmission: 'Aedes aegypti' },
+      malaria: { cases: 3, trend: 'stable', transmission: 'Anopheles mosquito' },
       respiratory: { cases: 4, trend: 'stable' },
-      gastro: { cases: 2, trend: 'stable' },
+      dengue: { cases: 1, trend: 'stable', transmission: 'Aedes aegypti' },
     },
     communityReports: { total: 11, garbage: 4, stagnantWater: 4, openDrains: 3, last7Days: 9 },
     ashaData: { totalHouseholds: 20, visited: 10, flagged: 3, symptomsReported: 6 },
@@ -46,12 +46,12 @@ export const wardData = {
     id: 'Sector-03', name: 'Sector-03', displayName: 'Sector-03 (Civil Lines)',
     population: 14500,
     hri: {
-      total: 3.0, severity: 'LOW',
-      breakdown: { heatExposure: 1.0, waterStagnation: 0.5, vectorDensity: 0.5, diseaseBurden: 0.5, sanitationStress: 0.5 }
+      total: 89, severity: 'CRITICAL',
+      breakdown: { heatExposure: 22, waterStagnation: 20, vectorDensity: 18, diseaseBurden: 22, sanitationStress: 7 }
     },
-    convergenceCount: 1,
+    convergenceCount: 5,
     diseases: {
-      dengue: { cases: 0, trend: 'stable', transmission: 'Aedes aegypti' },
+      dengue: { cases: 31, trend: 'outbreak', transmission: 'Aedes aegypti' },
       respiratory: { cases: 2, trend: 'stable' },
       gastro: { cases: 0, trend: 'none' },
     },
@@ -62,8 +62,8 @@ export const wardData = {
     id: 'Sector-04', name: 'Sector-04', displayName: 'Sector-04 (Hotgi Road)',
     population: 18500,
     hri: {
-      total: 8.0, severity: 'HIGH',
-      breakdown: { heatExposure: 2.0, waterStagnation: 2.0, vectorDensity: 1.5, diseaseBurden: 2.0, sanitationStress: 0.5 }
+      total: 67, severity: 'HIGH',
+      breakdown: { heatExposure: 18, waterStagnation: 16, vectorDensity: 12, diseaseBurden: 16, sanitationStress: 5 }
     },
     convergenceCount: 4,
     diseases: {
@@ -78,14 +78,14 @@ export const wardData = {
     id: 'Sector-05', name: 'Sector-05', displayName: 'Sector-05 (Jule Solapur)',
     population: 19200,
     hri: {
-      total: 5.5, severity: 'MODERATE',
-      breakdown: { heatExposure: 1.5, waterStagnation: 1.5, vectorDensity: 1.0, diseaseBurden: 1.0, sanitationStress: 0.5 }
+      total: 68, severity: 'HIGH',
+      breakdown: { heatExposure: 16, waterStagnation: 14, vectorDensity: 12, diseaseBurden: 16, sanitationStress: 10 }
     },
-    convergenceCount: 2,
+    convergenceCount: 4,
     diseases: {
+      diarrhoea: { cases: 8, trend: 'rising', transmission: 'Contaminated water' },
       dengue: { cases: 3, trend: 'stable', transmission: 'Aedes aegypti' },
       respiratory: { cases: 2, trend: 'stable' },
-      gastro: { cases: 1, trend: 'stable' },
     },
     communityReports: { total: 8, garbage: 3, stagnantWater: 3, openDrains: 2, last7Days: 6 },
     ashaData: { totalHouseholds: 20, visited: 13, flagged: 2, symptomsReported: 4 },
@@ -94,13 +94,13 @@ export const wardData = {
     id: 'Sector-06', name: 'Sector-06', displayName: 'Sector-06 (MIDC Area)',
     population: 12000,
     hri: {
-      total: 7.0, severity: 'HIGH',
-      breakdown: { heatExposure: 2.0, waterStagnation: 1.5, vectorDensity: 1.5, diseaseBurden: 1.5, sanitationStress: 0.5 }
+      total: 34, severity: 'LOW',
+      breakdown: { heatExposure: 10, waterStagnation: 8, vectorDensity: 6, diseaseBurden: 6, sanitationStress: 4 }
     },
-    convergenceCount: 3,
+    convergenceCount: 2,
     diseases: {
-      dengue: { cases: 7, trend: 'rising', transmission: 'Aedes aegypti' },
-      respiratory: { cases: 6, trend: 'rising' },
+      dengue: { cases: 5, trend: 'stable', transmission: 'Aedes aegypti' },
+      respiratory: { cases: 6, trend: 'stable' },
       gastro: { cases: 2, trend: 'stable' },
     },
     communityReports: { total: 12, garbage: 5, stagnantWater: 4, openDrains: 3, last7Days: 10 },
@@ -110,13 +110,13 @@ export const wardData = {
     id: 'Sector-07', name: 'Sector-07', displayName: 'Sector-07 (Navy Peth)',
     population: 17500,
     hri: {
-      total: 6.0, severity: 'MODERATE',
-      breakdown: { heatExposure: 2.0, waterStagnation: 1.5, vectorDensity: 1.0, diseaseBurden: 1.0, sanitationStress: 0.5 }
+      total: 72, severity: 'HIGH',
+      breakdown: { heatExposure: 18, waterStagnation: 14, vectorDensity: 12, diseaseBurden: 16, sanitationStress: 12 }
     },
-    convergenceCount: 3,
+    convergenceCount: 4,
     diseases: {
+      respiratory: { cases: 19, trend: 'rising', transmission: 'Airborne' },
       dengue: { cases: 4, trend: 'rising', transmission: 'Aedes aegypti' },
-      respiratory: { cases: 3, trend: 'stable' },
       gastro: { cases: 1, trend: 'stable' },
     },
     communityReports: { total: 9, garbage: 3, stagnantWater: 4, openDrains: 2, last7Days: 7 },
@@ -126,12 +126,12 @@ export const wardData = {
     id: 'Sector-08', name: 'Sector-08', displayName: 'Sector-08 (North Solapur)',
     population: 23000,
     hri: {
-      total: 4.0, severity: 'LOW',
-      breakdown: { heatExposure: 1.5, waterStagnation: 0.5, vectorDensity: 1.0, diseaseBurden: 0.5, sanitationStress: 0.5 }
+      total: 86, severity: 'CRITICAL',
+      breakdown: { heatExposure: 22, waterStagnation: 18, vectorDensity: 18, diseaseBurden: 20, sanitationStress: 8 }
     },
-    convergenceCount: 1,
+    convergenceCount: 5,
     diseases: {
-      dengue: { cases: 1, trend: 'stable', transmission: 'Aedes aegypti' },
+      dengue: { cases: 27, trend: 'outbreak', transmission: 'Aedes aegypti' },
       respiratory: { cases: 2, trend: 'stable' },
       gastro: { cases: 0, trend: 'none' },
     },
@@ -142,14 +142,14 @@ export const wardData = {
     id: 'Sector-09', name: 'Sector-09', displayName: 'Sector-09 (Railway Lines)',
     population: 15800,
     hri: {
-      total: 5.0, severity: 'MODERATE',
-      breakdown: { heatExposure: 1.5, waterStagnation: 1.0, vectorDensity: 1.0, diseaseBurden: 1.0, sanitationStress: 0.5 }
+      total: 69, severity: 'HIGH',
+      breakdown: { heatExposure: 18, waterStagnation: 12, vectorDensity: 12, diseaseBurden: 18, sanitationStress: 9 }
     },
-    convergenceCount: 2,
+    convergenceCount: 3,
     diseases: {
+      typhoid: { cases: 11, trend: 'rising', transmission: 'Contaminated water / food' },
       dengue: { cases: 2, trend: 'stable', transmission: 'Aedes aegypti' },
       respiratory: { cases: 2, trend: 'stable' },
-      gastro: { cases: 1, trend: 'stable' },
     },
     communityReports: { total: 7, garbage: 2, stagnantWater: 3, openDrains: 2, last7Days: 5 },
     ashaData: { totalHouseholds: 20, visited: 14, flagged: 2, symptomsReported: 4 },
@@ -158,12 +158,12 @@ export const wardData = {
     id: 'Sector-10', name: 'Sector-10', displayName: 'Sector-10 (Sadar Bazar)',
     population: 20500,
     hri: {
-      total: 7.5, severity: 'HIGH',
-      breakdown: { heatExposure: 2.0, waterStagnation: 2.0, vectorDensity: 1.5, diseaseBurden: 1.5, sanitationStress: 0.5 }
+      total: 74, severity: 'HIGH',
+      breakdown: { heatExposure: 18, waterStagnation: 16, vectorDensity: 14, diseaseBurden: 18, sanitationStress: 8 }
     },
     convergenceCount: 4,
     diseases: {
-      dengue: { cases: 9, trend: 'rising', transmission: 'Aedes aegypti' },
+      dengue: { cases: 22, trend: 'rising', transmission: 'Aedes aegypti' },
       respiratory: { cases: 4, trend: 'rising' },
       gastro: { cases: 3, trend: 'stable' },
     },
@@ -174,12 +174,12 @@ export const wardData = {
     id: 'Sector-11', name: 'Sector-11', displayName: 'Sector-11 (South Solapur)',
     population: 24000,
     hri: {
-      total: 3.5, severity: 'LOW',
-      breakdown: { heatExposure: 1.0, waterStagnation: 0.5, vectorDensity: 1.0, diseaseBurden: 0.5, sanitationStress: 0.5 }
+      total: 38, severity: 'LOW',
+      breakdown: { heatExposure: 8, waterStagnation: 8, vectorDensity: 8, diseaseBurden: 10, sanitationStress: 4 }
     },
     convergenceCount: 1,
     diseases: {
-      dengue: { cases: 1, trend: 'stable', transmission: 'Aedes aegypti' },
+      malaria: { cases: 2, trend: 'stable', transmission: 'Anopheles mosquito' },
       respiratory: { cases: 1, trend: 'stable' },
       gastro: { cases: 0, trend: 'none' },
     },
@@ -190,12 +190,12 @@ export const wardData = {
     id: 'Sector-12', name: 'Sector-12', displayName: 'Sector-12 (Market Yard / Siddheshwar)',
     population: 22000,
     hri: {
-      total: 5.0, severity: 'MODERATE',
-      breakdown: { heatExposure: 2.0, waterStagnation: 2.0, vectorDensity: 1.5, diseaseBurden: 0.5, sanitationStress: 0.0 }
+      total: 73, severity: 'HIGH',
+      breakdown: { heatExposure: 18, waterStagnation: 16, vectorDensity: 14, diseaseBurden: 16, sanitationStress: 9 }
     },
-    convergenceCount: 3,
+    convergenceCount: 4,
     diseases: {
-      dengue: { cases: 1, trend: 'stable', transmission: 'Aedes aegypti' },
+      dengue: { cases: 18, trend: 'rising', transmission: 'Aedes aegypti' },
       respiratory: { cases: 1, trend: 'stable' },
       gastro: { cases: 0, trend: 'none' },
     },
@@ -206,14 +206,14 @@ export const wardData = {
     id: 'Sector-13', name: 'Sector-13', displayName: 'Sector-13',
     population: 11000,
     hri: {
-      total: 4.0, severity: 'LOW',
-      breakdown: { heatExposure: 1.0, waterStagnation: 1.0, vectorDensity: 1.0, diseaseBurden: 0.5, sanitationStress: 0.5 }
+      total: 67, severity: 'HIGH',
+      breakdown: { heatExposure: 16, waterStagnation: 14, vectorDensity: 12, diseaseBurden: 16, sanitationStress: 9 }
     },
-    convergenceCount: 1,
+    convergenceCount: 3,
     diseases: {
+      cholera: { cases: 6, trend: 'rising', transmission: 'Contaminated water' },
       dengue: { cases: 1, trend: 'stable', transmission: 'Aedes aegypti' },
       respiratory: { cases: 1, trend: 'stable' },
-      gastro: { cases: 0, trend: 'none' },
     },
     communityReports: { total: 5, garbage: 2, stagnantWater: 2, openDrains: 1, last7Days: 4 },
     ashaData: { totalHouseholds: 20, visited: 15, flagged: 1, symptomsReported: 2 },
@@ -222,13 +222,13 @@ export const wardData = {
     id: 'Sector-14', name: 'Sector-14', displayName: 'Sector-14',
     population: 13500,
     hri: {
-      total: 5.5, severity: 'MODERATE',
-      breakdown: { heatExposure: 1.5, waterStagnation: 1.5, vectorDensity: 1.0, diseaseBurden: 1.0, sanitationStress: 0.5 }
+      total: 45, severity: 'MODERATE',
+      breakdown: { heatExposure: 12, waterStagnation: 10, vectorDensity: 8, diseaseBurden: 10, sanitationStress: 5 }
     },
     convergenceCount: 2,
     diseases: {
+      respiratory: { cases: 4, trend: 'stable', transmission: 'Airborne' },
       dengue: { cases: 3, trend: 'stable', transmission: 'Aedes aegypti' },
-      respiratory: { cases: 2, trend: 'stable' },
       gastro: { cases: 1, trend: 'stable' },
     },
     communityReports: { total: 7, garbage: 3, stagnantWater: 2, openDrains: 2, last7Days: 6 },
@@ -238,12 +238,12 @@ export const wardData = {
     id: 'Sector-15', name: 'Sector-15', displayName: 'Sector-15',
     population: 9800,
     hri: {
-      total: 3.5, severity: 'LOW',
-      breakdown: { heatExposure: 1.0, waterStagnation: 0.5, vectorDensity: 1.0, diseaseBurden: 0.5, sanitationStress: 0.5 }
+      total: 28, severity: 'LOW',
+      breakdown: { heatExposure: 8, waterStagnation: 6, vectorDensity: 6, diseaseBurden: 4, sanitationStress: 4 }
     },
     convergenceCount: 1,
     diseases: {
-      dengue: { cases: 0, trend: 'stable', transmission: 'Aedes aegypti' },
+      diarrhoea: { cases: 1, trend: 'stable', transmission: 'Contaminated water' },
       respiratory: { cases: 1, trend: 'stable' },
       gastro: { cases: 0, trend: 'none' },
     },
@@ -254,12 +254,12 @@ export const wardData = {
     id: 'Sector-16', name: 'Sector-16', displayName: 'Sector-16',
     population: 10200,
     hri: {
-      total: 4.5, severity: 'MODERATE',
-      breakdown: { heatExposure: 1.5, waterStagnation: 1.0, vectorDensity: 1.0, diseaseBurden: 0.5, sanitationStress: 0.5 }
+      total: 52, severity: 'MODERATE',
+      breakdown: { heatExposure: 14, waterStagnation: 12, vectorDensity: 10, diseaseBurden: 10, sanitationStress: 6 }
     },
     convergenceCount: 2,
     diseases: {
-      dengue: { cases: 2, trend: 'stable', transmission: 'Aedes aegypti' },
+      dengue: { cases: 9, trend: 'stable', transmission: 'Aedes aegypti' },
       respiratory: { cases: 2, trend: 'stable' },
       gastro: { cases: 0, trend: 'none' },
     },
@@ -518,4 +518,3 @@ export const getPredictions = (wardId, days = 7) => {
     };
   });
 };
-
