@@ -51,6 +51,7 @@ by **Team Goddamn**
 18. [Problem Statement Coverage](#18-problem-statement-coverage)
 19. [Competitive Differentiation](#19-competitive-differentiation)
 20. [Project Structure](#20-project-structure)
+21. [Recent Additions (ASHA & Conversational AI)](#21-recent-additions-asha-&-conversational-ai)
 
 ---
 
@@ -1004,6 +1005,39 @@ smart-public-health-system/
 │           └── communityMetrics.js
 └── package.json
 ```
+
+---
+
+## 21. Recent Additions (ASHA & Conversational AI)
+
+#### 🚀 New Features
+* **Conversational Citizen Interface**
+  * Chat-based reporting (sanitation, symptoms, health passport)
+  * Real-time ingestion into system → visible in Digital Twin
+* **ASHA Field Worker Mode**
+  * Trigger-based switch to survey mode
+  * Structured household survey (ID, location, symptoms, sanitation, vaccination)
+  * Directly feeds into HRI signals and ground intelligence layer
+* **Immunity Factor (Population Vulnerability Multiplier)**
+  * Applied post-HRI calculation
+  * Includes vaccination coverage, age risk, comorbidities
+  * Accounts for **historical outbreak exposure** (wards previously affected have relatively lower reinfection probability)
+
+#### 💡 Innovation Rationale
+* Eliminates need for multiple apps → reduces ASHA workload (currently fragmented across multiple systems)
+* Enables **zero-friction citizen participation** via simple chat instead of forms/apps
+* Creates a unified, real-time **ground intelligence pipeline** from both citizens and field workers
+
+#### 🔄 Updated System Flow
+Citizen / ASHA (Chat Interface) → Structured Data → HRI Engine → Digital Twin → SMC Action
+
+#### 🛠️ Tech Additions
+* Conversational state machine (multi-mode: citizen + ASHA)
+* Structured data extraction from chat
+* Geo-mapping (point-in-polygon)
+
+#### 🎯 Demo Highlight
+* Send message → instant report/survey → live impact on ward (HRI + map)
 
 ---
 

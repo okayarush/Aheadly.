@@ -1,0 +1,19 @@
+[
+  {
+    "id": "tg-1776024395349-xlb0b",
+    "type": "sanitation",
+    "issue_type": "Uncollected Garbage",
+    "source": "telegram",
+    "sector": "Sector-01",
+    "latitude": 15.355331,
+    "longitude": 75.137355,
+    "location": {
+      "lat": 15.355331,
+      "lng": 75.137355
+    },
+    "has_proof": true,
+    "photo_path": "/telegram_photos/tg-1776024395349-xlb0b.jpg",
+    "note": null,
+    "timestamp": "2026-04-12T20:06:37.183Z"
+  }
+]

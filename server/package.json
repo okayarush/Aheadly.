@@ -1,11 +1,15 @@
 {
-  "name": "nasa-healthy-cities-server",
+  "name": "aheadly-server",
   "version": "1.0.0",
-  "description": "NASA Space Apps Challenge - Data Pathways to Healthy Cities Backend Server",
+  "description": "Aheadly backend API for ward-level health intelligence",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "node server.js",
     "dev": "nodemon server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js",
+    "db:init": "npm run db:migrate && npm run db:seed",
+    "smoke": "node scripts/smoke.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint .",
@@ -30,7 +34,8 @@
     "lodash": "^4.17.21",
     "geojson": "^0.5.0",
     "turf": "^3.0.14",
-    "proj4": "^2.9.0"
+    "proj4": "^2.9.0",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",

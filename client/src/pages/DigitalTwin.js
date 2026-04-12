@@ -11,9 +11,12 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import { FiMap, FiActivity, FiLayers, FiSun, FiAlertCircle, FiUsers, FiTrash2, FiDroplet, FiAlertTriangle, FiX, FiCalendar } from "react-icons/fi";
+import { BsTelegram } from "react-icons/bs";
 import { DiseaseDataManager } from "../utils/DiseaseDataManager";
 import { CommunitySanitationManager } from "../utils/CommunitySanitationManager";
+import { TelegramReportsManager } from "../utils/TelegramReportsManager";
 import { getSectorID } from "../utils/HospitalRegistry"; // Import Sector Mapper
+import { wardVulnerabilityData, wardData } from "../data/unifiedHealthData";
 import { generateDiseaseSignal, generateDiseaseTimeline, getWardDiseaseProfile, formatDiseaseSignalFromData } from "../services/diseaseService";
 import "leaflet/dist/leaflet.css";
 import {
@@ -264,6 +267,61 @@ const normalizeDiseaseTrend = (trend) => {
   return "Stable";
 };
 
+/* ===================== RECOMMENDATION ENGINE ===================== */
+
+function getWardRecommendations(ward) {
+  if (!ward) return ["Maintain surveillance — no immediate intervention required"];
+  
+  const actions = [];
+  const diseases = ward.diseases || {};
+  const dengue = diseases.dengue || {};
+  const malaria = diseases.malaria || {};
+  const gastro = diseases.gastro || diseases.diarrhoea || {};
+  const reports = ward.communityReports || {};
+  const asha = ward.ashaData || {};
+  const heat = ward.hri?.breakdown?.heatExposure || 0;
+
+  // Disease-based logic (Priority)
+  if (dengue.cases >= 15 && dengue.trend === "rising") {
+    actions.push("Dengue fogging in high-risk zones");
+  }
+
+  if (malaria.cases >= 5) {
+    actions.push("Larvicide treatment in stagnant water areas");
+  }
+
+  if (gastro.cases >= 5) {
+    actions.push("Water chlorination and contamination inspection");
+  }
+
+  // Sanitation signals
+  if (reports.stagnantWater >= 3) {
+    actions.push("Drain cleanup and water removal");
+  }
+
+  if (reports.garbage >= 4) {
+    actions.push("Garbage clearance drive");
+  }
+
+  // ASHA signals
+  if (asha.flagged >= 3) {
+    actions.push("Focused ASHA household visits");
+  }
+
+  // Heat signals
+  if (heat >= 18) {
+    actions.push("Heat advisory and hydration alerts");
+  }
+
+  // Fallback
+  if (actions.length === 0) {
+    actions.push("Maintain surveillance — no immediate intervention required");
+  }
+
+  // Max 3 actions, sorted implicitly by push order (Diseases first)
+  return actions.slice(0, 3);
+}
+
 const LayerGuidePanel = styled.div`
   position: absolute;
   bottom: 20px;
@@ -451,6 +509,8 @@ const DigitalTwin = () => {
   const [heatTable, setHeatTable] = useState({});
   const [diseaseTable, setDiseaseTable] = useState({});
   const [communityReports, setCommunityReports] = useState([]);
+  const [telegramReports, setTelegramReports] = useState([]);
+  const [showRecentModal, setShowRecentModal] = useState(false);
 
   // Detailed Case Log State
   const [selectedWardDetail, setSelectedWardDetail] = useState(null);
@@ -594,6 +654,11 @@ const DigitalTwin = () => {
       setStagnationTable(map);
     });
 
+    // Telegram reports — fetch once, then poll every 30 s
+    TelegramReportsManager.fetchAndSync().then(all => {
+      setTelegramReports(all.filter(r => r.type === 'sanitation' && r.latitude && r.longitude));
+    });
+
     // 3. Load & Process Heat Table (Dependent on NDVI logic for Final Risk)
     Promise.all([ndviPromise, fetch("/Solapur_Ward_Heat_Stress_LST.csv").then(res => res.text())]).then(([ndviMap, lstText]) => {
       const lines = lstText.trim().split(/\r?\n/);
@@ -643,6 +708,16 @@ const DigitalTwin = () => {
       setHeatTable(finalMap);
     });
 
+  }, []);
+
+  // Poll telegram_reports.json every 30 s for live bot updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      TelegramReportsManager.fetchAndSync().then(all => {
+        setTelegramReports(all.filter(r => r.type === 'sanitation' && r.latitude && r.longitude));
+      });
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   /* ===================== CENTRALIZED STYLING ===================== */
@@ -802,6 +877,7 @@ const DigitalTwin = () => {
         profile: signal.profile, // STRICT MAPPING: Use the same profile as the signal
         score
       });
+      window.dispatchEvent(new CustomEvent('aheadly-ward-selected', { detail: { wardId: sectorId } }));
     };
   }, [diseaseTable, heatTable, stagnationTable, ndviTable, sanitationRiskTable]); // Re-bind when data changes
 
@@ -855,38 +931,88 @@ const DigitalTwin = () => {
         const profile = SECTOR_HEALTH_PROFILES[sectorId];
         if (profile) {
           const contributors = (profile.contributors || []).map(c => `<li>${c}</li>`).join('');
+
+          // ── Population Vulnerability Multiplier section ──────────────────────
+          const vData = wardVulnerabilityData[sectorId];
+          let vulnSection = '';
+          if (vData) {
+            const vm  = vData.vulnerability_multiplier;
+            const vc  = vData.vaccination_coverage;
+            const ep  = vData.elderly_percent;
+            const cb  = vData.comorbidity_burden;
+            const amplification = Math.round((vm - 1) * 100);
+
+            const vcColor = vc < 65 ? '#ef4444' : vc <= 75 ? '#f59e0b' : '#22c55e';
+            const vcBg    = vc < 65 ? '#fee2e2' : vc <= 75 ? '#fffbeb' : '#dcfce7';
+            const vcLabel = vc < 65 ? 'LOW'     : vc <= 75 ? 'MODERATE' : 'GOOD';
+
+            const epColor = ep > 10 ? '#f59e0b' : '#22c55e';
+            const epBg    = ep > 10 ? '#fffbeb' : '#dcfce7';
+            const epLabel = ep > 10 ? 'ELEVATED' : 'NORMAL';
+
+            const cbColor = cb > 26 ? '#ef4444' : cb > 22 ? '#f59e0b' : '#22c55e';
+            const cbBg    = cb > 26 ? '#fee2e2' : cb > 22 ? '#fffbeb' : '#dcfce7';
+            const cbLabel = cb > 26 ? 'HIGH'    : cb > 22 ? 'MODERATE' : 'LOW';
+
+            const pill = (label, color, bg) =>
+              `<span style="font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:999px;background:${bg};color:${color};letter-spacing:0.5px;">${label}</span>`;
+
+            vulnSection = `
+              <div style="margin-bottom:12px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+                <div style="padding:7px 12px;background:#0f172a;">
+                  <div style="font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;color:#67e8f9;font-weight:700;">POPULATION RISK FACTORS</div>
+                </div>
+                <div style="padding:8px 12px;background:#f8fafc;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:5px;border-bottom:1px solid #e2e8f0;margin-bottom:6px;">
+                    <span style="font-size:0.82rem;color:#475569;">Vulnerability Multiplier</span>
+                    <span style="font-size:1.05rem;font-weight:800;color:#0f172a;">${vm.toFixed(2)}&times;</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:0.82rem;color:#475569;">&#128137; Child Immunization Coverage</span>
+                    <span style="font-size:0.88rem;font-weight:600;color:#0f172a;">${vc}%</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:0.82rem;color:#475569;">&#128116; Elderly Population</span>
+                    <span style="font-size:0.88rem;font-weight:600;color:#0f172a;">${ep}%</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.82rem;color:#475569;">&#129488; Comorbidity Burden</span>
+                    <span style="font-size:0.88rem;font-weight:600;color:#0f172a;">${cb}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
           content = `
             <div style="font-family:'Inter',sans-serif;min-width:320px;color:#0f172a;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
                 <div>
                   <div style="font-size:0.75rem;letter-spacing:2px;color:#64748b;text-transform:uppercase;font-weight:700;">${profile.sector}</div>
                   <div style="font-size:1.1rem;font-weight:800;">${profile.sectorLabel}</div>
-                  <div style="font-size:0.95rem;color:#0d9488;font-weight:700;">HRI: ${profile.hri}/100</div>
                 </div>
-                <div style="padding:6px 10px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);background:${profile.hri>=80?'#fee2e2':profile.hri>=65?'#ffe4e6':profile.hri>=45?'#fff7ed':'#ecfdf3'};color:${profile.hri>=80?'#b91c1c':profile.hri>=65?'#c2410c':profile.hri>=45?'#b45309':'#0f766e'};font-weight:800;">
-                  ${profile.severity}
+                <div style="text-align:right;">
+                  <div style="font-size:3rem;line-height:1;font-weight:900;color:${profile.hri>=80?'#b91c1c':profile.hri>=65?'#c2410c':profile.hri>=45?'#b45309':'#0f766e'};">${profile.hri}</div>
+                  <div style="font-size:0.8rem;letter-spacing:1px;font-weight:800;color:${profile.hri>=80?'#b91c1c':profile.hri>=65?'#c2410c':profile.hri>=45?'#b45309':'#0f766e'};">${profile.severity.toUpperCase()}</div>
+                  <div style="font-size:0.65rem;color:#64748b;margin-top:4px;">Driven by rising dengue activity</div>
                 </div>
-              </div>
-
-              <div style="margin-bottom:12px;padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
-                <div style="font-size:0.8rem;color:#475569;font-weight:700;margin-bottom:4px;">Primary Disease Signal</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <div style="font-weight:800;color:#111827;">${profile.disease} — ${profile.cases} Cases</div>
-                  <div style="font-size:0.85rem;color:${profile.trend==='outbreak'?'#b91c1c':(profile.trend==='rising'?'#c2410c':'#0f766e')};font-weight:700;">
-                    ${profile.trendLabel}
-                  </div>
-                </div>
-                <div style="font-size:0.85rem;color:#475569;margin-top:4px;">Trend: ${profile.trendLabel} · Transmission: ${profile.transmission}</div>
               </div>
 
               <div style="margin-bottom:12px;">
-                <div style="font-size:0.8rem;color:#475569;font-weight:700;margin-bottom:6px;">Score Contributors</div>
-                <ul style="margin:0;padding-left:18px;font-size:0.9rem;color:#1f2937;line-height:1.4;">${contributors}</ul>
+                <div style="font-size:0.8rem;color:#475569;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Why This Ward Is At Risk</div>
+                <ul style="margin:0;padding-left:18px;font-size:0.85rem;color:#1f2937;line-height:1.4;">
+                  <li style="margin-bottom:2px;"><strong>${profile.disease}:</strong> ${profile.cases} active cases (${profile.trendLabel} trend)</li>
+                  ${contributors}
+                </ul>
               </div>
 
-              <div style="margin-bottom:12px;padding:10px;border-radius:10px;background:#0f172a;color:#e2e8f0;">
-                <div style="font-size:0.78rem;letter-spacing:1px;text-transform:uppercase;color:#67e8f9;font-weight:700;margin-bottom:4px;">Actionable Insight</div>
-                <div style="font-size:0.95rem;line-height:1.5;">"${profile.insight}"</div>
+              ${vulnSection}
+
+              <div style="margin-bottom:12px;padding:8px 12px;border-left:4px solid #0ea5e9;background:#f0f9ff;border-radius:4px;">
+                <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;font-weight:800;color:#0369a1;margin-bottom:4px;">Recommended Actions</div>
+                <ul style="margin:0;padding-left:14px;font-size:0.85rem;color:#0c4a6e;font-weight:600;">
+                  ${getWardRecommendations(wardData[sectorId]).map(action => `<li style="margin-bottom:2px;">${action}</li>`).join('')}
+                </ul>
               </div>
 
               <button id="queue-${sectorId}" onclick="window.addToPlanner && window.addToPlanner('${sectorId}')" style="width:100%;background:#0ea5e9;color:#0b1120;border:none;border-radius:12px;padding:10px 14px;font-weight:800;font-size:0.95rem;cursor:pointer;">
@@ -1140,11 +1266,21 @@ const DigitalTwin = () => {
     layer.setStyle({ weight: 3, color: "#6366f1", fillOpacity: 0.9 });
     selectedLayerRef.current = layer;
 
+    // Notify Aheadly Copilot of the selected ward
+    const rawName = layer.feature?.properties?.Name;
+    const sectorId = getSectorID(rawName);
+    if (sectorId) {
+      window.dispatchEvent(new CustomEvent('aheadly-ward-selected', { detail: { wardId: sectorId } }));
+    }
+
     // Popup is already bound by useEffect, just let it open
     layer.openPopup();
   };
 
   /* ===================== RENDER ===================== */
+
+  // Merge community + telegram sanitation reports for map markers
+  const allCommunityReports = [...communityReports, ...telegramReports];
 
   return (
     <Container>
@@ -1206,9 +1342,8 @@ const DigitalTwin = () => {
               );
             })}
 
-            {/* Community Report Markers (Overlay) - Representative Only */}
-            {/* FIX: Strictly unmount markers if any other layer is active */}
-            {showCommunityReports && !activeLayer && (communityReports || []).length > 0 && getRepresentativeReports(communityReports).map((report) => (
+            {/* Community Report Markers (Overlay) — includes Telegram-sourced reports */}
+            {showCommunityReports && !activeLayer && allCommunityReports.length > 0 && getRepresentativeReports(allCommunityReports).map((report) => (
               <Marker
                 key={report.id}
                 position={[report.latitude, report.longitude]}
@@ -1217,6 +1352,11 @@ const DigitalTwin = () => {
               >
                 <Popup>
                   <div style={{ fontFamily: 'sans-serif', minWidth: '220px' }}>
+                    {report.source === 'telegram' && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#e8f4fd', color: '#2CA5E0', fontSize: '0.7rem', fontWeight: '700', padding: '2px 8px', borderRadius: '999px', marginBottom: '7px' }}>
+                        ✈ via Telegram
+                      </div>
+                    )}
                     <h4 style={{ margin: '0 0 5px 0', fontSize: '1rem', color: '#1e293b' }}>Community Report</h4>
                     <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '8px' }}>
                       <b>Issue:</b> {report.issue_type}
@@ -1303,7 +1443,7 @@ const DigitalTwin = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setSelectedWardDetail(null)}
+                  onClick={() => { setSelectedWardDetail(null); window.dispatchEvent(new CustomEvent('aheadly-ward-deselected')); }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
                 >
                   <FiX size={20} />
@@ -1392,6 +1532,36 @@ const DigitalTwin = () => {
               )}
 
             </DetailPanel>
+          )}
+
+          {/* ── RECENT REPORTS button — visible when Community Reports layer is on ── */}
+          {showCommunityReports && (
+            <div
+              onClick={() => setShowRecentModal(true)}
+              style={{
+                position: 'absolute', top: 16, right: 16, zIndex: 1500,
+                background: '#6366f1',
+                color: 'white',
+                padding: '9px 18px',
+                borderRadius: '999px',
+                fontWeight: '800',
+                fontSize: '0.78rem',
+                letterSpacing: '0.08em',
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(99,102,241,0.45)',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                border: '1px solid rgba(255,255,255,0.15)',
+                userSelect: 'none',
+              }}
+            >
+              <FiUsers size={13} />
+              RECENT REPORTS
+              {allCommunityReports.filter(r => !r.isMock).length > 0 && (
+                <span style={{ background: 'rgba(255,255,255,0.22)', borderRadius: '999px', padding: '1px 7px', fontSize: '0.72rem', fontWeight: '700' }}>
+                  {allCommunityReports.filter(r => !r.isMock).length}
+                </span>
+              )}
+            </div>
           )}
 
         </MapWrapper>
@@ -1504,8 +1674,159 @@ const DigitalTwin = () => {
               </ToggleItem>
             </ToggleGroup>
           </div>
+
         </ControlPanel>
       </ContentGrid>
+      {/* ══════════════ RECENT REPORTS FULL-SCREEN MODAL ══════════════ */}
+      {showRecentModal && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.88)',
+          backdropFilter: 'blur(10px)',
+          zIndex: 9999,
+          display: 'flex', flexDirection: 'column',
+          fontFamily: "'Inter', sans-serif",
+        }}>
+
+          {/* Header */}
+          <div style={{
+            padding: '1.25rem 2rem',
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            background: 'rgba(13,15,20,0.98)',
+            flexShrink: 0,
+          }}>
+            <div>
+              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: '#f8fafc', letterSpacing: '-0.01em' }}>
+                Recent Reports
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '3px' }}>
+                {(() => {
+                  const real = allCommunityReports.filter(r => !r.isMock);
+                  const tg   = real.filter(r => r.source === 'telegram');
+                  return `${real.length} reports · ${tg.length} via Telegram`;
+                })()}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Filter pills */}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {['All','Telegram','Portal'].map(f => (
+                  <span
+                    key={f}
+                    style={{
+                      padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.07)', color: '#94a3b8',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >{f}</span>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowRecentModal(false)}
+                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', cursor: 'pointer', color: '#94a3b8', padding: '6px 10px', display: 'flex', alignItems: 'center' }}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable grid */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 2rem' }}>
+            {allCommunityReports.filter(r => !r.isMock).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '5rem', color: '#475569' }}>
+                <FiUsers size={40} style={{ marginBottom: '12px', opacity: 0.3 }} />
+                <div style={{ fontSize: '1rem', fontWeight: '600', color: '#64748b' }}>No real reports yet</div>
+                <div style={{ fontSize: '0.85rem', marginTop: '6px' }}>
+                  Submit a report via the Community Portal or Telegram bot.
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gap: '1rem',
+              }}>
+                {[...allCommunityReports]
+                  .filter(r => !r.isMock)
+                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                  .map((report, idx) => {
+                    const isTg = report.source === 'telegram';
+                    return (
+                      <div key={report.id || idx} style={{
+                        background: 'rgba(22,26,35,0.95)',
+                        border: `1px solid ${isTg ? 'rgba(44,165,224,0.25)' : 'rgba(99,102,241,0.2)'}`,
+                        borderRadius: '14px',
+                        overflow: 'hidden',
+                        display: 'flex', flexDirection: 'column',
+                      }}>
+
+                        {/* Photo */}
+                        {report.photo_path ? (
+                          <div style={{ height: '190px', overflow: 'hidden', background: '#0d0f14', flexShrink: 0 }}>
+                            <img
+                              src={report.photo_path}
+                              alt="evidence"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                              onError={e => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        ) : report.has_proof ? (
+                          <div style={{ height: '70px', background: 'rgba(52,211,153,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid rgba(52,211,153,0.1)', flexShrink: 0 }}>
+                            <div style={{ fontSize: '0.78rem', color: '#34d399', fontWeight: '600' }}>📸 Evidence on file</div>
+                          </div>
+                        ) : null}
+
+                        {/* Body */}
+                        <div style={{ padding: '0.9rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {/* Title row */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#f1f5f9', flex: 1, marginRight: '8px', lineHeight: '1.3' }}>
+                              {report.issue_type || report.classification || 'Report'}
+                            </div>
+                            <span style={{
+                              background: isTg ? 'rgba(44,165,224,0.15)' : 'rgba(99,102,241,0.15)',
+                              color: isTg ? '#7dd3f0' : '#a5b4fc',
+                              fontSize: '0.62rem', fontWeight: '800',
+                              padding: '2px 7px', borderRadius: '999px',
+                              border: `1px solid ${isTg ? 'rgba(44,165,224,0.3)' : 'rgba(99,102,241,0.3)'}`,
+                              whiteSpace: 'nowrap', flexShrink: 0,
+                              letterSpacing: '0.05em',
+                            }}>
+                              {isTg ? 'TELEGRAM' : 'PORTAL'}
+                            </span>
+                          </div>
+
+                          {/* Meta grid */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <div>
+                              <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Ward</div>
+                              <div style={{ fontSize: '0.82rem', fontWeight: '600', color: '#cbd5e1' }}>{report.sector}</div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Reported</div>
+                              <div style={{ fontSize: '0.82rem', fontWeight: '600', color: '#cbd5e1' }}>
+                                {new Date(report.timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Note / caption */}
+                          {report.note && !report.note.toLowerCase().includes('mock') && !report.note.toLowerCase().includes('automated') && (
+                            <div style={{ fontSize: '0.78rem', color: '#64748b', fontStyle: 'italic', lineHeight: '1.5', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                              "{report.note}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </Container >
   );
 };

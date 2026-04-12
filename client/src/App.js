@@ -34,6 +34,8 @@ import CommunityOnboarding from './pages/CommunityOnboarding';
 import ASHAOnboarding from './pages/ASHAOnboarding';
 
 // New Citizen Feature Pages
+import SatelliteIntelligence from './pages/SatelliteIntelligence';
+import ScientificValidation from './pages/ScientificValidation';
 import VaccinationTracker from './pages/VaccinationTracker';
 import WardLeaderboard from './pages/WardLeaderboard';
 import EmergencySOS from './pages/EmergencySOS';
@@ -106,6 +108,8 @@ function AppLayout() {
             <Route path="/policy-brief" element={<HealthPriorityBrief />} />
             <Route path="/health-priority" element={<HealthPriorityBrief />} />
             <Route path="/data-sources" element={<DataSources />} />
+            <Route path="/satellite-intelligence" element={<SatelliteIntelligence />} />
+            <Route path="/scientific-validation" element={<ScientificValidation />} />
             <Route path="/problem-statement" element={<ProblemStatement />} />
 
             {/* Hospital */}

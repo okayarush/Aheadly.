@@ -456,18 +456,33 @@ export const generateTickerEvents = () => {
 export const buildCopilotContext = (currentPage, selectedWardId = null, activeLayer = null) => {
   const city = getCityMetrics();
   const ward = selectedWardId ? wardData[selectedWardId] : null;
+  const vuln = selectedWardId ? wardVulnerabilityData[selectedWardId] : null;
 
-  let ctx = `CITY LIVE DATA: ${city.wardsMonitored} wards monitored | ${city.highRiskCount} HIGH risk (${city.highRiskNames.join(', ')}) | Avg HRI ${city.avgHRI}/12 | Hospital ${city.occupancyPercent}% occupied (${city.occupiedBeds}/${city.totalBeds} beds) | ${city.icuAvailable} ICU beds available | ${city.totalDiseaseSignals} disease signals active | ${city.totalCommunityReports} community reports (7d)\n`;
+  let ctx = `CITY LIVE DATA: ${city.wardsMonitored} wards monitored | ${city.highRiskCount} HIGH risk (${city.highRiskNames.join(', ')}) | Avg HRI ${city.avgHRI}/100 | Hospital ${city.occupancyPercent}% occupied (${city.occupiedBeds}/${city.totalBeds} beds) | ${city.icuAvailable} ICU beds available | ${city.totalDiseaseSignals} disease signals active | ${city.totalCommunityReports} community reports (7d)\n`;
   ctx += `VENTILATORS: ${city.ventilators.inUse}/${city.ventilators.total} in use | AMBULANCES: ${city.ambulances.active}/${city.ambulances.total} active\n`;
   ctx += `PAGE: ${currentPage}\n`;
 
   if (activeLayer) ctx += `MAP LAYER: ${activeLayer}\n`;
 
+  // Always include per-ward summary so AI can answer questions about any ward
+  ctx += `ALL WARDS (HRI/100 | severity | top disease | vaccination% | comorbidity burden% | elderly%):\n`;
+  Object.values(wardData).forEach(w => {
+    const topDisease = Object.entries(w.diseases).sort((a, b) => b[1].cases - a[1].cases)[0];
+    const vuln2 = wardVulnerabilityData[w.id];
+    ctx += `  ${w.id}: HRI ${w.hri.total}/100 (${w.hri.severity}) | convergence ${w.convergenceCount}/5 | top disease: ${topDisease[0]} ${topDisease[1].cases} cases (${topDisease[1].trend})`;
+    if (vuln2) ctx += ` | vaccination ${vuln2.vaccination_coverage}% | comorbidity ${vuln2.comorbidity_burden}% | elderly ${vuln2.elderly_percent}% | vulnerability ${vuln2.vulnerability_multiplier}x`;
+    ctx += `\n`;
+  });
+
   if (ward) {
-    ctx += `SELECTED WARD: ${ward.displayName} | HRI ${ward.hri.total}/12 (${ward.hri.severity}) | Convergence ${ward.convergenceCount}/5 signals\n`;
+    // Ward-specific context — full profile for the selected ward
+    ctx += `SELECTED WARD: ${ward.displayName} | HRI ${ward.hri.total}/100 (${ward.hri.severity}) | Convergence ${ward.convergenceCount}/5 signals\n`;
     ctx += `SIGNALS: Heat=${ward.hri.breakdown.heatExposure}, Water=${ward.hri.breakdown.waterStagnation}, Vector=${ward.hri.breakdown.vectorDensity}, Disease=${ward.hri.breakdown.diseaseBurden}, Sanitation=${ward.hri.breakdown.sanitationStress}\n`;
     ctx += `DISEASES: ${Object.entries(ward.diseases).map(([d, v]) => `${d}: ${v.cases} cases (${v.trend})`).join(', ')}\n`;
     ctx += `COMMUNITY (7d): ${ward.communityReports.last7Days} reports | ASHA: ${ward.ashaData.visited}/${ward.ashaData.totalHouseholds} visited, ${ward.ashaData.flagged} flagged, ${ward.ashaData.symptomsReported} with symptoms\n`;
+    if (vuln) {
+      ctx += `POPULATION VULNERABILITY: Vaccination coverage ${vuln.vaccination_coverage}% | Child immunization coverage ${vuln.vaccination_coverage}% | Elderly population ${vuln.elderly_percent}% | Comorbidity burden ${vuln.comorbidity_burden}% | Vulnerability multiplier ${vuln.vulnerability_multiplier}x\n`;
+    }
   }
 
   return ctx;
@@ -517,4 +532,28 @@ export const getPredictions = (wardId, days = 7) => {
         .map(([k]) => k),
     };
   });
+};
+
+// ── WARD VULNERABILITY DATA ────────────────────────────────────────────────────
+// Population vulnerability metrics per sector.
+// Used by the Digital Twin HRI drill-down panel (Population Vulnerability Multiplier section).
+// vulnerability_multiplier: amplification above raw HRI from population-level risk factors.
+
+export const wardVulnerabilityData = {
+  'Sector-01': { vulnerability_multiplier: 1.22, vaccination_coverage: 62, elderly_percent: 12.5, comorbidity_burden: 29 },
+  'Sector-02': { vulnerability_multiplier: 1.08, vaccination_coverage: 71, elderly_percent: 9.2,  comorbidity_burden: 21 },
+  'Sector-03': { vulnerability_multiplier: 1.35, vaccination_coverage: 54, elderly_percent: 14.1, comorbidity_burden: 33 },
+  'Sector-04': { vulnerability_multiplier: 1.18, vaccination_coverage: 66, elderly_percent: 10.8, comorbidity_burden: 25 },
+  'Sector-05': { vulnerability_multiplier: 1.21, vaccination_coverage: 60, elderly_percent: 11.3, comorbidity_burden: 27 },
+  'Sector-06': { vulnerability_multiplier: 1.04, vaccination_coverage: 78, elderly_percent: 7.4,  comorbidity_burden: 18 },
+  'Sector-07': { vulnerability_multiplier: 1.24, vaccination_coverage: 64, elderly_percent: 13.2, comorbidity_burden: 30 },
+  'Sector-08': { vulnerability_multiplier: 1.38, vaccination_coverage: 55, elderly_percent: 15.0, comorbidity_burden: 34 },
+  'Sector-09': { vulnerability_multiplier: 1.16, vaccination_coverage: 67, elderly_percent: 10.5, comorbidity_burden: 26 },
+  'Sector-10': { vulnerability_multiplier: 1.20, vaccination_coverage: 61, elderly_percent: 12.0, comorbidity_burden: 28 },
+  'Sector-11': { vulnerability_multiplier: 1.05, vaccination_coverage: 79, elderly_percent: 8.1,  comorbidity_burden: 19 },
+  'Sector-12': { vulnerability_multiplier: 1.19, vaccination_coverage: 63, elderly_percent: 11.5, comorbidity_burden: 27 },
+  'Sector-13': { vulnerability_multiplier: 1.28, vaccination_coverage: 57, elderly_percent: 13.8, comorbidity_burden: 32 },
+  'Sector-14': { vulnerability_multiplier: 1.10, vaccination_coverage: 72, elderly_percent: 9.0,  comorbidity_burden: 22 },
+  'Sector-15': { vulnerability_multiplier: 1.02, vaccination_coverage: 82, elderly_percent: 6.8,  comorbidity_burden: 16 },
+  'Sector-16': { vulnerability_multiplier: 1.12, vaccination_coverage: 69, elderly_percent: 9.8,  comorbidity_burden: 23 },
 };

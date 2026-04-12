@@ -100,7 +100,7 @@ function getProactiveInsight(pathname) {
   return null;
 }
 
-function buildSystemPrompt(pathname) {
+function buildSystemPrompt(pathname, selectedWardId = null) {
   // Citizen mode — friendly, jargon-free
   if (isCitizenPage(pathname)) {
     const dataContext = buildCopilotContext('Community Portal', null, null);
@@ -121,13 +121,17 @@ RULES:
   }
 
   const page = getPageLabel(pathname);
-  const dataContext = buildCopilotContext(page, null, null);
+  const dataContext = buildCopilotContext(page, selectedWardId, null);
+  const wardNote = selectedWardId
+    ? `The user has selected ${selectedWardId} on the map — answer questions in the context of that ward unless the user asks about the full city.`
+    : `No ward is currently selected — answer using city-wide data.`;
   return `You are Aheadly Copilot — AI health intelligence for Solapur Municipal Corporation.
-Deep knowledge of: Ward-level HRI (scored out of 12), HRI components (Heat Exposure, Water Stagnation, Vector Density, Disease Burden, Sanitation Stress), disease surveillance (Dengue, Respiratory, Gastro), community sanitation reports, hospital capacity and medicine stock.
+Deep knowledge of: Ward-level HRI (scored out of 100), HRI components (Heat Exposure, Water Stagnation, Vector Density, Disease Burden, Sanitation Stress — each scored 0-20), disease surveillance (Dengue, Respiratory, Gastro, Cholera, Malaria, Typhoid, Diarrhoea), community sanitation reports, hospital capacity and medicine stock, vaccination and child immunization coverage.
 Core thesis: Cities fail when multiple risk signals CONVERGE simultaneously — single signals are noise, overlapping signals are danger.
 
 LIVE SYSTEM DATA (as of now):
 ${dataContext}
+CONTEXT: ${wardNote}
 PERSONALITY: Confident, data-driven, action-oriented. Connect dots between signals. Keep responses 2-4 sentences for simple questions. Use specific ward names, HRI values, and numbers from the data above. Bold the most important insight. Frame risk as CONVERGENCE. Never make up numbers — use only what's in the data above.`;
 }
 
@@ -569,6 +573,7 @@ function AheadlyCopilot() {
   const [isLoading, setIsLoading] = useState(false);
   const [proactiveShown, setProactiveShown] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [selectedWardId, setSelectedWardId] = useState(null);
 
   const chatBottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -628,6 +633,18 @@ function AheadlyCopilot() {
     return () => window.removeEventListener('aheadly-open-copilot', handle);
   }, []);
 
+  // Track which ward is selected on the map
+  useEffect(() => {
+    const onSelect = (e) => setSelectedWardId(e.detail?.wardId || null);
+    const onDeselect = () => setSelectedWardId(null);
+    window.addEventListener('aheadly-ward-selected', onSelect);
+    window.addEventListener('aheadly-ward-deselected', onDeselect);
+    return () => {
+      window.removeEventListener('aheadly-ward-selected', onSelect);
+      window.removeEventListener('aheadly-ward-deselected', onDeselect);
+    };
+  }, []);
+
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -661,7 +678,7 @@ function AheadlyCopilot() {
 
       if (GEMINI_API_KEY) {
         try {
-          responseText = await askGemini(trimmed, history, buildSystemPrompt(pathname));
+          responseText = await askGemini(trimmed, history, buildSystemPrompt(pathname, selectedWardId));
         } catch (err) {
           console.warn('[AheadlyCopilot] Gemini API error, using fallback:', err);
         }
@@ -682,7 +699,7 @@ function AheadlyCopilot() {
         },
       ]);
     },
-    [isLoading, messages, pathname]
+    [isLoading, messages, pathname, selectedWardId]
   );
 
   const handleInputKeyDown = (e) => {
@@ -744,7 +761,7 @@ function AheadlyCopilot() {
 
               {/* Context pill */}
               <ContextPill>
-                📍 Viewing: {pageLabel}
+                📍 Viewing: {pageLabel}{selectedWardId ? ` · ${selectedWardId}` : ''}
               </ContextPill>
 
               {/* Messages */}

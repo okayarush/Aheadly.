@@ -12,7 +12,9 @@ import {
   FiX,
   FiArrowRight,
   FiZap,
-  FiTarget
+  FiTarget,
+  FiGlobe,
+  FiAward
 } from 'react-icons/fi';
 
 const BREAKPOINT = '768px';
@@ -266,6 +268,12 @@ const Sidebar = () => {
           </SidebarLink>
           <SidebarLink to="/data-sources" onClick={closeSidebar}>
             <FiDatabase size={16} /> Data Sources
+          </SidebarLink>
+          <SidebarLink to="/satellite-intelligence" onClick={closeSidebar}>
+            <FiGlobe size={16} /> Satellite Intelligence
+          </SidebarLink>
+          <SidebarLink to="/scientific-validation" onClick={closeSidebar}>
+            <FiAward size={16} /> Scientific Validation
           </SidebarLink>
         </SidebarNav>
 
