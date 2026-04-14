@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiDownload, FiPrinter, FiShare2, FiLoader, FiMapPin, FiInfo, FiX, FiShield, FiAlertTriangle } from 'react-icons/fi';
+import { FiDownload, FiPrinter, FiShare2, FiLoader, FiMapPin, FiInfo, FiX, FiShield, FiAlertTriangle, FiSend } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 // Services
@@ -219,6 +219,10 @@ const PolicyBrief = () => {
     const [selectedWard, setSelectedWard] = useState('Sector-01'); // Default
     const [policyData, setPolicyData] = useState(null);
     const [detailsModalItem, setDetailsModalItem] = useState(null);
+    const [advisoryModal, setAdvisoryModal] = useState(false);
+    const [advisoryMessage, setAdvisoryMessage] = useState('');
+    const [selectedPreset, setSelectedPreset] = useState(0);
+    const [isSending, setIsSending] = useState(false);
 
     useEffect(() => {
         if (selectedWard) {
@@ -246,7 +250,7 @@ const PolicyBrief = () => {
                 title: `Public Health Action Brief: ${wardName}`,
                 generatedAt: new Date(),
                 executiveSummary: {
-                    overview: `Analysis of ${wardName} indicates a ${hriData.category} risk level (HRI: ${hriData.score.toFixed(1)}/12). Primary concern is ${signal.primary.name} with ${signal.primary.activeCases} active cases.`,
+                    overview: `Analysis of ${wardName} indicates a ${hriData.category} risk level (HRI: ${hriData.score.toFixed(1)}/100). Primary concern is ${signal.primary.name} with ${signal.primary.activeCases} active cases.`,
                     keyFindings: [
                         `Primary Disease Signal: ${signal.primary.name} (${signal.primary.trend})`,
                         `Transmission Context: ${signal.primary.transmission || 'None detected'}`,
@@ -271,6 +275,70 @@ const PolicyBrief = () => {
             toast.error("Failed to generate brief");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const getPresets = (brief) => {
+        const ward = brief.title.replace('Public Health Action Brief: ', '');
+        const urgency = brief.executiveSummary.urgency;
+        const riskEmoji = urgency === 'CRITICAL' ? '🔴' : urgency === 'HIGH' ? '🟠' : '🟡';
+        const autoActions = brief.recommendations.slice(0, 3).map(r => `• ${r.name}`).join('\n');
+        return [
+            {
+                label: 'Auto-Generated', sublabel: 'Based on live ward data', icon: '🤖',
+                message: `🚨 *Public Health Advisory*\n📍 *${ward}* — Solapur\n⚠️ Risk Level: *${urgency}* ${riskEmoji}\n\n🧠 *What's happening:*\n${brief.executiveSummary.overview}\n\n👉 *What you should do:*\n${autoActions}\n\n🏥 *If symptoms appear:*\nFever, fatigue, or sudden illness → contact your nearest health centre immediately\n\n🔄 Status: Monitoring Active\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Dengue / Vector Alert', sublabel: 'Mosquito breeding risk', icon: '🦟',
+                message: `🚨 *Dengue Risk Alert*\n📍 *${ward}* — Solapur\n⚠️ High Risk 🟠\n\n🧠 *What's happening:*\nIncreased mosquito breeding and dengue cases detected nearby.\n\n👉 *What you should do:*\n• Remove stagnant water around home\n• Use mosquito repellent / nets\n• Avoid outdoor exposure during evening\n\n🏥 *If symptoms appear:*\nFever, joint pain → seek medical care immediately\n\n🔄 Status: Control measures ongoing\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Water Contamination', sublabel: 'Drain / pipeline risk', icon: '💧',
+                message: `🚨 *Water Contamination Alert*\n📍 *${ward}* — Solapur\n⚠️ High Risk 🔴\n\n🧠 *What's happening:*\nContaminated water detected in your area due to pipeline/drain issues.\n\n👉 *What you should do:*\n• Use only safe/filtered water\n• Avoid tap water for drinking\n• Follow strict hygiene practices\n\n🏥 *If symptoms appear:*\nFever, vomiting, diarrhoea → contact nearest health center immediately\n\n🔄 Status: Mitigation in progress\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Air Quality Alert', sublabel: 'PM2.5 / pollution high', icon: '🌫️',
+                message: `🚨 *Air Quality Alert (PM2.5 High)*\n📍 *${ward}* — Solapur\n⚠️ Moderate Risk 🟡\n\n🧠 *What's happening:*\nElevated air pollution levels detected in your area.\n\n👉 *What you should do:*\n• Wear mask outdoors\n• Avoid heavy outdoor activity\n• Keep windows closed during peak hours\n\n🏥 *If symptoms appear:*\nBreathlessness, coughing → consult doctor\n\n🔄 Status: Monitoring active\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Heat Stress Advisory', sublabel: 'High LST / heat index', icon: '🌡️',
+                message: `🚨 *Heat Stress Advisory*\n📍 *${ward}* — Solapur\n⚠️ High Risk 🟠\n\n🧠 *What's happening:*\nExtreme heat conditions detected. Risk of heat exhaustion is high.\n\n👉 *What you should do:*\n• Stay indoors during 12pm–4pm\n• Drink water every 30 minutes\n• Wear light, loose-fitting clothing\n\n🏥 *If symptoms appear:*\nDizziness, excessive sweating, weakness → seek immediate medical help\n\n🔄 Status: Heat watch active\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Custom Advisory', sublabel: 'Write your own message', icon: '✏️',
+                message: `🚨 *Advisory*\n📍 *${ward}* — Solapur\n⚠️ \n\n🧠 *What's happening:*\n\n\n👉 *What you should do:*\n• \n• \n• \n\n🏥 *If symptoms appear:*\n\n\n🔄 Status: \n📡 Source: Aheadly Health System`
+            },
+        ];
+    };
+
+    const openAdvisoryModal = () => {
+        if (!policyData) { toast('Brief still loading…'); return; }
+        const presets = getPresets(policyData);
+        setSelectedPreset(0);
+        setAdvisoryMessage(presets[0].message);
+        setAdvisoryModal(true);
+    };
+
+    const handleSendAdvisory = async () => {
+        if (!advisoryMessage.trim()) return;
+        setIsSending(true);
+        try {
+            const res = await fetch('http://localhost:3001/api/send-advisory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: advisoryMessage })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success(`Advisory sent for ${selectedWard}!`);
+                setAdvisoryModal(false);
+            } else {
+                toast.error(data.error || 'Failed to send');
+            }
+        } catch {
+            toast.error('Bot server unreachable — is the bot running on port 3001?');
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -316,6 +384,14 @@ const PolicyBrief = () => {
                         </span>
                     </div>
                     <Subtitle>Official Municipal Action Plan</Subtitle>
+                    <ActionButton
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={openAdvisoryModal}
+                        style={{ marginTop: '0.75rem', background: '#0ea5e9', color: 'white', border: 'none' }}
+                    >
+                        <FiSend size={16} /> Send Advisory
+                    </ActionButton>
                 </HeaderInfo>
                 <Actions>
                     <WardSelect value={selectedWard} onChange={(e) => setSelectedWard(e.target.value)}>
@@ -518,6 +594,80 @@ const PolicyBrief = () => {
             }}>
                 Rendered by /policy-brief component
             </div>
+
+            {/* ADVISORY COMPOSER MODAL */}
+            <AnimatePresence>
+                {advisoryModal && policyData && (() => {
+                    const presets = getPresets(policyData);
+                    return (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setAdvisoryModal(false)}>
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                                onClick={e => e.stopPropagation()}
+                                style={{ background: '#0f172a', borderRadius: '16px', width: '860px', maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #1e293b', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}
+                            >
+                                {/* Modal Header */}
+                                <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <div style={{ color: '#fff', fontWeight: '700', fontSize: '1.2rem' }}>📢 Send Advisory</div>
+                                        <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '2px' }}>{selectedWard} — Solapur</div>
+                                    </div>
+                                    <button onClick={() => setAdvisoryModal(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.25rem' }}>✕</button>
+                                </div>
+
+                                {/* Modal Body */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', flex: 1, overflow: 'hidden' }}>
+                                    {/* LEFT: Preset List */}
+                                    <div style={{ borderRight: '1px solid #1e293b', padding: '1.25rem', overflowY: 'auto' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#475569', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>Preset Templates</div>
+                                        {presets.map((p, i) => (
+                                            <div
+                                                key={i}
+                                                onClick={() => { setSelectedPreset(i); setAdvisoryMessage(p.message); }}
+                                                style={{
+                                                    padding: '0.75rem',
+                                                    borderRadius: '8px',
+                                                    border: `1px solid ${selectedPreset === i ? '#3b82f6' : '#1e293b'}`,
+                                                    background: selectedPreset === i ? 'rgba(59,130,246,0.1)' : 'transparent',
+                                                    cursor: 'pointer',
+                                                    marginBottom: '0.5rem',
+                                                    transition: 'all 0.15s'
+                                                }}
+                                            >
+                                                <div style={{ fontWeight: '600', fontSize: '0.9rem', color: selectedPreset === i ? '#93c5fd' : '#e2e8f0' }}>{p.icon} {p.label}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{p.sublabel}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* RIGHT: Editable Preview */}
+                                    <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#475569', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>Message Preview & Editor</div>
+                                        <textarea
+                                            value={advisoryMessage}
+                                            onChange={e => { setAdvisoryMessage(e.target.value); setSelectedPreset(null); }}
+                                            style={{ flex: 1, padding: '1rem', background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.88rem', lineHeight: '1.6', resize: 'none', outline: 'none' }}
+                                        />
+                                        <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.5rem' }}>*bold*, _italic_ — Telegram Markdown. Edit freely.</div>
+                                    </div>
+                                </div>
+
+                                {/* Modal Footer */}
+                                <div style={{ padding: '1.25rem 2rem', borderTop: '1px solid #1e293b', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                                    <button onClick={() => setAdvisoryModal(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Cancel</button>
+                                    <button
+                                        onClick={handleSendAdvisory}
+                                        disabled={isSending || !advisoryMessage.trim()}
+                                        style={{ background: isSending ? '#334155' : '#0ea5e9', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '8px', cursor: isSending ? 'not-allowed' : 'pointer', fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    >
+                                        {isSending ? '⏳ Sending...' : '📤 Send to Telegram'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    );
+                })()}
+            </AnimatePresence>
         </Container>
     );
 };

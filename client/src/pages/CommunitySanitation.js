@@ -6,6 +6,7 @@ import { FiTrash2, FiDroplet, FiAlertTriangle, FiAlertCircle, FiMapPin, FiCamera
 import { toast } from "react-hot-toast";
 
 import { CommunitySanitationManager } from "../utils/CommunitySanitationManager";
+import { CommunityIntelligenceManager } from "../utils/CommunityIntelligenceManager";
 import { getSectorID } from "../utils/HospitalRegistry";
 import "leaflet/dist/leaflet.css";
 import CommunityLayout from "../components/layout/CommunityLayout";
@@ -292,6 +293,7 @@ const CommunitySanitation = () => {
         };
 
         CommunitySanitationManager.addReport(newReport);
+        CommunityIntelligenceManager.refresh(); // invalidate merged risk cache
         toast.success("Issue Reported Successfully!");
 
         setFormData({

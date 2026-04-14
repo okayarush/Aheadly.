@@ -1,6 +1,6 @@
 import { EnvironmentalDataManager } from "../utils/EnvironmentalDataManager";
 import { DiseaseDataManager } from "../utils/DiseaseDataManager";
-import { CommunitySanitationManager } from "../utils/CommunitySanitationManager";
+import { CommunityIntelligenceManager } from "../utils/CommunityIntelligenceManager";
 import { getHRIScore } from "../utils/RiskCalculator";
 import { getSectorID } from "../utils/HospitalRegistry";
 import { generateDiseaseSignal } from "./diseaseService";
@@ -36,7 +36,7 @@ class HRIBridgeService {
 
         // 3. Fetch Data Components
         const diseaseData = DiseaseDataManager.getWardAggregates()[sectorId] || { level: "LOW" };
-        const sanitationData = CommunitySanitationManager.getSectorRisk(sectorId) || { level: "LOW" };
+        const sanitationData = CommunityIntelligenceManager.getSectorRisk(sectorId);
 
         const heatData = EnvironmentalDataManager.getHeatRecord(wardName) || { risk: "LOW" };
         const stagnationData = EnvironmentalDataManager.getStagnationRecord(wardName) || { level: "LOW" };

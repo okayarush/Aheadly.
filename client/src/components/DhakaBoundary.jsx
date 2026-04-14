@@ -85,9 +85,13 @@ const DhakaBoundary = ({
                 // Add popup with boundary name if available
                 if (feature.properties && feature.properties.shapeName) {
                     layer.bindPopup(
-                        `<div style="font-weight: bold; color: #DC143C;">
-              ${feature.properties.shapeName}
-            </div>`
+                        `<div style="font-weight: 800; color: #fff; background: #0f172a; padding: 10px 14px; border-radius: 8px; border: 1px solid #DC143C; font-size: 0.85rem; font-family: 'Inter', sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                            ${feature.properties.shapeName}
+                        </div>`,
+                        {
+                            className: 'custom-dhaka-popup',
+                            offset: [0, -10]
+                        }
                     );
                 }
 

@@ -442,7 +442,7 @@ export const generateTickerEvents = () => {
     if (ward.communityReports.last7Days > 8)
       events.push({ icon: '🗑️', text: `${ward.communityReports.last7Days} reports in ${ward.name} (7d)` });
     if (ward.hri.severity === 'HIGH')
-      events.push({ icon: '📊', text: `${ward.name} escalated — HRI ${ward.hri.total}/12` });
+      events.push({ icon: '📊', text: `${ward.name} escalated — HRI ${ward.hri.total}/100` });
     if (ward.diseases.dengue.trend === 'rising')
       events.push({ icon: '🦟', text: `Dengue rising in ${ward.name}: ${ward.diseases.dengue.cases} cases` });
   });

@@ -1,3 +1,5 @@
+import { CommunityIntelligenceManager } from '../utils/CommunityIntelligenceManager';
+
 const TRANSMISSION_BY_DISEASE = {
   Dengue: 'Aedes aegypti (Day biter)',
   Malaria: 'Anopheles mosquito (Night biter)',
@@ -24,6 +26,14 @@ const toTrendLabel = (trend) => {
   return 'Stable →';
 };
 
+// Replace the hardcoded Community Reports contributor with live data
+const withLiveCommunity = (sectorName, contributors) => {
+  const liveContributor = CommunityIntelligenceManager.getCommunityContributor(sectorName);
+  return contributors.map(c =>
+    c.source === 'Community Reports' ? liveContributor : c
+  );
+};
+
 export const SECTOR_DATA = {
   'sector-03': {
     name: 'Sector-03',
@@ -38,7 +48,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 3.2, max: 3.2, color: '#4da6ff', note: '31 confirmed dengue admissions this week' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.6, max: 2.8, color: '#f5a623', note: '14 HIGH risk households flagged in sector' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.8, max: 2.0, color: '#00d4aa', note: 'LST 43.1°C · Stagnation index CRITICAL' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.8, max: 2.0, color: '#00d4aa', note: 'LST 47.9°C · Stagnation index CRITICAL' },
       { source: 'Community Reports', icon: '👥', score: 1.2, max: 1.4, color: '#2dd48a', note: '18 stagnant water + 9 symptom reports' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.5, max: 0.6, color: '#b48aff', note: 'Humidity 84% · High breeding conditions' }
     ],
@@ -48,18 +58,88 @@ export const SECTOR_DATA = {
       'NASA satellite shows CRITICAL stagnation index — confirmed by 18 community stagnant water reports'
     ],
     interventions: [
-      { name: 'Emergency Fogging Campaign', hriReduction: 12, caseReductionPct: 30, tag: 'RECOMMENDED FROM ALERT', description: 'Immediate thermal fogging in all sub-wards of Sector-03 to disrupt adult mosquito population.' },
-      { name: 'Larviciding & Source Reduction', hriReduction: 14, caseReductionPct: 35, tag: 'RECOMMENDED FROM ALERT', description: 'Deploy larvicide in all identified stagnation points. Remove standing water containers.' },
-      { name: 'Community Advisory — Dengue', hriReduction: 4, caseReductionPct: 10, tag: null, description: 'Broadcast dengue prevention advisory to all Sector-03 residents via community portal.' },
-      { name: 'ASHA Worker Mobilization', hriReduction: 5, caseReductionPct: 8, tag: null, description: 'Intensify household surveys in flagged sub-areas. Daily reporting for 14 days.' },
-      { name: 'Hospital Preparedness Alert', hriReduction: 2, caseReductionPct: 0, tag: null, description: 'Notify nearest hospitals to pre-stock NS1 kits and Paracetamol IV.' }
+      { 
+        name: 'Emergency Fogging Campaign', 
+        hriReduction: 18, 
+        caseReductionPct: 35, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Immediate thermal fogging across all high-risk sub-wards to reduce adult mosquito population.',
+        executionSteps: [
+          'Deploy fogging teams in all flagged sub-wards',
+          'Focus on peak mosquito activity hours',
+          'Cover high-density residential clusters',
+          'Repeat cycles for 3–5 days'
+        ],
+        effort: 'High',
+        costCategory: 'Municipal Emergency'
+      },
+      { 
+        name: 'Larviciding & Source Reduction', 
+        hriReduction: 16, 
+        caseReductionPct: 40, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Eliminate mosquito breeding sites through larvicide application and removal of stagnant water.',
+        executionSteps: [
+          'Identify stagnation hotspots',
+          'Apply larvicides',
+          'Remove open water containers',
+          'Clean drains and blocked areas'
+        ],
+        effort: 'High',
+        costCategory: 'Municipal'
+      },
+      { 
+        name: 'ASHA Worker Mobilization', 
+        hriReduction: 14, 
+        caseReductionPct: 20, 
+        tag: null, 
+        description: 'Deploy ASHA workers for intensive household surveillance and reporting.',
+        executionSteps: [
+          'Intensify daily surveys in affected clusters',
+          'Identify new fever/joint pain cases',
+          'Report daily for 14 days',
+          'Escalate critical cases immediately'
+        ],
+        effort: 'Moderate–High',
+        costCategory: 'Workforce'
+      },
+      { 
+        name: 'Hyperlocal Dengue Alerting', 
+        hriReduction: 10, 
+        caseReductionPct: 15, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Send targeted dengue alerts to high-risk clusters with prevention guidance.',
+        executionSteps: [
+          'Identify high-risk streets via HRI',
+          'Send localized alerts (NOT ward-wide)',
+          'Include prevention steps + symptoms',
+          'Update dynamically'
+        ],
+        effort: 'Low',
+        costCategory: 'Digital'
+      },
+      { 
+        name: 'Hospital Preparedness & Surge Control', 
+        hriReduction: 8, 
+        caseReductionPct: 5, 
+        tag: null, 
+        description: 'Prepare hospitals for dengue surge with medicines, beds, and diagnostic kits.',
+        executionSteps: [
+          'Alert hospitals for surge readiness',
+          'Pre-stock NS1 kits, IV fluids, paracetamol',
+          'Allocate isolation beds',
+          'Monitor capacity in real-time'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Healthcare System'
+      }
     ],
     expectedImpact: {
-      hriAfter: 61,
-      timelineDays: 14,
-      caseReduction: 65,
-      containmentProbability: 78,
-      description: 'Implementing Emergency Fogging + Larviciding projects HRI reduction from 89 → 61 within 14 days. Estimated 65% reduction in new dengue cases. Outbreak containment probability: 78%.'
+      hriAfter: 46,
+      timelineDays: 5,
+      caseReduction: 75,
+      containmentProbability: 82,
+      description: 'Comprehensive deployment (Fogging + Larviciding + ASHA + Alerts) projects HRI reduction from 89 → 46 within 5 days. Transmission chain disruption likely within 72 hours.'
     }
   },
   'sector-08': {
@@ -75,7 +155,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 3.1, max: 3.2, color: '#4da6ff', note: '27 dengue admissions — active outbreak' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.4, max: 2.8, color: '#f5a623', note: '11 HIGH risk households flagged' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.7, max: 2.0, color: '#00d4aa', note: 'LST 41.8°C · Stagnation HIGH' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.7, max: 2.0, color: '#00d4aa', note: 'LST 46.3°C · Stagnation HIGH' },
       { source: 'Community Reports', icon: '👥', score: 1.1, max: 1.4, color: '#2dd48a', note: '14 stagnant water reports this week' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.5, max: 0.6, color: '#b48aff', note: 'Humidity 81%' }
     ],
@@ -85,17 +165,88 @@ export const SECTOR_DATA = {
       'Satellite stagnation HIGH — breeding sites identified near Railway Colony area'
     ],
     interventions: [
-      { name: 'Emergency Fogging Campaign', hriReduction: 11, caseReductionPct: 28, tag: 'RECOMMENDED FROM ALERT', description: 'Immediate fogging across North Solapur sub-wards.' },
-      { name: 'Larviciding & Source Reduction', hriReduction: 13, caseReductionPct: 32, tag: 'RECOMMENDED FROM ALERT', description: 'Target stagnation points near Railway Colony.' },
-      { name: 'Community Advisory — Dengue', hriReduction: 4, caseReductionPct: 8, tag: null, description: 'Broadcast prevention advisory to Sector-08 residents.' },
-      { name: 'ASHA Worker Mobilization', hriReduction: 4, caseReductionPct: 7, tag: null, description: 'Daily household surveys in flagged clusters for 14 days.' }
+      { 
+        name: 'Emergency Fogging Campaign', 
+        hriReduction: 17, 
+        caseReductionPct: 35, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Immediate fogging in high-risk sub-wards to reduce adult mosquito population.',
+        executionSteps: [
+          'Deploy fogging in Railway Colony + nearby clusters',
+          'Target peak mosquito activity hours',
+          'Repeat cycles for 3–5 days',
+          'Focus on dense residential zones'
+        ],
+        effort: 'High',
+        costCategory: 'Emergency'
+      },
+      { 
+        name: 'Larviciding & Source Reduction', 
+        hriReduction: 15, 
+        caseReductionPct: 40, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Eliminate mosquito breeding sites in stagnation zones.',
+        executionSteps: [
+          'Identify stagnation points',
+          'Apply larvicides',
+          'Remove standing water containers',
+          'Clean drains'
+        ],
+        effort: 'High',
+        costCategory: 'Municipal'
+      },
+      { 
+        name: 'ASHA Worker Mobilization', 
+        hriReduction: 13, 
+        caseReductionPct: 20, 
+        tag: null, 
+        description: 'Intensify household surveys and daily reporting in affected clusters.',
+        executionSteps: [
+          'Conduct daily household surveys',
+          'Track fever + joint pain cases',
+          'Report daily for 14 days',
+          'Escalate critical cases'
+        ],
+        effort: 'Moderate–High',
+        costCategory: 'Workforce'
+      },
+      { 
+        name: 'Hyperlocal Dengue Alerting', 
+        hriReduction: 9, 
+        caseReductionPct: 15, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Deliver targeted dengue alerts to affected clusters (not full ward).',
+        executionSteps: [
+          'Identify high-risk streets',
+          'Send localized alerts',
+          'Include prevention steps (remove water, avoid bites)',
+          'Update dynamically'
+        ],
+        effort: 'Low',
+        costCategory: 'Digital'
+      },
+      { 
+        name: 'Hospital Preparedness Alert', 
+        hriReduction: 7, 
+        caseReductionPct: 5, 
+        tag: null, 
+        description: 'Prepare hospitals for dengue case surge.',
+        executionSteps: [
+          'Alert hospitals',
+          'Pre-stock NS1 kits, IV fluids',
+          'Allocate dengue beds',
+          'Monitor capacity'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Healthcare'
+      }
     ],
     expectedImpact: {
-      hriAfter: 58,
-      timelineDays: 14,
-      caseReduction: 60,
-      containmentProbability: 74,
-      description: 'Implementing fogging + larviciding projects HRI reduction from 86 → 58 within 14 days. Estimated 60% reduction in new dengue cases.'
+      hriAfter: 46,
+      timelineDays: 5,
+      caseReduction: 72,
+      containmentProbability: 80,
+      description: 'Emergency Railway Colony response projects HRI reduction from 86 → 46 within 5 days. High-intensity vector suppression likely disrupts transmission chain by Day 3.'
     }
   },
   'sector-10': {
@@ -111,7 +262,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.8, max: 3.2, color: '#4da6ff', note: '22 dengue cases — rising trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.1, max: 2.8, color: '#f5a623', note: '8 HIGH risk households this week' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.4, max: 2.0, color: '#00d4aa', note: 'LST 38.7°C · Stagnation MODERATE' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.4, max: 2.0, color: '#00d4aa', note: 'LST 46.2°C · Stagnation MODERATE' },
       { source: 'Community Reports', icon: '👥', score: 0.9, max: 1.4, color: '#2dd48a', note: '9 reports this week' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.5, max: 0.6, color: '#b48aff', note: 'Humidity 79%' }
     ],
@@ -141,7 +292,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases',     icon: '🏥', score: 2.6, max: 3.2, color: '#4da6ff', note: '18 dengue cases — rising trend' },
       { source: 'ASHA Field Surveys',     icon: '👩‍⚕️', score: 2.0, max: 2.8, color: '#f5a623', note: '9 HIGH risk households flagged near market' },
-      { source: 'NASA Satellite Signals', icon: '🛰',  score: 1.5, max: 2.0, color: '#00d4aa', note: 'LST 39.4°C · Stagnation MODERATE-HIGH' },
+      { source: 'NASA Satellite Signals', icon: '🛰',  score: 1.5, max: 2.0, color: '#00d4aa', note: 'LST 47.6°C · Stagnation MODERATE-HIGH' },
       { source: 'Community Reports',      icon: '👥', score: 1.1, max: 1.4, color: '#2dd48a', note: '16 stagnant water reports near market drains' },
       { source: 'Weather & Environment',  icon: '🌦', score: 0.5, max: 0.6, color: '#b48aff', note: 'Humidity 81%' }
     ],
@@ -151,13 +302,74 @@ export const SECTOR_DATA = {
       '16 citizen reports of stagnant water in market drains — primary breeding source identified'
     ],
     interventions: [
-      { name: 'Market Drain Emergency Cleanup', tag: 'RECOMMENDED FROM ALERT', description: 'Clear all clogged drains in Market Yard area — primary stagnation source.', hriReduction: 11, caseReductionPct: 25 },
-      { name: 'Targeted Fogging — Market Zone', tag: 'RECOMMENDED FROM ALERT', description: 'Thermal fogging in Market Yard and surrounding residential lanes.', hriReduction: 10, caseReductionPct: 22 },
-      { name: 'Community Advisory',             tag: null, description: 'Broadcast dengue prevention advisory to Sector-12 residents.', hriReduction: 3, caseReductionPct: 8 },
-      { name: 'ASHA Worker Mobilization',       tag: null, description: 'Intensify surveys in 9 flagged households and surrounding area.', hriReduction: 4, caseReductionPct: 7 }
+      { 
+        name: 'Market Drain Emergency Cleanup', 
+        hriReduction: 13, 
+        caseReductionPct: 35, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Clear clogged drains and eliminate stagnant water in Market Yard area.',
+        executionSteps: [
+          'Identify clogged drains in Market Yard',
+          'Deploy emergency desilting teams',
+          'Remove stagnant water',
+          'Ensure continuous drainage flow'
+        ],
+        effort: 'High',
+        costCategory: 'Infrastructure'
+      },
+      { 
+        name: 'Targeted Fogging — Market Zone', 
+        hriReduction: 12, 
+        caseReductionPct: 30, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Conduct localized fogging in Market Yard and surrounding residential areas.',
+        executionSteps: [
+          'Fog market + nearby residential lanes',
+          'Target peak mosquito activity times',
+          'Repeat for 3–4 days',
+          'Monitor effectiveness'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Municipal'
+      },
+      { 
+        name: 'ASHA Worker Mobilization', 
+        hriReduction: 10, 
+        caseReductionPct: 20, 
+        tag: null, 
+        description: 'Intensify household surveys in market-adjacent clusters.',
+        executionSteps: [
+          'Conduct daily surveys in flagged households',
+          'Track fever + joint pain symptoms',
+          'Identify new cases early',
+          'Escalate critical cases'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Workforce'
+      },
+      { 
+        name: 'Hyperlocal Dengue Alerting', 
+        hriReduction: 8, 
+        caseReductionPct: 15, 
+        tag: null, 
+        description: 'Send targeted dengue alerts to residents around Market Yard.',
+        executionSteps: [
+          'Identify high-risk streets near market',
+          'Send localized alerts',
+          'Include prevention steps (remove water, avoid bites)',
+          'Update dynamically'
+        ],
+        effort: 'Low',
+        costCategory: 'Digital'
+      }
     ],
-    expectedImpact: { hriAfter: 48, timelineDays: 10, caseReduction: 54, containmentProbability: 76,
-      description: 'Market drain cleanup + fogging projects HRI reduction from 73 → 48 within 10 days.' }
+    expectedImpact: { 
+      hriAfter: 43, 
+      timelineDays: 5, 
+      caseReduction: 70, 
+      containmentProbability: 78,
+      description: 'Market drain cleanup + fogging projects HRI reduction from 73 → 43 within 5 days. Transmission chain disruption likely if market-zone vector density is reduced by 85%.' 
+    }
   },
   'sector-07': {
     name: 'Sector-07',
@@ -172,7 +384,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.6, max: 3.2, color: '#4da6ff', note: '19 respiratory admissions — rising' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.0, max: 2.8, color: '#f5a623', note: '7 households with cough/breathlessness' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.6, max: 2.0, color: '#00d4aa', note: 'PM2.5 elevated · Urban heat island' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.6, max: 2.0, color: '#00d4aa', note: 'LST 48.2°C · Stagnation MODERATE · PM2.5 elevated' },
       { source: 'Community Reports', icon: '👥', score: 0.7, max: 1.4, color: '#2dd48a', note: '6 air quality complaints' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.6, max: 0.6, color: '#b48aff', note: 'High humidity + monsoon conditions' }
     ],
@@ -182,17 +394,73 @@ export const SECTOR_DATA = {
       'Urban heat island effect elevating vulnerability in dense residential areas of Navy Peth'
     ],
     interventions: [
-      { name: 'Air Quality Advisory Broadcast', hriReduction: 8, caseReductionPct: 18, tag: 'RECOMMENDED FROM ALERT', description: 'Issue PM2.5 advisory to Navy Peth residents. Recommend masks outdoors.' },
-      { name: 'Mobile Health Camp', hriReduction: 10, caseReductionPct: 22, tag: 'RECOMMENDED FROM ALERT', description: 'Deploy rapid response medical team for respiratory screening.' },
-      { name: 'PM2.5 Monitoring Intensification', hriReduction: 4, caseReductionPct: 5, tag: null, description: 'Install temporary air quality monitors in high-density areas.' },
-      { name: 'Community Mask Distribution', hriReduction: 5, caseReductionPct: 10, tag: null, description: 'Distribute N95 masks to vulnerable households via ASHA workers.' }
+      { 
+        name: 'PM2.5 Monitoring Intensification', 
+        hriReduction: 8, 
+        caseReductionPct: 15, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Deploy temporary air quality monitors in high-density zones.',
+        executionSteps: [
+          'Install temporary sensors in Navy Peth hotspots',
+          'Track PM2.5 levels in real time',
+          'Feed data into HRI system',
+          'Identify peak exposure zones'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Technical / Monitoring'
+      },
+      { 
+        name: 'Community Mask Distribution', 
+        hriReduction: 10, 
+        caseReductionPct: 20, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Distribute N95 masks to vulnerable populations via ASHA workers.',
+        executionSteps: [
+          'Identify vulnerable households',
+          'Distribute N95 masks',
+          'Educate on proper usage',
+          'Prioritize elderly and children'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Municipal / Health'
+      },
+      { 
+        name: 'Hyperlocal Air Quality Alerting', 
+        hriReduction: 7, 
+        caseReductionPct: 15, 
+        tag: null, 
+        description: 'Send localized alerts on air quality levels and safety precautions.',
+        executionSteps: [
+          'Identify high PM2.5 zones',
+          'Send alerts (app/SMS)',
+          'Recommend mask usage + reduced outdoor exposure',
+          'Update dynamically'
+        ],
+        effort: 'Low',
+        costCategory: 'Digital'
+      },
+      { 
+        name: 'Mobile Health Camp Deployment', 
+        hriReduction: 12, 
+        caseReductionPct: 25, 
+        tag: null, 
+        description: 'Deploy rapid-response medical teams for respiratory screening and treatment.',
+        executionSteps: [
+          'Set up camps in high-risk zones',
+          'Screen for respiratory symptoms',
+          'Provide basic treatment and referrals',
+          'Monitor case trends'
+        ],
+        effort: 'High',
+        costCategory: 'Healthcare'
+      }
     ],
     expectedImpact: {
-      hriAfter: 51,
-      timelineDays: 7,
-      caseReduction: 45,
-      containmentProbability: 72,
-      description: 'Air quality advisory + mobile health camp projects HRI reduction from 72 → 51 within 7 days.'
+      hriAfter: 46,
+      timelineDays: 5,
+      caseReduction: 68,
+      containmentProbability: 76,
+      description: 'Air quality monitoring + mobile health camp deployment projects HRI reduction from 72 → 46 within 5 days. Effective PM2.5 exposure reduction likely through community masking.'
     }
   },
   'sector-01': {
@@ -208,7 +476,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.4, max: 3.2, color: '#4da6ff', note: '14 typhoid cases — rising trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.2, max: 2.8, color: '#f5a623', note: '9 households — fever + GI symptoms' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.2, max: 2.0, color: '#00d4aa', note: 'Water stagnation near supply lines' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.2, max: 2.0, color: '#00d4aa', note: 'LST 47.4°C · Stagnation MODERATE · Water stagnation near supply lines' },
       { source: 'Community Reports', icon: '👥', score: 1.1, max: 1.4, color: '#2dd48a', note: '12 contaminated water reports' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.4, max: 0.6, color: '#b48aff', note: 'Moderate conditions' }
     ],
@@ -218,10 +486,81 @@ export const SECTOR_DATA = {
       '12 citizen reports of contaminated or discoloured water in Ashok Chowk area'
     ],
     interventions: [
-      { name: 'Water Quality Testing', hriReduction: 8, caseReductionPct: 20, tag: 'RECOMMENDED FROM ALERT', description: 'Immediate testing of municipal water supply lines in Ashok Chowk.' },
-      { name: 'Boil Water Advisory', hriReduction: 12, caseReductionPct: 35, tag: 'RECOMMENDED FROM ALERT', description: 'Issue boil-water advisory to all Sector-01 households immediately.' },
-      { name: 'Sanitation Rapid Response', hriReduction: 6, caseReductionPct: 12, tag: null, description: 'Emergency cleanup of open drains near water supply infrastructure.' },
-      { name: 'Food Safety Inspection', hriReduction: 4, caseReductionPct: 8, tag: null, description: 'Inspect food establishments in the sector for hygiene compliance.' }
+      { 
+        name: 'Water Network Isolation + Geo-Chlorination', 
+        hriReduction: 13, 
+        caseReductionPct: 35, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Isolate contaminated pipeline segments and apply targeted chlorination in affected zones.',
+        executionSteps: [
+          'Identify affected pipelines using complaint clusters + ASHA data',
+          'Temporarily isolate contaminated segments',
+          'Reroute safe water supply',
+          'Conduct targeted chlorination in flagged zones'
+        ],
+        effort: 'High',
+        costCategory: 'Infrastructure + Municipal'
+      },
+      { 
+        name: 'Mobile Water Testing + Source Traceback', 
+        hriReduction: 11, 
+        caseReductionPct: 25, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Deploy mobile testing units and identify the exact contamination source (pipeline, tank, or vendor).',
+        executionSteps: [
+          'Deploy field testing units in Ashok Chowk clusters',
+          'Test water samples from households and supply lines',
+          'Analyze patterns to identify common contamination source',
+          'Flag source for immediate corrective action'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Municipal / Operational'
+      },
+      { 
+        name: 'ASHA Micro-Cluster Surveillance', 
+        hriReduction: 16, 
+        caseReductionPct: 35, 
+        tag: null, 
+        description: 'Deploy ASHA workers for daily monitoring in high-risk micro-clusters.',
+        executionSteps: [
+          'Assign ASHA workers to flagged streets',
+          'Conduct daily symptom tracking in households',
+          'Identify new cases and escalate immediately',
+          'Monitor cluster expansion patterns'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Workforce (ASHA)'
+      },
+      { 
+        name: 'Targeted High-Risk Vendor Inspection', 
+        hriReduction: 9, 
+        caseReductionPct: 15, 
+        tag: null, 
+        description: 'Inspect and regulate food vendors in contamination-affected zones.',
+        executionSteps: [
+          'Identify vendors in high-risk streets',
+          'Conduct hygiene and water source inspections',
+          'Shut down non-compliant vendors temporarily',
+          'Enforce safe food handling practices'
+        ],
+        effort: 'Low–Moderate',
+        costCategory: 'Regulatory'
+      },
+      { 
+        name: 'Hyperlocal Citizen Alerting System', 
+        hriReduction: 14, 
+        caseReductionPct: 25, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Deliver precise, zone-specific alerts to affected households.',
+        executionSteps: [
+          'Identify high-risk streets via HRI + reports',
+          'Send targeted alerts (app/SMS)',
+          'Provide safe water instructions + alternatives',
+          'Update alerts dynamically based on new data'
+        ],
+        effort: 'Low',
+        costCategory: 'Digital / Communication'
+      }
     ],
     expectedImpact: {
       hriAfter: 48,
@@ -244,7 +583,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.3, max: 3.2, color: '#4da6ff', note: '11 typhoid admissions from rail colony catchments' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.1, max: 2.8, color: '#f5a623', note: '8 households with fever + GI complaints' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.1, max: 2.0, color: '#00d4aa', note: 'Localized stagnation around service lanes' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.1, max: 2.0, color: '#00d4aa', note: 'LST 46.9°C · Stagnation MODERATE · Localized near service lanes' },
       { source: 'Community Reports', icon: '👥', score: 1.0, max: 1.4, color: '#2dd48a', note: '9 contaminated water complaints in 7 days' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.4, max: 0.6, color: '#b48aff', note: 'Intermittent rain stress on pipelines' }
     ],
@@ -279,7 +618,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.1, max: 3.2, color: '#4da6ff', note: '8 diarrhoeal admissions with rising week-on-week trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.0, max: 2.8, color: '#f5a623', note: '7 households flagged near open drains' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.2, max: 2.0, color: '#00d4aa', note: 'Runoff accumulation in dense low-lying pockets' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.2, max: 2.0, color: '#00d4aa', note: 'LST 46.7°C · Stagnation MODERATE · Runoff in low-lying pockets' },
       { source: 'Community Reports', icon: '👥', score: 0.9, max: 1.4, color: '#2dd48a', note: '8 open-drain and wastewater overflow complaints' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.4, max: 0.6, color: '#b48aff', note: 'Monsoon humidity sustaining contamination risk' }
     ],
@@ -289,16 +628,73 @@ export const SECTOR_DATA = {
       'Community complaints confirm wastewater overflow persistence in the same sub-wards'
     ],
     interventions: [
-      { name: 'Drain Desilting Priority', tag: 'RECOMMENDED FROM ALERT', description: 'Execute rapid desilting of open drains in flagged pockets.' },
-      { name: 'Water Chlorination Sweep', tag: 'RECOMMENDED FROM ALERT', description: 'Deploy chlorination teams for household and public taps.' },
-      { name: 'Hygiene Advisory Campaign', tag: null, description: 'Broadcast handwashing and safe-water practices through field teams.' }
+      { 
+        name: 'Drain Desilting + Wastewater Clearance', 
+        hriReduction: 14, 
+        caseReductionPct: 35, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Rapid desilting of open drains and removal of wastewater blockages in flagged areas.',
+        executionSteps: [
+          'Identify blocked drains from reports',
+          'Deploy desilting teams in priority zones',
+          'Clear overflow points',
+          'Restore proper drainage flow'
+        ],
+        effort: 'High',
+        costCategory: 'Infrastructure'
+      },
+      { 
+        name: 'Targeted Water Chlorination Sweep', 
+        hriReduction: 12, 
+        caseReductionPct: 30, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Chlorinate household and public water sources in affected zones.',
+        executionSteps: [
+          'Identify affected water supply areas',
+          'Chlorinate taps and storage tanks',
+          'Monitor chlorine levels',
+          'Repeat in high-risk pockets'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Municipal'
+      },
+      { 
+        name: 'ASHA Cluster Surveillance', 
+        hriReduction: 10, 
+        caseReductionPct: 20, 
+        tag: null, 
+        description: 'Monitor households in drain-adjacent clusters for diarrhoeal symptoms.',
+        executionSteps: [
+          'Assign ASHA workers to flagged zones',
+          'Track symptoms daily',
+          'Identify new cases',
+          'Escalate severe cases'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Workforce'
+      },
+      { 
+        name: 'Hyperlocal Hygiene Alerting', 
+        hriReduction: 8, 
+        caseReductionPct: 15, 
+        tag: null, 
+        description: 'Deliver targeted hygiene and safe-water alerts to affected households.',
+        executionSteps: [
+          'Identify high-risk streets',
+          'Send localized alerts (SMS/app/ASHA)',
+          'Provide hygiene + safe water guidance',
+          'Update dynamically'
+        ],
+        effort: 'Low',
+        costCategory: 'Digital'
+      }
     ],
     expectedImpact: {
-      hriAfter: 47,
-      timelineDays: 9,
-      caseReduction: 48,
-      containmentProbability: 73,
-      description: 'Desilting + chlorination response projects HRI reduction from 68 → 47 within 9 days and lowers diarrhoeal transmission pressure.'
+      hriAfter: 31,
+      timelineDays: 5,
+      caseReduction: 70,
+      containmentProbability: 78,
+      description: 'Systemic desilting + chlorination drive projects HRI reduction from 68 → 31 within 5 days. Enteric transmission chain likely broken if 100% of identified drains are cleared.'
     }
   },
   'sector-13': {
@@ -314,7 +710,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.0, max: 3.2, color: '#4da6ff', note: '6 cholera admissions tied to shared water source' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 1.9, max: 2.8, color: '#f5a623', note: '6 households with acute watery diarrhoea symptoms' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.1, max: 2.0, color: '#00d4aa', note: 'Drain backup and wet pockets near borewell strip' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.1, max: 2.0, color: '#00d4aa', note: 'LST 46.4°C · Stagnation HIGH · Drain backup near borewell strip' },
       { source: 'Community Reports', icon: '👥', score: 0.9, max: 1.4, color: '#2dd48a', note: '7 foul-water complaints this week' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.4, max: 0.6, color: '#b48aff', note: 'Persistent humidity supports contamination survival' }
     ],
@@ -324,16 +720,73 @@ export const SECTOR_DATA = {
       'Community complaints indicate foul-water persistence and possible sewage mixing'
     ],
     interventions: [
-      { name: 'Boil Water Advisory', tag: 'RECOMMENDED FROM ALERT', description: 'Issue immediate boil-water directive across Sector-13.' },
-      { name: 'Emergency Chlorination Drive', tag: 'RECOMMENDED FROM ALERT', description: 'Shock chlorinate identified supply points and storage nodes.' },
-      { name: 'Rapid Stool Sample Coordination', tag: null, description: 'Coordinate sample confirmation with nearby public health labs.' }
+      { 
+        name: 'Emergency Chlorination Drive', 
+        hriReduction: 15, 
+        caseReductionPct: 40, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Shock chlorination of affected water supply points and storage nodes.',
+        executionSteps: [
+          'Identify affected supply nodes',
+          'Perform high-dose chlorination',
+          'Monitor chlorine levels',
+          'Repeat in high-risk pockets'
+        ],
+        effort: 'High',
+        costCategory: 'Municipal'
+      },
+      { 
+        name: 'Source Isolation + Safe Water Supply', 
+        hriReduction: 14, 
+        caseReductionPct: 35, 
+        tag: 'RECOMMENDED FROM ALERT', 
+        description: 'Isolate contaminated source and provide alternate safe water.',
+        executionSteps: [
+          'Identify contaminated borewell/pipeline',
+          'Shut off supply temporarily',
+          'Deploy tanker supply',
+          'Prevent further mixing'
+        ],
+        effort: 'High',
+        costCategory: 'Infrastructure'
+      },
+      { 
+        name: 'ASHA Cluster Surveillance', 
+        hriReduction: 11, 
+        caseReductionPct: 20, 
+        tag: null, 
+        description: 'Monitor households with diarrhoeal symptoms for cluster control.',
+        executionSteps: [
+          'Assign ASHA workers to affected zones',
+          'Conduct daily symptom tracking',
+          'Identify new cases',
+          'Escalate severe cases'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Workforce'
+      },
+      { 
+        name: 'ORS Distribution + Household Support', 
+        hriReduction: 8, 
+        caseReductionPct: 15, 
+        tag: null, 
+        description: 'Distribute ORS and provide basic care support in affected households.',
+        executionSteps: [
+          'Distribute ORS via ASHA workers',
+          'Educate on usage',
+          'Prioritize vulnerable households',
+          'Monitor recovery'
+        ],
+        effort: 'Low–Moderate',
+        costCategory: 'Healthcare'
+      }
     ],
     expectedImpact: {
-      hriAfter: 46,
-      timelineDays: 8,
-      caseReduction: 46,
-      containmentProbability: 71,
-      description: 'Rapid chlorination + advisory response projects HRI reduction from 67 → 46 within 8 days and reduces cholera spread probability.'
+      hriAfter: 34,
+      timelineDays: 5,
+      caseReduction: 75,
+      containmentProbability: 80,
+      description: 'Rapid chlorination + source isolation response projects HRI reduction from 67 → 34 within 5 days. Transmission chain disruption likely within 48 hours of source shutdown.'
     }
   },
   'sector-16': {
@@ -349,7 +802,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 1.4, max: 3.2, color: '#4da6ff', note: '9 dengue cases with no accelerated spread' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 1.3, max: 2.8, color: '#f5a623', note: '4 households under observation' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.0, max: 2.0, color: '#00d4aa', note: 'Localized stagnation pockets manageable' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.0, max: 2.0, color: '#00d4aa', note: 'LST 45.6°C · Stagnation MODERATE-HIGH · Localized pockets' },
       { source: 'Community Reports', icon: '👥', score: 0.6, max: 1.4, color: '#2dd48a', note: '4 stagnant water reports addressed' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.3, max: 0.6, color: '#b48aff', note: 'Moderate humidity profile' }
     ],
@@ -383,7 +836,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 1.1, max: 3.2, color: '#4da6ff', note: '4 respiratory admissions, stable trajectory' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 1.0, max: 2.8, color: '#f5a623', note: '3 households with mild respiratory symptoms' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.9, max: 2.0, color: '#00d4aa', note: 'Moderate PM2.5 pockets near arterial roads' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.9, max: 2.0, color: '#00d4aa', note: 'LST 45.8°C · Stagnation LOW · PM2.5 near arterial roads' },
       { source: 'Community Reports', icon: '👥', score: 0.5, max: 1.4, color: '#2dd48a', note: '2 air quality complaints logged' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.3, max: 0.6, color: '#b48aff', note: 'Humidity stable, no severe spikes' }
     ],
@@ -393,16 +846,58 @@ export const SECTOR_DATA = {
       'Community signal volume remains limited and manageable'
     ],
     interventions: [
-      { name: 'Air Quality Monitoring', hriReduction: 4, caseReductionPct: 8, tag: null, description: 'Deploy mobile air quality sensors to identify high PM2.5 zones.' },
-      { name: 'Preventive Health Advisory', hriReduction: 5, caseReductionPct: 12, tag: null, description: 'Issue health advisories for vulnerable populations in high-risk zones.' },
-      { name: 'ASHA Routine Surveillance', hriReduction: 3, caseReductionPct: 6, tag: null, description: 'Increase frequency of household visits for respiratory symptom tracking.' }
+      { 
+        name: 'Air Quality Monitoring Intensification', 
+        hriReduction: 6, 
+        caseReductionPct: 10, 
+        tag: null, 
+        description: 'Deploy mobile air quality sensors to identify PM2.5 hotspots.',
+        executionSteps: [
+          'Install mobile sensors in high-traffic zones',
+          'Track PM2.5 levels in real time',
+          'Identify peak exposure areas',
+          'Feed data into HRI system'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Technical'
+      },
+      { 
+        name: 'Hyperlocal Air Quality Advisory', 
+        hriReduction: 5, 
+        caseReductionPct: 12, 
+        tag: null, 
+        description: 'Deliver targeted advisories to populations in high PM2.5 zones.',
+        executionSteps: [
+          'Identify high-risk streets near arterial roads',
+          'Send localized alerts',
+          'Recommend mask usage + reduced outdoor exposure',
+          'Update dynamically'
+        ],
+        effort: 'Low',
+        costCategory: 'Digital'
+      },
+      { 
+        name: 'ASHA Respiratory Surveillance', 
+        hriReduction: 5, 
+        caseReductionPct: 10, 
+        tag: null, 
+        description: 'Increase monitoring of mild respiratory symptoms in affected households.',
+        executionSteps: [
+          'Monitor flagged households',
+          'Track respiratory symptoms',
+          'Conduct periodic follow-ups',
+          'Escalate if cluster forms'
+        ],
+        effort: 'Low–Moderate',
+        costCategory: 'Workforce'
+      }
     ],
     expectedImpact: {
-      hriAfter: 39,
-      timelineDays: 12,
-      caseReduction: 22,
-      containmentProbability: 90,
-      description: 'Advisory + follow-up screening projects modest HRI reduction from 45 → 39 while maintaining stable respiratory conditions.'
+      hriAfter: 33,
+      timelineDays: 7,
+      caseReduction: 35,
+      containmentProbability: 88,
+      description: 'Advisory + mobile monitoring projects HRI reduction from 45 → 33 within 7 days. Early detection allows for preventive behavior before symptoms escalate.'
     }
   },
   'sector-02': {
@@ -418,7 +913,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 0.9, max: 3.2, color: '#4da6ff', note: '3 malaria cases with no rise trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 0.9, max: 2.8, color: '#f5a623', note: '2 households under watch' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.8, max: 2.0, color: '#00d4aa', note: 'Low-to-moderate breeding conditions' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.8, max: 2.0, color: '#00d4aa', note: 'LST 46.8°C · Stagnation LOW · Low-to-moderate breeding conditions' },
       { source: 'Community Reports', icon: '👥', score: 0.4, max: 1.4, color: '#2dd48a', note: 'Minimal mosquito complaints this week' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.2, max: 0.6, color: '#b48aff', note: 'Weather stable and moderate' }
     ],
@@ -428,8 +923,51 @@ export const SECTOR_DATA = {
       'Vector breeding indicators remain within controlled baseline limits'
     ],
     interventions: [
-      { name: 'Routine Larval Surveillance', tag: null, description: 'Continue weekly larval site checks in known hotspots.' },
-      { name: 'Bed-Net Advisory Refresh', tag: null, description: 'Reinforce night-time mosquito prevention messaging.' }
+      { 
+        name: 'Targeted Larval Source Reduction', 
+        hriReduction: 6, 
+        caseReductionPct: 15, 
+        tag: null, 
+        description: 'Eliminate mosquito breeding sites in identified hotspots using targeted larval control.',
+        executionSteps: [
+          'Identify stagnant water hotspots',
+          'Apply larvicides in targeted areas',
+          'Remove standing water sources',
+          'Conduct weekly follow-ups'
+        ],
+        effort: 'Low–Moderate',
+        costCategory: 'Municipal'
+      },
+      { 
+        name: 'ASHA Sentinel Monitoring', 
+        hriReduction: 5, 
+        caseReductionPct: 10, 
+        tag: null, 
+        description: 'Maintain active surveillance of flagged households and nearby areas.',
+        executionSteps: [
+          'Assign ASHA workers to flagged households',
+          'Monitor fever/malaria symptoms',
+          'Conduct follow-ups',
+          'Escalate if new cases appear'
+        ],
+        effort: 'Low',
+        costCategory: 'Workforce'
+      },
+      { 
+        name: 'Targeted Household Inspection Drive', 
+        hriReduction: 6, 
+        caseReductionPct: 12, 
+        tag: null, 
+        description: 'Inspect households in flagged zones to eliminate hidden breeding sources.',
+        executionSteps: [
+          'Inspect homes in flagged + nearby areas',
+          'Identify hidden breeding spots',
+          'Educate residents on safe practices',
+          'Remove or treat risk sources'
+        ],
+        effort: 'Moderate',
+        costCategory: 'Municipal / Field'
+      }
     ],
     expectedImpact: {
       hriAfter: 36,
@@ -452,7 +990,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 0.4, max: 3.2, color: '#4da6ff', note: '2 malaria cases — no active trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 0.6, max: 2.8, color: '#f5a623', note: '1 HIGH risk household this week' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.8, max: 2.0, color: '#00d4aa', note: 'Normal LST · Low stagnation' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.8, max: 2.0, color: '#00d4aa', note: 'LST 46.1°C · Stagnation LOW' },
       { source: 'Community Reports', icon: '👥', score: 0.2, max: 1.4, color: '#2dd48a', note: 'No active reports' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.3, max: 0.6, color: '#b48aff', note: 'Normal conditions' }
     ],
@@ -486,7 +1024,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 0.8, max: 3.2, color: '#4da6ff', note: '5 dengue cases, trend remains stable' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 0.7, max: 2.8, color: '#f5a623', note: '2 households under observation' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.7, max: 2.0, color: '#00d4aa', note: 'Low stagnation profile in monitored zones' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.7, max: 2.0, color: '#00d4aa', note: 'LST 46.5°C · Stagnation LOW · Monitored zones stable' },
       { source: 'Community Reports', icon: '👥', score: 0.3, max: 1.4, color: '#2dd48a', note: 'Few vector complaints, mostly resolved' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.2, max: 0.6, color: '#b48aff', note: 'No adverse weather trigger' }
     ],
@@ -496,15 +1034,43 @@ export const SECTOR_DATA = {
       'Existing preventive response appears sufficient to prevent escalation'
     ],
     interventions: [
-      { name: 'Routine Fogging Cadence', tag: null, description: 'Continue scheduled anti-vector fogging in industrial-adjacent pockets.' },
-      { name: 'Community Source Check', tag: null, description: 'Reinforce weekly container and water storage checks.' }
+      { 
+        name: 'Routine Fogging Cadence', 
+        hriReduction: 4, 
+        caseReductionPct: 10, 
+        tag: null, 
+        description: 'Continue scheduled anti-vector fogging in identified pockets.',
+        executionSteps: [
+          'Follow scheduled fogging cycles',
+          'Focus on previously flagged zones',
+          'Monitor mosquito density trends',
+          'Adjust frequency if risk increases'
+        ],
+        effort: 'Low',
+        costCategory: 'Municipal'
+      },
+      { 
+        name: 'Community Source Check', 
+        hriReduction: 3, 
+        caseReductionPct: 8, 
+        tag: null, 
+        description: 'Conduct periodic checks for household water storage and container hygiene.',
+        executionSteps: [
+          'Inspect water storage containers',
+          'Check coolers, tanks, and small water sources',
+          'Educate residents on preventive practices',
+          'Reinforce weekly checks'
+        ],
+        effort: 'Low',
+        costCategory: 'Community / Field'
+      }
     ],
     expectedImpact: {
-      hriAfter: 30,
+      hriAfter: 28,
       timelineDays: 14,
-      caseReduction: 18,
-      containmentProbability: 94,
-      description: 'Current preventive routines sustain low risk, with projected HRI reduction from 34 → 30 over two weeks.'
+      caseReduction: 20,
+      containmentProbability: 96,
+      description: 'Current preventive routines sustain stable low-risk conditions, projecting HRI reduction from 34 → 28 over 14 days.'
     }
   },
   'sector-15': {
@@ -520,7 +1086,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 0.3, max: 3.2, color: '#4da6ff', note: '1 isolated diarrhoeal case recorded' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 0.4, max: 2.8, color: '#f5a623', note: 'No household cluster flagged' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.5, max: 2.0, color: '#00d4aa', note: 'Low environmental stress indicators' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.5, max: 2.0, color: '#00d4aa', note: 'LST 46.0°C · Stagnation LOW · Low environmental stress' },
       { source: 'Community Reports', icon: '👥', score: 0.2, max: 1.4, color: '#2dd48a', note: 'No sanitation escalation reports' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.2, max: 0.6, color: '#b48aff', note: 'Stable weather conditions' }
     ],
@@ -530,15 +1096,42 @@ export const SECTOR_DATA = {
       'No immediate environmental trigger requiring escalation'
     ],
     interventions: [
-      { name: 'Routine Hygiene Messaging', tag: null, description: 'Continue baseline hygiene and safe-water awareness outreach.' },
-      { name: 'Standard Water Monitoring', tag: null, description: 'Maintain routine quality checks at distribution points.' }
+      { 
+        name: 'Routine Hygiene Messaging', 
+        hriReduction: 2, 
+        caseReductionPct: 5, 
+        tag: null, 
+        description: 'Continue baseline hygiene and safe-water awareness campaigns.',
+        executionSteps: [
+          'Share hygiene practices (handwashing, safe water use)',
+          'Use community portal / ASHA outreach',
+          'Maintain periodic messaging'
+        ],
+        effort: 'Low',
+        costCategory: 'Digital / Community'
+      },
+      { 
+        name: 'Standard Water Monitoring', 
+        hriReduction: 2, 
+        caseReductionPct: 5, 
+        tag: null, 
+        description: 'Maintain routine water quality checks at distribution points.',
+        executionSteps: [
+          'Conduct periodic water quality tests',
+          'Monitor supply points',
+          'Maintain reporting logs',
+          'Escalate if anomalies detected'
+        ],
+        effort: 'Low',
+        costCategory: 'Municipal'
+      }
     ],
     expectedImpact: {
-      hriAfter: 24,
+      hriAfter: 25,
       timelineDays: 14,
       caseReduction: 15,
-      containmentProbability: 97,
-      description: 'Routine monitoring keeps Sector-15 in low-risk mode, with projected HRI improvement from 28 → 24 over two weeks.'
+      containmentProbability: 98,
+      description: 'Routine hygiene messaging + water monitoring projects HRI reduction from 28 → 25 over 14 days. Maintains low-risk enteric stability.'
     }
   }
 };
@@ -553,7 +1146,10 @@ export const toSectorKey = (nameOrKey) => {
   return `sector-${String(num).padStart(2, '0')}`;
 };
 
-export const getSectorDataByName = (nameOrKey) => SECTOR_DATA[toSectorKey(nameOrKey)] || SECTOR_DATA['sector-03'];
+export const getSectorDataByName = (nameOrKey) => {
+  const data = SECTOR_DATA[toSectorKey(nameOrKey)] || SECTOR_DATA['sector-03'];
+  return { ...data, contributors: withLiveCommunity(data.name, data.contributors) };
+};
 
 export const calculateImpact = (sectorKey, appliedInterventionNames = []) => {
   const sector = SECTOR_DATA[toSectorKey(sectorKey)];
@@ -633,8 +1229,10 @@ export const SECTOR_SELECTOR_OPTIONS = Object.values(SECTOR_DATA)
     display: `${item.name} — ${item.label} · ${item.hri} · ${item.severity}`
   }));
 
-export const SECTOR_HEALTH_PROFILES = Object.values(SECTOR_DATA).reduce((acc, item) => {
-  acc[item.name] = {
+// Build sector health profile with live community data
+const getSectorHealthProfile = (sectorId) => {
+  const item = SECTOR_DATA[toSectorKey(sectorId)] || SECTOR_DATA['sector-03'];
+  return {
     sector: item.name,
     sectorLabel: item.label,
     hri: item.hri,
@@ -644,11 +1242,26 @@ export const SECTOR_HEALTH_PROFILES = Object.values(SECTOR_DATA).reduce((acc, it
     trend: item.trend.toLowerCase(),
     trendLabel: toTrendLabel(item.trend),
     transmission: TRANSMISSION_BY_DISEASE[item.disease] || 'Transmission data unavailable',
-    contributors: contributorLines(item.contributors),
+    contributors: contributorLines(withLiveCommunity(item.name, item.contributors)),
     insight: item.expectedImpact?.description || 'Continue monitoring.'
   };
-  return acc;
-}, {});
+};
+
+// Proxy-backed access to live sector health profiles
+// Allows DigitalTwin.js and other consumers to use SECTOR_HEALTH_PROFILES[sectorId] syntax
+// while receiving dynamically computed community contributor data
+export const SECTOR_HEALTH_PROFILES = new Proxy({}, {
+  get(_, sectorId) {
+    if (typeof sectorId !== 'string') return undefined;
+    return getSectorHealthProfile(sectorId);
+  },
+  ownKeys() {
+    return Object.values(SECTOR_DATA).map(d => d.name);
+  },
+  getOwnPropertyDescriptor(_, key) {
+    return { enumerable: true, configurable: true, value: getSectorHealthProfile(key) };
+  }
+});
 
 export const PREDEFINED_SECTORS = {
   'Sector-03': SECTOR_HEALTH_PROFILES['Sector-03'],
@@ -704,10 +1317,10 @@ export const mapSectorInterventions = (sectorName) => {
     tag: entry.tag,
     hriReduction: entry.hriReduction || 0,
     caseReductionPct: entry.caseReductionPct || 0,
-    expectedHealthImpact: sector.expectedImpact?.description,
-    executionSteps: [entry.description],
+    expectedHealthImpact: entry.hriReduction ? `Projected HRI reduction: ${sector.hri} → ~${Math.round(sector.hri - entry.hriReduction)}` : sector.expectedImpact?.description,
+    executionSteps: entry.executionSteps || [entry.description],
     riskDrivers: sector.primaryRiskDrivers || [],
-    effort: 'Moderate',
-    costCategory: 'Municipal'
+    effort: entry.effort || 'Moderate',
+    costCategory: entry.costCategory || 'Municipal'
   }));
 };

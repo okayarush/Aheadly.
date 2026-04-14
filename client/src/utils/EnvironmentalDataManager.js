@@ -66,6 +66,14 @@ class EnvironmentalDataManagerService {
         return this.heatTable;
     }
 
+    getAllNDVIData() {
+        return this.ndviTable;
+    }
+
+    getAllStagnationData() {
+        return this.stagnationTable;
+    }
+
     // --- PROCESSORS ---
 
     _processNDVI(text) {

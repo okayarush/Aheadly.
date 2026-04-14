@@ -1,5 +1,22 @@
 [
   {
+    "id": "tg-1776158913104-y48ud",
+    "type": "sanitation",
+    "issue_type": "Open Drain / Sewage",
+    "source": "telegram",
+    "sector": "Sector-11",
+    "latitude": 17.719781,
+    "longitude": 75.860016,
+    "location": {
+      "lat": 17.719781,
+      "lng": 75.860016
+    },
+    "has_proof": true,
+    "photo_path": "/telegram_photos/tg-1776158913104-y48ud.jpg",
+    "note": null,
+    "timestamp": "2026-04-14T09:28:34.928Z"
+  },
+  {
     "id": "tg-1776024395349-xlb0b",
     "type": "sanitation",
     "issue_type": "Uncollected Garbage",

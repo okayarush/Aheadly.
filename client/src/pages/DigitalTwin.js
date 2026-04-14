@@ -10,10 +10,11 @@ import {
   Popup
 } from "react-leaflet";
 import L from "leaflet";
-import { FiMap, FiActivity, FiLayers, FiSun, FiAlertCircle, FiUsers, FiTrash2, FiDroplet, FiAlertTriangle, FiX, FiCalendar } from "react-icons/fi";
+import { FiMap, FiActivity, FiLayers, FiSun, FiAlertCircle, FiUsers, FiTrash2, FiDroplet, FiAlertTriangle, FiX, FiCalendar, FiInfo } from "react-icons/fi";
 import { BsTelegram } from "react-icons/bs";
 import { DiseaseDataManager } from "../utils/DiseaseDataManager";
 import { CommunitySanitationManager } from "../utils/CommunitySanitationManager";
+import { CommunityIntelligenceManager } from "../utils/CommunityIntelligenceManager";
 import { TelegramReportsManager } from "../utils/TelegramReportsManager";
 import { getSectorID } from "../utils/HospitalRegistry"; // Import Sector Mapper
 import { wardVulnerabilityData, wardData } from "../data/unifiedHealthData";
@@ -463,11 +464,22 @@ const LegendItem = styled.div`
 `;
 
 const SectionTitle = styled.h4`
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0 0 0.5rem 0;
+  color: #94a3b8;
+  margin: 1.5rem 0 0.75rem 0;
   text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 1px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(255,255,255,0.1), transparent);
+  }
 `;
 
 const ToggleGroup = styled.div`
@@ -496,6 +508,98 @@ const ToggleItem = styled.div`
   }
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease-out;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+`;
+
+const ScientificCard = styled.div`
+  background: #0d0f14;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  color: white;
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+`;
+
+const ModalHeader = styled.div`
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+`;
+
+const ModalBody = styled.div`
+  padding: 1.5rem;
+`;
+
+const FormulaBlock = styled.div`
+  background: rgba(20, 184, 166, 0.05);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 100%;
+    background: #14b8a6;
+  }
+`;
+
+const Formula = styled.code`
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  color: #2dd4bf;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.5;
+`;
+
+const ScientificBadge = styled.span`
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+
 
 
 /* ===================== COMPONENT ===================== */
@@ -511,6 +615,7 @@ const DigitalTwin = () => {
   const [communityReports, setCommunityReports] = useState([]);
   const [telegramReports, setTelegramReports] = useState([]);
   const [showRecentModal, setShowRecentModal] = useState(false);
+  const [activeScientificModal, setActiveScientificModal] = useState(null);
 
   // Detailed Case Log State
   const [selectedWardDetail, setSelectedWardDetail] = useState(null);
@@ -610,7 +715,7 @@ const DigitalTwin = () => {
     // Initialize/Load Community Reports (Mock Data)
     CommunitySanitationManager.initializeData();
     setCommunityReports(CommunitySanitationManager.getAllReports());
-    setSanitationRiskTable(CommunitySanitationManager.getRiskTable());
+    setSanitationRiskTable(CommunityIntelligenceManager.getRiskTable());
 
     fetch("/solapur_city_boundary.geojson").then(res => res.json()).then(setCityBoundary);
 
@@ -894,7 +999,14 @@ const DigitalTwin = () => {
         btn.style.color = "#0b1120";
       }
     };
-    return () => { delete window.addToPlanner; };
+    window.showScientificBasis = (topic) => {
+      setActiveScientificModal(topic);
+    };
+
+    return () => { 
+      delete window.addToPlanner; 
+      delete window.showScientificBasis;
+    };
   }, []);
 
   // Track previous layer to detect switches
@@ -904,125 +1016,118 @@ const DigitalTwin = () => {
   useEffect(() => {
     if (!geoJsonRef.current) return;
 
-    // A. HANDLE POPUP CLOSING
-    // Only close popups if the layer ACTUALLY changed (e.g. from "disease" to "ndvi")
-    // Do NOT close if we are just updating data within "disease" layer
     if (prevLayerRef.current !== activeLayer) {
       if (map) map.closePopup();
       prevLayerRef.current = activeLayer;
     }
 
-    // B. Force Style Refresh
     geoJsonRef.current.setStyle(getWardStyle);
 
-    // C. Re-bind Popups
     geoJsonRef.current.eachLayer((layer) => {
-      // ALWAYS unbind first to clear old state
       layer.unbindPopup();
-
       const feature = layer.feature;
       const rawName = feature.properties.Name;
-      const nameKey = rawName?.toLowerCase();
       const sectorId = getSectorID(rawName);
+      const nameKey = rawName?.toLowerCase();
 
       let content = null;
+
+      const wrapperStyle = "font-family:'Inter',sans-serif; min-width:340px; color:#f8fafc; background:#0f172a; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);";
+      const headerStyle = "padding:16px 18px; background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom:1px solid rgba(255,255,255,0.1);";
+      const bodyStyle = "padding:16px 18px; background:rgba(255,255,255,0.02);";
+      const sectionTitleStyle = "font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:#64748b; font-weight:800; margin-bottom:12px; display:flex; align-items:center; gap:8px;";
 
       if (activeLayer === "hri") {
         const profile = SECTOR_HEALTH_PROFILES[sectorId];
         if (profile) {
-          const contributors = (profile.contributors || []).map(c => `<li>${c}</li>`).join('');
-
-          // ── Population Vulnerability Multiplier section ──────────────────────
           const vData = wardVulnerabilityData[sectorId];
-          let vulnSection = '';
-          if (vData) {
-            const vm  = vData.vulnerability_multiplier;
-            const vc  = vData.vaccination_coverage;
-            const ep  = vData.elderly_percent;
-            const cb  = vData.comorbidity_burden;
-            const amplification = Math.round((vm - 1) * 100);
+          const dData = diseaseTable[sectorId] || {};
+          const hData = heatTable[nameKey] || {};
+          const sData = stagnationTable[nameKey] || {};
+          const wData = wardData[sectorId] || {};
 
-            const vcColor = vc < 65 ? '#ef4444' : vc <= 75 ? '#f59e0b' : '#22c55e';
-            const vcBg    = vc < 65 ? '#fee2e2' : vc <= 75 ? '#fffbeb' : '#dcfce7';
-            const vcLabel = vc < 65 ? 'LOW'     : vc <= 75 ? 'MODERATE' : 'GOOD';
+          const hriColor = profile.hri >= 80 ? '#ef4444' : profile.hri >= 65 ? '#f97316' : profile.hri >= 45 ? '#f59e0b' : '#10b981';
+          const trendArrow = (profile.trend === 'outbreak' || profile.trend === 'rising') ? '↑' : (profile.trend === 'declining' ? '↓' : '→');
+          const trendDisplay = profile.trend === 'outbreak' ? 'Outbreak' : profile.trend === 'rising' ? 'Rising' : 'Stable';
 
-            const epColor = ep > 10 ? '#f59e0b' : '#22c55e';
-            const epBg    = ep > 10 ? '#fffbeb' : '#dcfce7';
-            const epLabel = ep > 10 ? 'ELEVATED' : 'NORMAL';
-
-            const cbColor = cb > 26 ? '#ef4444' : cb > 22 ? '#f59e0b' : '#22c55e';
-            const cbBg    = cb > 26 ? '#fee2e2' : cb > 22 ? '#fffbeb' : '#dcfce7';
-            const cbLabel = cb > 26 ? 'HIGH'    : cb > 22 ? 'MODERATE' : 'LOW';
-
-            const pill = (label, color, bg) =>
-              `<span style="font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:999px;background:${bg};color:${color};letter-spacing:0.5px;">${label}</span>`;
-
-            vulnSection = `
-              <div style="margin-bottom:12px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
-                <div style="padding:7px 12px;background:#0f172a;">
-                  <div style="font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;color:#67e8f9;font-weight:700;">POPULATION RISK FACTORS</div>
-                </div>
-                <div style="padding:8px 12px;background:#f8fafc;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:5px;border-bottom:1px solid #e2e8f0;margin-bottom:6px;">
-                    <span style="font-size:0.82rem;color:#475569;">Vulnerability Multiplier</span>
-                    <span style="font-size:1.05rem;font-weight:800;color:#0f172a;">${vm.toFixed(2)}&times;</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                    <span style="font-size:0.82rem;color:#475569;">&#128137; Child Immunization Coverage</span>
-                    <span style="font-size:0.88rem;font-weight:600;color:#0f172a;">${vc}%</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                    <span style="font-size:0.82rem;color:#475569;">&#128116; Elderly Population</span>
-                    <span style="font-size:0.88rem;font-weight:600;color:#0f172a;">${ep}%</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:0.82rem;color:#475569;">&#129488; Comorbidity Burden</span>
-                    <span style="font-size:0.88rem;font-weight:600;color:#0f172a;">${cb}</span>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
+          const dengueCases = wData.diseases?.dengue?.cases ?? profile.cases;
+          const hospitalAdmissions = dData.total != null ? dData.total : profile.cases;
+          const lstTemp = hData.meanLst != null ? hData.meanLst.toFixed(1) : 'N/A';
+          const stagnationLvl = sData.level || 'N/A';
+          const ashaFlagged = wData.ashaData?.flagged ?? 0;
+          const interventions = getWardRecommendations(wData);
+          
+          const vm = vData?.vulnerability_multiplier ?? 1.0;
+          const vc = vData?.vaccination_coverage ?? 100;
+          const ep = vData?.elderly_percent ?? 5;
+          const cb = vData?.comorbidity_burden ?? 10;
 
           content = `
-            <div style="font-family:'Inter',sans-serif;min-width:320px;color:#0f172a;">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-                <div>
-                  <div style="font-size:0.75rem;letter-spacing:2px;color:#64748b;text-transform:uppercase;font-weight:700;">${profile.sector}</div>
-                  <div style="font-size:1.1rem;font-weight:800;">${profile.sectorLabel}</div>
+            <div style="${wrapperStyle}">
+              <div style="${headerStyle}">
+                <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:#94a3b8; font-weight:800; margin-bottom:8px;">${profile.sector} — WARD INTELLIGENCE</div>
+                <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+                  <span style="font-size:2.2rem; line-height:1; font-weight:900; color:${hriColor}; letter-spacing:-0.03em;">HRI: ${profile.hri}</span>
+                  <span style="font-size:1rem; font-weight:700; color:${hriColor}80;">/100</span>
                 </div>
-                <div style="text-align:right;">
-                  <div style="font-size:3rem;line-height:1;font-weight:900;color:${profile.hri>=80?'#b91c1c':profile.hri>=65?'#c2410c':profile.hri>=45?'#b45309':'#0f766e'};">${profile.hri}</div>
-                  <div style="font-size:0.8rem;letter-spacing:1px;font-weight:800;color:${profile.hri>=80?'#b91c1c':profile.hri>=65?'#c2410c':profile.hri>=45?'#b45309':'#0f766e'};">${profile.severity.toUpperCase()}</div>
-                  <div style="font-size:0.65rem;color:#64748b;margin-top:4px;">Driven by rising dengue activity</div>
+                <div style="display:inline-flex; align-items:center; gap:6px; background:${hriColor}20; color:${hriColor}; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; border:1px solid ${hriColor}40;">
+                  ${profile.severity} RISK
+                </div>
+              </div>
+              <div style="${bodyStyle}">
+                <div style="${sectionTitleStyle}"><span style="width:4px; height:4px; border-radius:50%; background:#3b82f6;"></span> RISK ATTRIBUTION</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:18px;">
+                  <div>
+                    <div style="font-size:0.6rem; text-transform:uppercase; color:#94a3b8; font-weight:700; margin-bottom:4px;">Clinical Signals</div>
+                    <div style="font-size:0.9rem; font-weight:700; color:#f8fafc;">${dengueCases} Cases</div>
+                    <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">Trend: <span style="color:${profile.trend === 'rising' || profile.trend === 'outbreak' ? '#ef4444' : '#10b981'}; font-weight:700;">${trendDisplay} ${trendArrow}</span></div>
+                  </div>
+                  <div>
+                    <div style="font-size:0.6rem; text-transform:uppercase; color:#94a3b8; font-weight:700; margin-bottom:4px;">Hospital Load</div>
+                    <div style="font-size:0.9rem; font-weight:700; color:#f8fafc;">${hospitalAdmissions} Admits</div>
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                  <div>
+                    <div style="font-size:0.6rem; text-transform:uppercase; color:#94a3b8; font-weight:700; margin-bottom:4px;">Environment</div>
+                    <div style="font-size:0.9rem; font-weight:700; color:#f8fafc;">${lstTemp}°C / ${stagnationLvl}</div>
+                  </div>
+                  <div>
+                    <div style="font-size:0.6rem; text-transform:uppercase; color:#94a3b8; font-weight:700; margin-bottom:4px;">Ground Intel</div>
+                    <div style="font-size:0.9rem; font-weight:700; color:#f8fafc;">${ashaFlagged} Flags</div>
+                  </div>
                 </div>
               </div>
 
-              <div style="margin-bottom:12px;">
-                <div style="font-size:0.8rem;color:#475569;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Why This Ward Is At Risk</div>
-                <ul style="margin:0;padding-left:18px;font-size:0.85rem;color:#1f2937;line-height:1.4;">
-                  <li style="margin-bottom:2px;"><strong>${profile.disease}:</strong> ${profile.cases} active cases (${profile.trendLabel} trend)</li>
-                  ${contributors}
+              ${vData ? `
+              <div style="padding:16px 18px; border-top:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.01);">
+                <div style="font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:#64748b; font-weight:800; margin-bottom:12px;">POPULATION VULNERABILITY</div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                  <span style="font-size:0.75rem; color:#cbd5e1;">Vulnerability Multiplier</span>
+                  <span style="font-size:1.1rem; font-weight:900; color:${vm >= 1.25 ? '#ef4444' : vm >= 1.15 ? '#f59e0b' : '#94a3b8'};">${vm.toFixed(2)}&times;</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <div style="display:flex; justify-content:space-between; font-size:0.7rem;">
+                    <span style="color:#94a3b8;">Immunization Coverage</span><span style="font-weight:700; color:#f1f5f9;">${vc}%</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.7rem;">
+                    <span style="color:#94a3b8;">Elderly / Comorbidity</span><span style="font-weight:700; color:#f1f5f9;">${ep}% / ${cb}</span>
+                  </div>
+                </div>
+              </div>` : ''}
+
+              <div style="padding:16px 18px; border-top:1px solid rgba(255,255,255,0.05); background:rgba(59, 130, 246, 0.05);">
+                <div style="font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:#3b82f6; font-weight:800; margin-bottom:10px;">ACTIONABLE INTERVENTIONS</div>
+                <ul style="margin:0; padding-left:0; list-style:none; font-size:0.82rem; color:#f1f5f9; font-weight:600; line-height:1.5;">
+                  ${interventions.map(a => `<li style="margin-bottom:6px; display:flex; align-items:flex-start; gap:8px;"><span style="color:#3b82f6;">•</span><span>${a}</span></li>`).join('')}
                 </ul>
               </div>
-
-              ${vulnSection}
-
-              <div style="margin-bottom:12px;padding:8px 12px;border-left:4px solid #0ea5e9;background:#f0f9ff;border-radius:4px;">
-                <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;font-weight:800;color:#0369a1;margin-bottom:4px;">Recommended Actions</div>
-                <ul style="margin:0;padding-left:14px;font-size:0.85rem;color:#0c4a6e;font-weight:600;">
-                  ${getWardRecommendations(wardData[sectorId]).map(action => `<li style="margin-bottom:2px;">${action}</li>`).join('')}
-                </ul>
+              <div style="padding:18px;">
+                <button id="queue-${sectorId}" onclick="window.addToPlanner && window.addToPlanner('${sectorId}')" style="width:100%; background:#0ea5e9; color:#0f172a; border:none; border-radius:10px; padding:14px; font-weight:900; font-size:0.9rem; cursor:pointer; letter-spacing:0.05em; text-align:center; box-shadow:0 10px 15px -3px rgba(14, 165, 233, 0.3);">INITIATE INTERVENTION PLAN →</button>
               </div>
-
-              <button id="queue-${sectorId}" onclick="window.addToPlanner && window.addToPlanner('${sectorId}')" style="width:100%;background:#0ea5e9;color:#0b1120;border:none;border-radius:12px;padding:10px 14px;font-weight:800;font-size:0.95rem;cursor:pointer;">
-                Send to Intervention Planner →
-              </button>
-            </div>
-          `;
+            </div>`;
         }
-      }
-      else if (activeLayer === "disease") {
+      } else if (activeLayer === "disease") {
         const dData = diseaseTable[sectorId] || {};
         const signal = formatDiseaseSignalFromData(sectorId, dData);
         const primary = signal.primary;
@@ -1030,230 +1135,151 @@ const DigitalTwin = () => {
         const trendKey = normalizeDiseaseTrend(primary.trend);
         const trendLabel = TREND_LABELS[trendKey] || TREND_LABELS.Stable;
         const insight = ACTION_INSIGHTS[trendKey] || ACTION_INSIGHTS.Stable;
-        const caseCount = primary.activeCases || 0;
-        const caseLabel = `${caseCount} case${caseCount === 1 ? "" : "s"}`;
-        const transmission = primary.transmission || "Transmission data unavailable";
-        const color = DISEASE_PRIORITY_COLORS[priority] || DISEASE_PRIORITY_COLORS.LOW;
         const diseaseName = primary.displayName || primary.name;
+        const color = DISEASE_PRIORITY_COLORS[priority] || DISEASE_PRIORITY_COLORS.LOW;
 
         content = `
-            <div style="font-family: 'Inter', sans-serif; min-width: 280px; color: #0f172a;">
-              <div style="margin-bottom: 6px; font-size: 0.75rem; color: #475569; text-transform: uppercase; letter-spacing: 0.1em;">Ward</div>
-              <div style="font-size: 1rem; font-weight: 700; margin-bottom: 12px;">${rawName}</div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 0.65rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.12em;">Priority</span>
-                <span style="font-size: 0.85rem; font-weight: 700; color: ${color};">${priority}</span>
-              </div>
-              <div style="margin-bottom: 8px;">
-                <div style="font-size: 0.7rem; text-transform: uppercase; color: #64748b; margin-bottom: 4px;">Primary Signal</div>
-                <div style="font-size: 1.1rem; font-weight: 700; color: #0f172a;">${diseaseName}</div>
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                <div>
-                  <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Case Load</div>
-                  <div style="font-size: 0.95rem; font-weight: 700;">${caseLabel}</div>
-                </div>
-                <div>
-                  <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Trend</div>
-                  <div style="font-size: 0.95rem; font-weight: 700; color: ${color};">${trendLabel}</div>
-                </div>
-              </div>
-              <div style="margin-bottom: 10px;">
-                <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Transmission Vector</div>
-                <div style="font-size: 0.9rem; font-weight: 600; color: #0f172a;">${transmission}</div>
-              </div>
-              <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
-                <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px;">Actionable Insight</div>
-                <div style="font-size: 0.9rem; font-weight: 600; color: #0f172a; line-height: 1.4;">
-                  ${insight}
-                </div>
+          <div style="${wrapperStyle}">
+            <div style="${headerStyle}">
+              <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:#94a3b8; font-weight:800; margin-bottom:8px;">${rawName} — DISEASE SIGNAL</div>
+              <div style="font-size:1.5rem; font-weight:900; color:#f8fafc; margin-bottom:8px;">${diseaseName}</div>
+              <div style="display:inline-flex; align-items:center; gap:6px; background:${color}20; color:${color}; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; border:1px solid ${color}40;">
+                ${priority} PRIORITY
               </div>
             </div>
-        `;
-      }
-      else if (activeLayer === "hri") {
-        const dData = diseaseTable[sectorId] || { level: "LOW" };
-        const hData = heatTable[nameKey] || { risk: "LOW" };
-        const sData = stagnationTable[nameKey] || { level: "LOW" };
-        const nData = ndviTable[nameKey] || { mean: 0.6 };
-        const cData = sanitationRiskTable[sectorId] || { level: "LOW" };
-
-        const { score, category, breakdown } = getHRIScore(dData.level, hData.risk, sData.level, nData.mean, cData.level);
-        const color = getHRIColor(category);
-
-        let insight = "Current indicators suggest stable conditions in this ward. Routine monitoring is sufficient at this stage.";
-        if (category === "CRITICAL") insight = "This ward shows multiple overlapping health and environmental stressors. Immediate coordination between public health monitoring, sanitation inspection, and heat or water mitigation teams is recommended.";
-        else if (category === "HIGH") insight = "This ward is under elevated health stress driven by a combination of disease burden and environmental factors. Preventive interventions and closer monitoring may help reduce escalation.";
-        else if (category === "MODERATE") insight = "Emerging stress indicators are present in this ward. Continued surveillance and early preventive action could limit future health risk.";
-
-
-        content = `
-            <div style="font-family: sans-serif; min-width: 280px;">
-              <h3 style="margin: 0 0 5px 0; color: #333;">HEALTH RATE INDEX (HRI)</h3> 
-              <div style="margin-bottom: 12px; padding: 8px 10px; background: rgba(0,0,0,0.03); border-radius: 4px;">
-                <div style="font-size: 1.1rem; font-weight: 800; color: ${color}; display: flex; align-items: center; justify-content: space-between;">
-                  <span>${category}</span>
-                  <span style="font-size: 0.9rem; color: #333; font-weight: 600;">Score: ${score} / 12</span>
+            <div style="${bodyStyle}">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div>
+                  <div style="font-size:0.6rem; text-transform:uppercase; color:#94a3b8; font-weight:700; margin-bottom:4px;">Case Load</div>
+                  <div style="font-size:1rem; font-weight:800; color:#f8fafc;">${primary.activeCases || 0} Active</div>
+                </div>
+                <div>
+                  <div style="font-size:0.6rem; text-transform:uppercase; color:#94a3b8; font-weight:700; margin-bottom:4px;">Trend</div>
+                  <div style="font-size:1rem; font-weight:800; color:${color};">${trendLabel}</div>
                 </div>
               </div>
-
-              <div style="margin-bottom: 12px;">
-                <div style="font-size: 0.75em; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 6px;">Score Contributors</div>
-                <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.85rem; color: #333; line-height: 1.4;">
-                   ${breakdown.length > 0 ? breakdown.map(item => `<li style="margin-bottom:4px;">${item}</li>`).join('') : '<li style="color:#666; font-style:italic;">No significant risks detected.</li>'}
-                </ul>
+              <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                <div style="font-size:0.6rem; text-transform:uppercase; color:#64748b; font-weight:700; margin-bottom:6px;">MUNICIPAL INSIGHT</div>
+                <div style="font-size:0.85rem; line-height:1.5; color:#cbd5e1; font-style:italic;">"${insight}"</div>
               </div>
-
-              <div style="background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px;">
-                <div style="font-size: 0.75em; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 4px;">Actionable Insight</div>
-                <div style="font-size: 0.85rem; color: #1e293b; line-height: 1.4;">
-                  ${insight}
-                </div>
+              <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
+                <button 
+                  onclick="window.handleWardDetail && window.handleWardDetail('${rawName}')"
+                  style="width:100%; background:rgba(99, 102, 241, 0.1); color:#a5b4fc; border:1px solid rgba(99, 102, 241, 0.3); border-radius:8px; padding:10px; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s; text-transform:uppercase; letter-spacing:0.05em;"
+                  onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'"
+                  onmouseout="this.style.background='rgba(99, 102, 241, 0.1)'"
+                >
+                  <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="14" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  Detailed Case Log
+                </button>
               </div>
             </div>
-        `;
-      }
-      else if (activeLayer === "heat") {
+          </div>`;
+      } else if (activeLayer === "heat") {
         const data = heatTable[nameKey];
         if (data) {
+          const riskColor = getHeatRiskColor(data.risk);
           content = `
-  < div style = "font-family: sans-serif; min-width: 260px;" >
-              <h3 style="margin: 0 0 8px 0; color: #333;">Ward: ${rawName}</h3>
-              <div style="margin-bottom: 12px; padding: 6px 10px; background: rgba(0,0,0,0.03); border-radius: 4px;">
-                <b>Urban Heat Health Risk:</b> 
-                <span style="color: ${getHeatRiskColor(data.risk)}; font-weight: bold; margin-left: 5px;">
-                  ${data.risk}
-                </span>
-              </div>
-              <div style="font-size: 0.95em; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div>
-                  <div style="font-size: 0.8em; color: #666; text-transform: uppercase;">Mean Temp (LST)</div>
-                  <div style="font-weight: 600;">${data.meanLst?.toFixed(1)} °C</div>
-                </div>
-                <div>
-                  <div style="font-size: 0.8em; color: #666; text-transform: uppercase;">Vegetation (NDVI)</div>
-                  <div style="font-weight: 600;">${data.ndviMean?.toFixed(2)}</div>
+            <div style="${wrapperStyle}">
+              <div style="${headerStyle}">
+                <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:#94a3b8; font-weight:800; margin-bottom:8px;">${rawName} — THERMAL STRESS</div>
+                <div style="font-size:2rem; font-weight:900; color:#f8fafc; margin-bottom:8px;">${data.meanLst?.toFixed(1)}°C</div>
+                <div style="display:inline-flex; align-items:center; gap:6px; background:${riskColor}20; color:${riskColor}; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; border:1px solid ${riskColor}40;">
+                  ${data.risk} RISK
                 </div>
               </div>
-              <div style="background: #f8f9fa; padding: 10px; border-left: 3px solid ${getHeatRiskColor(data.risk)}; border-radius: 0 4px 4px 0;">
-                <div style="font-size: 0.75em; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 4px;">Health Implication</div>
-                <div style="font-size: 0.9em; color: #333; line-height: 1.4;">
-                  ${getHeatRiskReason(data.risk)}
+              <div style="${bodyStyle}">
+                <div style="margin-bottom:12px; font-size:0.85rem; line-height:1.5; color:#cbd5e1;">${getHeatRiskReason(data.risk)}</div>
+                <div style="display:flex; gap:20px; border-top:1px solid rgba(255,255,255,0.05); pt:12px;">
+                  <div><div style="font-size:0.6rem; color:#64748b; text-transform:uppercase;">NDVI Mean</div><div style="font-weight:700;">${data.ndviMean?.toFixed(2)}</div></div>
                 </div>
               </div>
-            </div >
-  `;
+            </div>`;
         }
-      }
-      else if (activeLayer === "stagnation") {
+      } else if (activeLayer === "stagnation") {
         const data = stagnationTable[nameKey];
         if (data) {
+          const riskColor = getStagnationColor(data.level);
           content = `
-  < div style = "font-family: sans-serif; min-width: 240px;" >
-              <h3 style="margin: 0 0 8px 0; color: #333;">Ward: ${rawName}</h3>
-              <div style="margin-bottom: 12px; padding: 6px 10px; background: rgba(0,0,0,0.03); border-radius: 4px;">
-                <b>Water Stagnation Susceptibility:</b> 
-                <span style="color: ${getStagnationColor(data.level)}; font-weight: bold; margin-left: 5px;">
-                  ${data.level}
-                </span>
+            <div style="${wrapperStyle}">
+              <div style="${headerStyle}">
+                <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:#94a3b8; font-weight:800; margin-bottom:8px;">${rawName} — VECTOR RISK</div>
+                <div style="font-size:1.4rem; font-weight:900; color:#f8fafc; margin-bottom:8px;">${data.level} Susceptibility</div>
+                <div style="display:inline-flex; align-items:center; gap:6px; background:${riskColor}20; color:${riskColor}; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; border:1px solid ${riskColor}40;">STAGNATION POTENTIAL</div>
               </div>
-              <div style="font-size: 0.95em; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div>
-                  <div style="font-size: 0.8em; color: #666; text-transform: uppercase;">Vegetation (NDVI)</div>
-                  <div style="font-weight: 600;">${data.ndviMean?.toFixed(3)}</div>
+              <div style="${bodyStyle}">
+                <div style="margin-bottom:12px; font-size:0.85rem; line-height:1.5; color:#cbd5e1;">${getStagnationReason(data.level)}</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.05); pt:12px;">
+                  <div><div style="font-size:0.6rem; color:#64748b; text-transform:uppercase;">Slope</div><div style="font-weight:700;">${data.slope}°</div></div>
+                  <div><div style="font-size:0.6rem; color:#64748b; text-transform:uppercase;">Area</div><div style="font-weight:700;">${data.totalArea?.toFixed(1)} km²</div></div>
                 </div>
-                <div>
-                  <div style="font-size: 0.8em; color: #666; text-transform: uppercase;">Terrain Slope</div>
-                  <div style="font-weight: 600;">${data.slope}°</div>
+                <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
+                  <button 
+                    onclick="window.showScientificBasis && window.showScientificBasis('mndwi')"
+                    style="width:100%; background:rgba(20, 184, 166, 0.1); color:#2dd4bf; border:1px solid rgba(20, 184, 166, 0.3); border-radius:8px; padding:8px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(20, 184, 166, 0.2)'"
+                    onmouseout="this.style.background='rgba(20, 184, 166, 0.1)'"
+                  >
+                    <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="14" width="14" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    VIEW SCIENTIFIC BASIS
+                  </button>
                 </div>
               </div>
-              <div style="background: #f8f9fa; padding: 10px; border-left: 3px solid ${getStagnationColor(data.level)}; border-radius: 0 4px 4px 0;">
-                <div style="font-size: 0.75em; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 4px;">Health Implication</div>
-                <div style="font-size: 0.9em; color: #333; line-height: 1.4;">
-                  ${getStagnationReason(data.level)}
-                </div>
-              </div>
-            </div >
-  `;
+            </div>`;
         }
-      }
-      else if (activeLayer === "ndvi") {
+       } else if (activeLayer === "ndvi") {
         const mean = ndviTable[nameKey]?.mean;
         const status = getNDVIStatus(mean);
         if (mean != null) {
+          const riskColor = getNDVIColor(mean);
           content = `
-  < div style = "font-family: sans-serif; min-width: 240px;" >
-              <h3 style="margin: 0 0 8px 0; color: #333;">Ward: ${rawName}</h3>
-              <div style="margin-bottom: 12px; padding: 6px 10px; background: rgba(0,0,0,0.03); border-radius: 4px;">
-                <b>Vegetation Health (NDVI):</b> 
-                <span style="font-weight: bold; margin-left: 5px;">${mean.toFixed(3)}</span>
+            <div style="${wrapperStyle}">
+              <div style="${headerStyle}">
+                <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:#94a3b8; font-weight:800; margin-bottom:8px;">${rawName} — VEGETATION HEALTH</div>
+                <div style="font-size:2rem; font-weight:900; color:#f8fafc; margin-bottom:8px;">${mean.toFixed(3)}</div>
+                <div style="display:inline-flex; align-items:center; gap:6px; background:${riskColor}20; color:${riskColor}; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; border:1px solid ${riskColor}40;">${status}</div>
               </div>
-              <div style="margin-bottom: 12px;">
-                <div style="font-size: 0.8em; color: #666; text-transform: uppercase;">Vegetation Status</div>
-                <div style="font-weight: 600; color: ${getNDVIColor(mean)};">${status}</div>
-              </div>
-              <div style="background: #f8f9fa; padding: 10px; border-left: 3px solid ${getNDVIColor(mean)}; border-radius: 0 4px 4px 0;">
-                <div style="font-size: 0.75em; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 4px;">Health Implication</div>
-                <div style="font-size: 0.9em; color: #333; line-height: 1.4;">
-                  ${getNDVIReason(status)}
+              <div style="${bodyStyle}">
+                <div style="font-size:0.85rem; line-height:1.5; color:#cbd5e1;">${getNDVIReason(status)}</div>
+                <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
+                  <button 
+                    onclick="window.showScientificBasis && window.showScientificBasis('ndvi')"
+                    style="width:100%; background:rgba(20, 184, 166, 0.1); color:#2dd4bf; border:1px solid rgba(20, 184, 166, 0.3); border-radius:8px; padding:8px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(20, 184, 166, 0.2)'"
+                    onmouseout="this.style.background='rgba(20, 184, 166, 0.1)'"
+                  >
+                    <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="14" width="14" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    VIEW SCIENTIFIC BASIS
+                  </button>
                 </div>
               </div>
-            </div >
-  `;
+            </div>`;
         }
-      }
-      // NEW: Ward Summary for Community Reports Mode (When no base layer active)
-      else if (!activeLayer && showCommunityReports) {
-        const risk = CommunitySanitationManager.getSectorRisk(sectorId);
-        // Only show if we have data/risk
+      } else if (!activeLayer && showCommunityReports) {
+        const risk = CommunityIntelligenceManager.getSectorRisk(sectorId);
+        const riskColor = risk.count > 3 ? '#ef4444' : '#10b981';
         content = `
-  < div style = "font-family: sans-serif; min-width: 240px;" >
-              <h3 style="margin: 0 0 8px 0; color: #333;">Community Reports Summary</h3>
-              <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: #1e293b;">Ward: ${sectorId}</div>
-              
-              <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-                 <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; flex: 1;">
-                    <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase;">Total Reports</div>
-                    <div style="font-size: 1.1rem; font-weight: bold; color: #334155;">${risk.count}</div>
-                 </div>
-                 <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; flex: 1;">
-                    <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase;">Dominant Issue</div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;" title="${risk.dominantIssue}">${risk.dominantIssue}</div>
-                 </div>
+          <div style="${wrapperStyle}">
+            <div style="${headerStyle}">
+              <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:#94a3b8; font-weight:800; margin-bottom:8px;">${sectorId} — COMMUNITY FEEDBACK</div>
+              <div style="font-size:1.8rem; font-weight:900; color:#f8fafc; margin-bottom:8px;">${risk.count} Valid Reports</div>
+              <div style="display:inline-flex; align-items:center; gap:6px; background:${riskColor}20; color:${riskColor}; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; border:1px solid ${riskColor}40;">SITUATIONAL AWARENESS</div>
+            </div>
+            <div style="${bodyStyle}">
+              <div style="margin-bottom:12px;">
+                <div style="font-size:0.6rem; color:#64748b; text-transform:uppercase; margin-bottom:4px;">Primary Issue Reported</div>
+                <div style="font-size:1.1rem; font-weight:700; color:#f8fafc;">${risk.dominantIssue}</div>
               </div>
-
-               <div style="background: #fff; padding: 10px; border-left: 3px solid ${risk.count > 3 ? '#f97316' : '#22c55e'}; border-radius: 0 4px 4px 0; border: 1px solid #f1f5f9;">
-                <div style="font-size: 0.75em; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 4px;">Insight</div>
-                <div style="font-size: 0.85rem; color: #333; line-height: 1.4;">
-                  ${risk.count >= 3
-            ? "Repeated sanitation-related reports suggest localized environmental stress requiring inspection."
-            : "Low urgency. Monitor for new reports."}
-                </div>
+              <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border-left:4px solid ${riskColor};">
+                <div style="font-size:0.85rem; line-height:1.5; color:#cbd5e1;">${risk.count >= 3 ? "Immediate inspection of sanitation infrastructure recommended due to report clustering." : "Conditions currently stable. No immediate field deployment required."}</div>
               </div>
-            </div >
-  `;
+            </div>
+          </div>`;
       }
 
-      // ONLY bind if we have content
-      if (content) {
-        layer.bindPopup(content);
-      }
+      if (content) layer.bindPopup(content);
     });
-
-    // If switching TO disease layer, ensure we have fresh data
-    // FIX: Do NOT set state here if it causes a loop.
-    // Ideally, we just read from the existing state which should be kept fresh by the event listener.
-    // If we truly need to refresh on switch, we should check if data differs or use a separate effect.
-    // For now, removing this setDiseaseTable to prevent the infinite loop is the Priority #1 Fix.
-    // The event listener on mount already handles updates.
-    /* 
-    if (activeLayer === "disease") {
-       // const freshData = DiseaseDataManager.getWardAggregates();
-       // setDiseaseTable(freshData); 
-    }
-    */
-
-  }, [activeLayer, ndviTable, stagnationTable, heatTable, diseaseTable, map, showCommunityReports, communityReports]); // Re-run when layer or data changes
+  }, [activeLayer, ndviTable, stagnationTable, heatTable, diseaseTable, map, showCommunityReports, communityReports]);
 
   // Click Handler (Interaction-Only)
   const onWardClick = (e) => {
@@ -1285,9 +1311,13 @@ const DigitalTwin = () => {
   return (
     <Container>
       <PortalBanner portal="smc" />
-      <div style={{ padding: "1.5rem 2rem", color: "white" }}>
-        <h1>Solapur Digital Twin</h1>
-        <p style={{ opacity: 0.7 }}>Ward-level Intelligence</p>
+      <div style={{ padding: "2rem 2.5rem 1.5rem", color: "white" }}>
+        <h1 style={{ fontSize: "2.5rem", fontWeight: 900, letterSpacing: "-0.04em", margin: 0, background: "linear-gradient(to right, #fff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          Solapur Digital Twin
+        </h1>
+        <p style={{ opacity: 1, color: "#3b82f6", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+          Ward-level Intelligence Command Center
+        </p>
       </div>
 
       <ContentGrid>
@@ -1351,29 +1381,30 @@ const DigitalTwin = () => {
                 ref={el => markerRefs.current[report.id] = el}
               >
                 <Popup>
-                  <div style={{ fontFamily: 'sans-serif', minWidth: '220px' }}>
+                  <div style={{ fontFamily: "'Inter', sans-serif", minWidth: '240px', color: '#f8fafc', background: '#0f172a', borderRadius: '10px', padding: '14px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}>
                     {report.source === 'telegram' && (
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#e8f4fd', color: '#2CA5E0', fontSize: '0.7rem', fontWeight: '700', padding: '2px 8px', borderRadius: '999px', marginBottom: '7px' }}>
-                        ✈ via Telegram
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(44,165,224,0.15)', color: '#7dd3f0', fontSize: '0.65rem', fontWeight: '800', padding: '3px 10px', borderRadius: '999px', marginBottom: '10px', border: '1px solid rgba(44,165,224,0.3)' }}>
+                        <BsTelegram /> TELEGRAM REPORT
                       </div>
                     )}
-                    <h4 style={{ margin: '0 0 5px 0', fontSize: '1rem', color: '#1e293b' }}>Community Report</h4>
-                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '8px' }}>
-                      <b>Issue:</b> {report.issue_type}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', marginBottom: '4px' }}>
-                      <b>Ward:</b> {report.sector}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
-                      <b>Reported:</b> {new Date(report.timestamp).toLocaleDateString()}
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '1.1rem', fontWeight: '800', color: '#f8fafc' }}>Community Report</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', color: '#64748b', fontWeight: '700', marginBottom: '2px' }}>Issue</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#f1f5f9' }}>{report.issue_type}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', color: '#64748b', fontWeight: '700', marginBottom: '2px' }}>Ward</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#f1f5f9' }}>{report.sector}</div>
+                      </div>
                     </div>
 
-                    <div style={{ background: '#f1f5f9', padding: '8px', borderRadius: '4px', marginBottom: '8px', borderLeft: '3px solid #6366f1' }}>
-                      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 'bold', color: '#475569', marginBottom: '3px' }}>
-                        Health Context
+                    <div style={{ background: 'rgba(99,102,241,0.1)', padding: '10px', borderRadius: '8px', marginBottom: '10px', borderLeft: '3px solid #6366f1' }}>
+                      <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', fontWeight: '800', color: '#a5b4fc', marginBottom: '4px' }}>
+                        Public Health Context
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: '1.3' }}>
-                        {HEALTH_CONTEXT[report.issue_type] || "This issue requires municipal attention to prevent public health risks."}
+                      <div style={{ fontSize: '0.78rem', color: '#cbd5e1', lineHeight: '1.4' }}>
+                        {HEALTH_CONTEXT[report.issue_type] || "This issue requires municipal attention to mitigate localized disease risk."}
                       </div>
                     </div>
 
@@ -1459,26 +1490,28 @@ const DigitalTwin = () => {
                 return (
                   <DetailSection key={idx}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <div style={{ fontSize: '1rem', fontWeight: '700', color: isZero ? '#64748b' : '#1e293b' }}>{disease.name}</div>
+                      <div style={{ fontSize: '1rem', fontWeight: '800', color: isZero ? '#64748b' : '#f8fafc' }}>{disease.name}</div>
                       <div style={{
-                        background: isZero ? '#f1f5f9' : '#fef2f2',
-                        color: isZero ? '#64748b' : '#ef4444',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        fontSize: '0.75rem',
-                        fontWeight: 'bold',
-                        border: isZero ? '1px solid #e2e8f0' : '1px solid #fee2e2'
+                        background: isZero ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.1)',
+                        color: isZero ? '#94a3b8' : '#fca5a5',
+                        padding: '4px 10px',
+                        borderRadius: '999px',
+                        fontSize: '0.7rem',
+                        fontWeight: '800',
+                        border: isZero ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(239, 68, 68, 0.2)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
                       }}>
                         {disease.activeCases} Active Cases
                       </div>
                     </div>
 
-                    <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '12px' }}>
-                      Trend: <b style={{ color: !isZero && disease.trend.includes('Rising') ? '#ef4444' : (isZero ? '#94a3b8' : '#f59e0b') }}>{disease.trend}</b> • Transmission: <b>{disease.type}</b>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '12px', fontWeight: '500' }}>
+                      Trend: <b style={{ color: !isZero && disease.trend.includes('Rising') ? '#f87171' : (isZero ? '#64748b' : '#fbbf24') }}>{disease.trend}</b> • Transmission: <b style={{ color: '#cbd5e1' }}>{disease.type}</b>
                     </div>
 
                     {!isZero && (
-                      <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                      <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', background: 'rgba(0,0,0,0.2)' }}>
                         <TimelineTable>
                           <thead>
                             <tr>
@@ -1494,11 +1527,14 @@ const DigitalTwin = () => {
                                 <td style={{ fontWeight: 'bold' }}>{row.cases}</td>
                                 <td>
                                   <span style={{
-                                    fontSize: '0.7rem',
-                                    padding: '1px 4px',
+                                    fontSize: '0.65rem',
+                                    padding: '2px 6px',
                                     borderRadius: '4px',
-                                    background: row.status === 'Confirmed' ? '#dcfce7' : (row.cases > 0 ? '#fff7ed' : 'transparent'),
-                                    color: row.status === 'Confirmed' ? '#15803d' : (row.cases > 0 ? '#c2410c' : '#cbd5e1')
+                                    background: row.status === 'Confirmed' ? 'rgba(34, 197, 94, 0.15)' : (row.cases > 0 ? 'rgba(249, 115, 22, 0.15)' : 'transparent'),
+                                    color: row.status === 'Confirmed' ? '#4ade80' : (row.cases > 0 ? '#fb923c' : '#64748b'),
+                                    border: `1px solid ${row.status === 'Confirmed' ? 'rgba(34, 197, 94, 0.3)' : (row.cases > 0 ? 'rgba(249, 115, 22, 0.3)' : 'transparent')}`,
+                                    fontWeight: '700',
+                                    textTransform: 'uppercase'
                                   }}>
                                     {row.status}
                                   </span>
@@ -1510,7 +1546,7 @@ const DigitalTwin = () => {
                       </div>
                     )}
                     {isZero && (
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: '10px 0', borderTop: '1px dashed #e2e8f0' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic', padding: '10px 0', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
                         No cases reported in the last 30 days.
                       </div>
                     )}
@@ -1519,11 +1555,11 @@ const DigitalTwin = () => {
               })}
 
               {selectedWardDetail.signal.primary?.activeCases > 0 && (
-                <DetailSection style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                <DetailSection style={{ background: 'rgba(255,255,255,0.03)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
                     Public Health Interpretation
                   </div>
-                  <div style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.5', fontStyle: 'italic' }}>
+                  <div style={{ fontSize: '0.85rem', color: '#cbd5e1', lineHeight: '1.6', fontStyle: 'italic' }}>
                     "This ward shows sustained {selectedWardDetail.signal.primary?.name.toLowerCase()} transmission over the last 30 days,
                     indicating active {selectedWardDetail.signal.primary?.type === 'Vector-Borne' ? 'vector breeding' : 'environmental exposure'} and local transmission.
                     Immediate containment and surveillance escalation are advised."
@@ -1827,8 +1863,109 @@ const DigitalTwin = () => {
         </div>
       )}
 
+      {activeScientificModal && (
+        <ModalOverlay onClick={() => setActiveScientificModal(null)}>
+          <ScientificCard onClick={e => e.stopPropagation()}>
+            <ModalHeader>
+              <div>
+                <ScientificBadge>
+                  {activeScientificModal === 'mndwi' ? 'Sentinel-2 • Optical/SWIR' : 'Sentinel-2 • Optical'}
+                </ScientificBadge>
+                <div style={{ fontSize: '1.25rem', fontWeight: '800', marginTop: '8px', color: '#fff' }}>
+                  {activeScientificModal === 'mndwi' ? 'MNDWI Methodology' : 'NDVI Methodology'}
+                </div>
+              </div>
+              <button 
+                onClick={() => setActiveScientificModal(null)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+              >
+                <FiX size={24} />
+              </button>
+            </ModalHeader>
+            <ModalBody>
+              {activeScientificModal === 'mndwi' ? (
+                <>
+                  <div style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: '1.6' }}>
+                    The Modified Normalized Difference Water Index (MNDWI) is utilized to distinguish surface water and identify areas prone to stagnation with high precision.
+                  </div>
+                  
+                  <FormulaBlock>
+                    <div style={{ fontSize: '0.65rem', color: '#14b8a6', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>Modified Normalized Difference Water Index</div>
+                    <Formula>MNDWI = (Green - SWIR) / (Green + SWIR)</Formula>
+                    <div style={{ marginTop: '12px', fontSize: '0.75rem', color: '#5eead4', fontWeight: '600' }}>
+                      Bands: B3 (Green, 560 nm), B11 (SWIR, 1610 nm)
+                    </div>
+                  </FormulaBlock>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                      <div style={{ color: '#14b8a6', marginTop: '2px' }}><FiInfo size={16} /></div>
+                      <div style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5' }}>
+                        <strong style={{ color: '#f8fafc' }}>Threshold Analysis:</strong> Positive MNDWI values (<strong style={{ color: '#2dd4bf' }}>&gt;0.10</strong>) indicate reliable surface water presence and potential vector breeding habitats.
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: '1.6' }}>
+                    The Normalized Difference Vegetation Index (NDVI) is used to estimate vegetation density and health, crucial for cooling effects and habitat analysis.
+                  </div>
+                  
+                  <FormulaBlock>
+                    <div style={{ fontSize: '0.65rem', color: '#14b8a6', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>Normalized Difference Vegetation Index</div>
+                    <Formula>NDVI = (NIR - Red) / (NIR + Red)</Formula>
+                    <div style={{ marginTop: '12px', fontSize: '0.75rem', color: '#5eead4', fontWeight: '600' }}>
+                      Bands: B8 (NIR, 842 nm), B4 (Red, 665 nm)
+                    </div>
+                  </FormulaBlock>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                      <div style={{ color: '#14b8a6', marginTop: '2px' }}><FiInfo size={16} /></div>
+                      <div style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5' }}>
+                        <strong style={{ color: '#f8fafc' }}>Threshold Analysis:</strong> Low NDVI (<strong style={{ color: '#ef4444' }}>&lt;0.25</strong>) correlates with sparse canopy and elevated surface heat retention.
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <div style={{ color: '#14b8a6', marginTop: '2px' }}><FiActivity size={16} /></div>
+                  <div style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.5' }}>
+                    <strong style={{ color: '#f8fafc' }}>Urban Context:</strong> This data allows us to identify "Heat Islands" where lack of vegetation amplifies thermal stress and disease risk.
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setActiveScientificModal(null)}
+                style={{ 
+                  width: '100%', 
+                  background: '#14b8a6', 
+                  color: '#0d0f14', 
+                  border: 'none', 
+                  borderRadius: '10px', 
+                  padding: '12px', 
+                  fontWeight: '800', 
+                  fontSize: '0.9rem', 
+                  marginTop: '1.5rem', 
+                  cursor: 'pointer',
+                  boxShadow: '0 10px 15px -3px rgba(20, 184, 166, 0.3)'
+                }}
+              >
+                UNDERSTOOD
+              </button>
+            </ModalBody>
+          </ScientificCard>
+        </ModalOverlay>
+      )}
+
     </Container >
   );
 };
 
 export default DigitalTwin;
+

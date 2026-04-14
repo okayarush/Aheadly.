@@ -23,15 +23,16 @@ import {
     FiEdit3,
     FiInfo,
     FiX,
-    FiArrowDown
+    FiArrowDown,
+    FiSend
 } from 'react-icons/fi';
-import { hriBridgeService } from '../services/hriBridgeService';
 import BoundaryService from '../services/boundaryService';
 import { getSectorID } from '../utils/HospitalRegistry';
 import { DiseaseDataManager } from '../utils/DiseaseDataManager';
 import { formatDiseaseSignalFromData } from '../services/diseaseService';
 import { rankInterventions } from '../utils/interventionLogic';
 import PortalBanner from '../components/common/PortalBanner';
+import { SECTOR_HEALTH_PROFILES } from '../services/plannerState';
 
 
 // --- STYLED COMPONENTS ---
@@ -457,10 +458,10 @@ const PreviewPaper = styled.div`
 // --- LOGIC HELPERS ---
 
 const getRiskColor = (score) => {
-    if (score >= 9) return '#ef4444';
-    if (score >= 6) return '#f97316';
-    if (score >= 3) return '#eab308';
-    return '#10b981';
+    if (score >= 80) return '#cc2200';
+    if (score >= 65) return '#ff4444';
+    if (score >= 45) return '#ff8c42';
+    return '#2dd48a';
 };
 
 // --- COMPONENT ---
@@ -477,6 +478,10 @@ const HealthPriorityBrief = () => {
     const [viewMode, setViewMode] = useState('landing');
     const [detailsModalItem, setDetailsModalItem] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSending, setIsSending] = useState(false);
+    const [advisoryModal, setAdvisoryModal] = useState(false);
+    const [advisoryMessage, setAdvisoryMessage] = useState('');
+    const [selectedPreset, setSelectedPreset] = useState(0);
     const [scrollProgress, setScrollProgress] = useState(0);
     const panelRef = useRef(null);
 
@@ -570,7 +575,10 @@ const HealthPriorityBrief = () => {
                 return;
             }
 
-            const hriData = await hriBridgeService.getBaselineHRIFromTwin(sectorId);
+            // Use SECTOR_HEALTH_PROFILES (same as DigitalTwin)
+            const profile = SECTOR_HEALTH_PROFILES[sectorId];
+            const hriScore = profile?.hri ?? 40;
+            const hriData = { score: hriScore, contributors: profile?.contributors || {} };
             const ranked = rankInterventions(hriData.contributors, signal);
 
             // STRICT ACTION FILTERING: Primary Disease Type Only
@@ -604,7 +612,7 @@ const HealthPriorityBrief = () => {
                 cluster: primary.cluster,
                 transmission: primary.transmission,
                 secondary: signal.secondary,
-                score: hriData.score,
+                score: hriData.score, // Already 0-100 scale
                 contributors: hriData.contributors
             });
 
@@ -612,23 +620,31 @@ const HealthPriorityBrief = () => {
 
             // Determine Priority Level (Visual only, data uses strict fields)
             let level = 'ROUTINE MONITORING';
-            let color = '#10b981';
+            let color = '#2dd48a';
             let reason = 'No active transmission chains detected.';
 
             if (primary.activeCases > 0) {
                 if (primary.trend === 'Rising' || primary.trend === 'Surge') {
                     level = 'URGENT RESPONSE';
-                    color = '#ef4444';
+                    color = '#cc2200';
                     reason = `Active ${primary.name} transmission (${primary.activeCases} cases) with ${primary.trend} trend requires immediate intervention.`;
                 } else {
                     level = 'HIGH PRIORITY';
-                    color = '#f97316';
+                    color = '#ff4444';
                     reason = `Active ${primary.name} cases (${primary.activeCases}) present but stable. Containment required.`;
                 }
-            } else if (hriData.score >= 7) {
+            } else if (hriData.score >= 80) {
+                level = 'CRITICAL RISK';
+                color = '#cc2200';
+                reason = `Critical environmental risk (HRI ${hriData.score.toFixed(1)}) indicates severe health vulnerability.`;
+            } else if (hriData.score >= 65) {
+                level = 'HIGH RISK';
+                color = '#ff4444';
+                reason = `High environmental risk (HRI ${hriData.score.toFixed(1)}) supports disease amplification potential.`;
+            } else if (hriData.score >= 45) {
                 level = 'MODERATE RISK';
-                color = '#eab308';
-                reason = `High environmental risk (HRI ${hriData.score.toFixed(1)}) supports vector breeding despite zero current cases.`;
+                color = '#ff8c42';
+                reason = `Moderate environmental risk (HRI ${hriData.score.toFixed(1)}) requires ongoing surveillance.`;
             }
 
             setPriorityInfo({ level, color, reason });
@@ -636,6 +652,69 @@ const HealthPriorityBrief = () => {
         } catch (e) {
             console.error(e);
             alert("CRITICAL ERROR: Data Sync Failed. Refresh.");
+        }
+    };
+
+    const getPresets = () => {
+        const ward = selectedWard.properties.Name;
+        const urgency = priorityInfo.level;
+        const riskEmoji = urgency === 'URGENT RESPONSE' ? '🔴' : urgency === 'HIGH PRIORITY' ? '🟠' : urgency === 'MODERATE RISK' ? '🟡' : '🟢';
+        const autoActions = interventions.slice(0, 3).map(a => `• ${a.name}`).join('\n');
+        return [
+            {
+                label: 'Auto-Generated', sublabel: 'Based on live ward data', icon: '🤖',
+                message: `🚨 *Public Health Advisory*\n📍 *${ward}* — Solapur\n⚠️ Risk Level: *${urgency}* ${riskEmoji}\n\n🧠 *What's happening:*\n${priorityInfo.reason}\n\n👉 *What you should do:*\n${autoActions || '• Follow standard health precautions'}\n\n🏥 *If symptoms appear:*\nFever, fatigue, or sudden illness → contact your nearest health centre immediately\n\n🔄 Status: Monitoring Active\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Dengue / Vector Alert', sublabel: 'Mosquito breeding risk', icon: '🦟',
+                message: `🚨 *Dengue Risk Alert*\n📍 *${ward}* — Solapur\n⚠️ High Risk 🟠\n\n🧠 *What's happening:*\nIncreased mosquito breeding and dengue cases detected nearby.\n\n👉 *What you should do:*\n• Remove stagnant water around home\n• Use mosquito repellent / nets\n• Avoid outdoor exposure during evening\n\n🏥 *If symptoms appear:*\nFever, joint pain → seek medical care immediately\n\n🔄 Status: Control measures ongoing\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Water Contamination', sublabel: 'Drain / pipeline risk', icon: '💧',
+                message: `🚨 *Water Contamination Alert*\n📍 *${ward}* — Solapur\n⚠️ High Risk 🔴\n\n🧠 *What's happening:*\nContaminated water detected in your area due to pipeline/drain issues.\n\n👉 *What you should do:*\n• Use only safe/filtered water\n• Avoid tap water for drinking\n• Follow strict hygiene practices\n\n🏥 *If symptoms appear:*\nFever, vomiting, diarrhoea → contact nearest health center immediately\n\n🔄 Status: Mitigation in progress\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Air Quality Alert', sublabel: 'PM2.5 / pollution high', icon: '🌫️',
+                message: `🚨 *Air Quality Alert (PM2.5 High)*\n📍 *${ward}* — Solapur\n⚠️ Moderate Risk 🟡\n\n🧠 *What's happening:*\nElevated air pollution levels detected in your area.\n\n👉 *What you should do:*\n• Wear mask outdoors\n• Avoid heavy outdoor activity\n• Keep windows closed during peak hours\n\n🏥 *If symptoms appear:*\nBreathlessness, coughing → consult doctor\n\n🔄 Status: Monitoring active\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Heat Stress Advisory', sublabel: 'High LST / heat index', icon: '🌡️',
+                message: `🚨 *Heat Stress Advisory*\n📍 *${ward}* — Solapur\n⚠️ High Risk 🟠\n\n🧠 *What's happening:*\nExtreme heat conditions detected. Risk of heat exhaustion is high.\n\n👉 *What you should do:*\n• Stay indoors during 12pm–4pm\n• Drink water every 30 minutes\n• Wear light, loose-fitting clothing\n\n🏥 *If symptoms appear:*\nDizziness, excessive sweating, weakness → seek immediate medical help\n\n🔄 Status: Heat watch active\n📡 Source: Aheadly Health System`
+            },
+            {
+                label: 'Custom Advisory', sublabel: 'Write your own message', icon: '✏️',
+                message: `🚨 *Advisory*\n📍 *${ward}* — Solapur\n⚠️ \n\n🧠 *What's happening:*\n\n\n👉 *What you should do:*\n• \n• \n• \n\n🏥 *If symptoms appear:*\n\n\n🔄 Status: \n📡 Source: Aheadly Health System`
+            },
+        ];
+    };
+
+    const openAdvisoryModal = () => {
+        if (!clinicalData || !priorityInfo) return;
+        const presets = getPresets();
+        setSelectedPreset(0);
+        setAdvisoryMessage(presets[0].message);
+        setAdvisoryModal(true);
+    };
+
+    const handleSendAdvisory = async () => {
+        if (!advisoryMessage.trim()) return;
+        setIsSending(true);
+        try {
+            const res = await fetch('http://localhost:3001/api/send-advisory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: advisoryMessage })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAdvisoryModal(false);
+            } else {
+                alert(data.error || 'Failed to send');
+            }
+        } catch {
+            alert('Bot server unreachable — is the bot running on port 3001?');
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -679,7 +758,18 @@ const HealthPriorityBrief = () => {
                         </ExplainerStep>
                     </ExplainerRow>
 
-                    <div style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        <HeaderCTAButton
+                            disabled={!clinicalData}
+                            onClick={openAdvisoryModal}
+                            style={{
+                                background: clinicalData ? '#0ea5e9' : undefined,
+                                boxShadow: clinicalData ? '0 4px 6px -1px rgba(14, 165, 233, 0.4)' : undefined
+                            }}
+                        >
+                            <FiSend /> Send Advisory
+                        </HeaderCTAButton>
+                        <div style={{ position: 'relative' }}>
                         <HeaderCTAButton
                             disabled={!selectedWard || isGenerating}
                             onClick={handleGenerate}
@@ -697,6 +787,7 @@ const HealthPriorityBrief = () => {
                                 <><FiFileText /> Generate Ward Policy Brief</>
                             )}
                         </HeaderCTAButton>
+                        </div>
                     </div>
                 </HeaderBottomRow>
             </LandingHeader>
@@ -957,7 +1048,7 @@ const HealthPriorityBrief = () => {
                                     <h3 style={{ fontSize: '14px', textTransform: 'uppercase', borderBottom: '1px solid #ddd', paddingBottom: '5px' }}>2. Risk Factors</h3>
                                     <ul style={{ fontSize: '14px', lineHeight: '1.6', paddingLeft: '20px' }}>
                                         <li><strong>Transmission Mode:</strong> {clinicalData.transmission}.</li>
-                                        <li><strong>Environmental Susceptibility:</strong> HRI Score {clinicalData.score.toFixed(1)} indicates {clinicalData.score > 7 ? 'high' : 'moderate'} favorability for pathogen survival.</li>
+                                        <li><strong>Environmental Susceptibility:</strong> HRI Score {clinicalData.score.toFixed(1)} indicates {clinicalData.score >= 80 ? 'critical' : clinicalData.score >= 65 ? 'high' : 'moderate'} favorability for pathogen survival.</li>
                                     </ul>
                                 </div>
 
@@ -1074,6 +1165,76 @@ const HealthPriorityBrief = () => {
                         </motion.div>
                     </div>
                 )}
+            </AnimatePresence>
+
+            {/* ADVISORY COMPOSER MODAL */}
+            <AnimatePresence>
+                {advisoryModal && clinicalData && priorityInfo && (() => {
+                    const presets = getPresets();
+                    return (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setAdvisoryModal(false)}>
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                                onClick={e => e.stopPropagation()}
+                                style={{ background: '#0f172a', borderRadius: '16px', width: '860px', maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #1e293b', boxShadow: '0 25px 50px rgba(0,0,0,0.6)' }}
+                            >
+                                {/* Header */}
+                                <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <div style={{ color: '#fff', fontWeight: '700', fontSize: '1.2rem' }}>📢 Send Advisory</div>
+                                        <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '2px' }}>{selectedWard.properties.Name} — Solapur</div>
+                                    </div>
+                                    <button onClick={() => setAdvisoryModal(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.25rem' }}>✕</button>
+                                </div>
+
+                                {/* Body */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', flex: 1, overflow: 'hidden' }}>
+                                    {/* LEFT: Presets */}
+                                    <div style={{ borderRight: '1px solid #1e293b', padding: '1.25rem', overflowY: 'auto' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#475569', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>Preset Templates</div>
+                                        {presets.map((p, i) => (
+                                            <div
+                                                key={i}
+                                                onClick={() => { setSelectedPreset(i); setAdvisoryMessage(p.message); }}
+                                                style={{
+                                                    padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', marginBottom: '0.5rem', transition: 'all 0.15s',
+                                                    border: `1px solid ${selectedPreset === i ? '#3b82f6' : '#1e293b'}`,
+                                                    background: selectedPreset === i ? 'rgba(59,130,246,0.1)' : 'transparent',
+                                                }}
+                                            >
+                                                <div style={{ fontWeight: '600', fontSize: '0.9rem', color: selectedPreset === i ? '#93c5fd' : '#e2e8f0' }}>{p.icon} {p.label}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{p.sublabel}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* RIGHT: Editable Preview */}
+                                    <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#475569', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>Message Preview & Editor</div>
+                                        <textarea
+                                            value={advisoryMessage}
+                                            onChange={e => { setAdvisoryMessage(e.target.value); setSelectedPreset(null); }}
+                                            style={{ flex: 1, padding: '1rem', background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.88rem', lineHeight: '1.6', resize: 'none', outline: 'none' }}
+                                        />
+                                        <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.5rem' }}>*bold*, _italic_ — Telegram Markdown. Edit freely.</div>
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div style={{ padding: '1.25rem 2rem', borderTop: '1px solid #1e293b', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                                    <button onClick={() => setAdvisoryModal(false)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Cancel</button>
+                                    <button
+                                        onClick={handleSendAdvisory}
+                                        disabled={isSending || !advisoryMessage.trim()}
+                                        style={{ background: isSending ? '#334155' : '#0ea5e9', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '8px', cursor: isSending ? 'not-allowed' : 'pointer', fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    >
+                                        {isSending ? '⏳ Sending...' : '📤 Send to Telegram'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    );
+                })()}
             </AnimatePresence>
         </Container>
     );

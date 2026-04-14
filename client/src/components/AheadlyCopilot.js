@@ -12,9 +12,9 @@ const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
 const GEMINI_MODEL = 'gemini-2.0-flash';
 
 const DEMO_FALLBACKS = {
-  briefing: `**Solapur Health Briefing — Today**\n\n3 wards at HIGH risk (HRI > 8/12): Sector-12, Sector-7, Sector-19. Primary driver: **signal convergence** — heat exposure + water stagnation creating vector breeding conditions.\n\nDengue cases up 23% week-over-week. 12 new sanitation reports in 48hrs.\n\n**Recommended:** Deploy fogging to Sector-12 and Sector-7 immediately.`,
-  risk: `**4 of 5 risk signals simultaneously elevated** — convergence zone.\n\n• Heat Exposure: 2.0 (LST 38°C+)\n• Water Stagnation: 2.0 (drain capacity exceeded)\n• Vector Density: 1.5 (Aedes breeding confirmed)\n• Disease Burden: 0.5 (early cases emerging)\n\nIt's not any single signal — the **combination** is dangerous.`,
-  interventions: `**3-action deployment recommended:**\n\n1. **Drain Desilting** (Priority 1) — Targets root cause: stagnation score 2.0\n2. **Targeted Fogging** (Priority 2) — Disrupts adult mosquito populations\n3. **Community Advisory** (Priority 3) — Alert residents via citizen reporting\n\nProjected: HRI reduction ~3.5 points over 14 days.`,
+  briefing: `**Solapur Health Briefing — Today**\n\n3 wards at HIGH risk (HRI > 65/100): Sector-12, Sector-7, Sector-19. Primary driver: **signal convergence** — heat exposure + water stagnation creating vector breeding conditions.\n\nDengue cases up 23% week-over-week. 12 new sanitation reports in 48hrs.\n\n**Recommended:** Deploy fogging to Sector-12 and Sector-7 immediately.`,
+  risk: `**4 of 5 risk signals simultaneously elevated** — convergence zone.\n\n• Heat Exposure: 15/20 (LST 38°C+)\n• Water Stagnation: 12/20 (drain capacity exceeded)\n• Vector Density: 10/20 (Aedes breeding confirmed)\n• Disease Burden: 4/20 (early cases emerging)\n\nIt's not any single signal — the **combination** is dangerous.`,
+  interventions: `**3-action deployment recommended:**\n\n1. **Drain Desilting** (Priority 1) — Targets root cause: stagnation score 12/20\n2. **Targeted Fogging** (Priority 2) — Disrupts adult mosquito populations\n3. **Community Advisory** (Priority 3) — Alert residents via citizen reporting\n\nProjected: HRI reduction ~30 points over 14 days.`,
 };
 
 const WELCOME_MESSAGE = {
@@ -89,7 +89,7 @@ function getQuickPrompts(pathname) {
 
 function getProactiveInsight(pathname) {
   if (pathname.startsWith('/digital-twin')) {
-    return '⚡ Sector-12 HRI has increased from 3.0 to 5.0. Heat exposure and water stagnation both spiked.';
+    return '⚡ Sector-12 HRI has increased from 25 to 42. Heat exposure and water stagnation both spiked.';
   }
   if (pathname.startsWith('/intervention-planner')) {
     return "🎯 This ward's risk is primarily environmental. Fogging alone won't help — drain desilting targets the root cause.";

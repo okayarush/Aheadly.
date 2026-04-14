@@ -53,12 +53,31 @@ const GlobalStyles = createGlobalStyle`
   }
 
   .leaflet-popup-content-wrapper {
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
   }
 
-  .leaflet-popup-tip {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  .leaflet-popup-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: inherit !important;
+  }
+
+  .leaflet-popup-tip-container {
+    display: none !important;
+  }
+
+  .leaflet-container a.leaflet-popup-close-button {
+    color: #94a3b8 !important;
+    padding: 10px 14px 0 0 !important;
+    font-weight: bold !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .leaflet-container a.leaflet-popup-close-button:hover {
+    color: white !important;
   }
 
   /* Chart.js canvas styling */

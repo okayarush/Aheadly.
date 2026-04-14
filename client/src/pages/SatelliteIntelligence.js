@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FiGlobe, FiDatabase, FiCpu, FiLayers, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import PortalBanner from '../components/common/PortalBanner';
+import { EnvironmentalDataManager } from '../utils/EnvironmentalDataManager';
 
 // ─────────────────────────────────────────────
 // DESIGN TOKENS (match SMC dark dashboard)
@@ -15,36 +16,28 @@ const TEXT    = '#cbd5e1';
 const HEADING = '#f1f5f9';
 
 // ─────────────────────────────────────────────
-// STATIC SATELLITE DATA (sector-level aggregates)
-// Derived from: NASA ECOSTRESS LST composites +
-//   ESA Sentinel-2 NDVI / MNDWI zonal statistics
-// Last pipeline run: 2026-04-10T03:42:17Z
+// STATIC PER-SECTOR META (fields not in any CSV)
+// MNDWI: Sentinel-2 SWIR composite — updated ~5-day revisit
+// lastUpdated: most recent ECOSTRESS daily composite timestamp
 // ─────────────────────────────────────────────
-// lastUpdated reflects most recent ECOSTRESS daily composite per sector.
-// NDVI/MNDWI composites run on ~5-day Sentinel-2 revisit; cadence noted in column.
-const SECTOR_DATA = [
-  { id: 'Sector-01', lst: 41.2, ndvi: 0.21, mndwi:  0.24, heat: 'HIGH',     stag: 'HIGH',     lastUpdated: '12 Apr 2026, 06:30 IST' },
-  { id: 'Sector-02', lst: 37.8, ndvi: 0.35, mndwi:  0.12, heat: 'MODERATE', stag: 'MODERATE', lastUpdated: '12 Apr 2026, 04:18 IST' },
-  { id: 'Sector-03', lst: 43.1, ndvi: 0.17, mndwi:  0.31, heat: 'HIGH',     stag: 'HIGH',     lastUpdated: '12 Apr 2026, 06:30 IST' },
-  { id: 'Sector-04', lst: 35.4, ndvi: 0.44, mndwi:  0.03, heat: 'LOW',      stag: 'LOW',      lastUpdated: '11 Apr 2026, 22:50 IST' },
-  { id: 'Sector-05', lst: 39.6, ndvi: 0.28, mndwi:  0.19, heat: 'MODERATE', stag: 'MODERATE', lastUpdated: '12 Apr 2026, 05:55 IST' },
-  { id: 'Sector-06', lst: 36.2, ndvi: 0.41, mndwi:  0.07, heat: 'LOW',      stag: 'LOW',      lastUpdated: '11 Apr 2026, 23:40 IST' },
-  { id: 'Sector-07', lst: 42.4, ndvi: 0.19, mndwi:  0.28, heat: 'HIGH',     stag: 'HIGH',     lastUpdated: '12 Apr 2026, 06:30 IST' },
-  { id: 'Sector-08', lst: 34.1, ndvi: 0.52, mndwi: -0.04, heat: 'LOW',      stag: 'LOW',      lastUpdated: '11 Apr 2026, 21:35 IST' },
-  { id: 'Sector-09', lst: 38.3, ndvi: 0.32, mndwi:  0.15, heat: 'MODERATE', stag: 'MODERATE', lastUpdated: '12 Apr 2026, 04:18 IST' },
-  { id: 'Sector-10', lst: 42.7, ndvi: 0.18, mndwi:  0.29, heat: 'HIGH',     stag: 'HIGH',     lastUpdated: '12 Apr 2026, 06:30 IST' },
-  { id: 'Sector-11', lst: 34.8, ndvi: 0.49, mndwi: -0.02, heat: 'LOW',      stag: 'LOW',      lastUpdated: '11 Apr 2026, 22:50 IST' },
-  { id: 'Sector-12', lst: 40.9, ndvi: 0.23, mndwi:  0.22, heat: 'HIGH',     stag: 'MODERATE', lastUpdated: '12 Apr 2026, 05:55 IST' },
-  { id: 'Sector-13', lst: 37.1, ndvi: 0.37, mndwi:  0.11, heat: 'MODERATE', stag: 'MODERATE', lastUpdated: '12 Apr 2026, 04:18 IST' },
-  { id: 'Sector-14', lst: 38.7, ndvi: 0.31, mndwi:  0.14, heat: 'MODERATE', stag: 'MODERATE', lastUpdated: '12 Apr 2026, 05:00 IST' },
-  { id: 'Sector-15', lst: 36.5, ndvi: 0.39, mndwi:  0.08, heat: 'MODERATE', stag: 'LOW',      lastUpdated: '11 Apr 2026, 23:40 IST' },
-  { id: 'Sector-16', lst: 35.9, ndvi: 0.43, mndwi:  0.04, heat: 'LOW',      stag: 'LOW',      lastUpdated: '11 Apr 2026, 23:40 IST' },
-];
-
-// Sorted descending by LST for table display
-const SECTOR_DATA_SORTED = [...SECTOR_DATA].sort((a, b) => b.lst - a.lst);
-const TOP_SECTORS = SECTOR_DATA_SORTED.slice(0, 5);
-const REMAINING_SECTORS = SECTOR_DATA_SORTED.slice(5);
+const STATIC_SECTOR_META = {
+  'sector-01': { mndwi:  0.24, lastUpdated: '12 Apr 2026, 06:30 IST' },
+  'sector-02': { mndwi:  0.12, lastUpdated: '12 Apr 2026, 04:18 IST' },
+  'sector-03': { mndwi:  0.31, lastUpdated: '12 Apr 2026, 06:30 IST' },
+  'sector-04': { mndwi:  0.03, lastUpdated: '11 Apr 2026, 22:50 IST' },
+  'sector-05': { mndwi:  0.19, lastUpdated: '12 Apr 2026, 05:55 IST' },
+  'sector-06': { mndwi:  0.07, lastUpdated: '11 Apr 2026, 23:40 IST' },
+  'sector-07': { mndwi:  0.28, lastUpdated: '12 Apr 2026, 06:30 IST' },
+  'sector-08': { mndwi: -0.04, lastUpdated: '11 Apr 2026, 21:35 IST' },
+  'sector-09': { mndwi:  0.15, lastUpdated: '12 Apr 2026, 04:18 IST' },
+  'sector-10': { mndwi:  0.29, lastUpdated: '12 Apr 2026, 06:30 IST' },
+  'sector-11': { mndwi: -0.02, lastUpdated: '11 Apr 2026, 22:50 IST' },
+  'sector-12': { mndwi:  0.22, lastUpdated: '12 Apr 2026, 05:55 IST' },
+  'sector-13': { mndwi:  0.11, lastUpdated: '12 Apr 2026, 04:18 IST' },
+  'sector-14': { mndwi:  0.14, lastUpdated: '12 Apr 2026, 05:00 IST' },
+  'sector-15': { mndwi:  0.08, lastUpdated: '11 Apr 2026, 23:40 IST' },
+  'sector-16': { mndwi:  0.04, lastUpdated: '11 Apr 2026, 23:40 IST' },
+};
 
 const HEAT_COLOR  = { HIGH: '#ef4444', MODERATE: '#f97316', LOW: '#22c55e' };
 const STAG_COLOR  = { HIGH: '#ef4444', MODERATE: '#f97316', LOW: '#22c55e' };
@@ -483,6 +476,39 @@ const ActiveBadge = styled.span`
 // ─────────────────────────────────────────────
 const SatelliteIntelligence = () => {
   const [expanded, setExpanded] = useState(false);
+  const [sectorData, setSectorData] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      await EnvironmentalDataManager.initialize();
+      const heatTable = EnvironmentalDataManager.getAllHeatData();
+      if (!heatTable) return;
+
+      const rows = Object.keys(heatTable).map(key => {
+        const heat   = heatTable[key];
+        const stag   = EnvironmentalDataManager.getStagnationRecord(key);
+        const meta   = STATIC_SECTOR_META[key] || { mndwi: 0, lastUpdated: 'N/A' };
+        // stagnation uses "MEDIUM" internally; display normalises to "MODERATE"
+        const stagDisplay = stag?.level === 'MEDIUM' ? 'MODERATE' : (stag?.level || 'LOW');
+        return {
+          id:          key.charAt(0).toUpperCase() + key.slice(1), // "sector-01" → "Sector-01"
+          lst:         heat.meanLst,
+          ndvi:        heat.ndviMean,
+          mndwi:       meta.mndwi,
+          heat:        heat.heatLevel,   // "HIGH" | "MODERATE" | "LOW"
+          stag:        stagDisplay,
+          lastUpdated: meta.lastUpdated,
+        };
+      });
+
+      setSectorData(rows);
+    };
+    load();
+  }, []);
+
+  const sectorDataSorted  = [...sectorData].sort((a, b) => b.lst - a.lst);
+  const topSectors        = sectorDataSorted.slice(0, 5);
+  const remainingSectors  = sectorDataSorted.slice(5);
 
   return (
     <PageWrapper>
@@ -561,7 +587,7 @@ const SatelliteIntelligence = () => {
                 </tr>
               </THead>
               <tbody>
-                {TOP_SECTORS.map((row, i) => (
+                {topSectors.map((row, i) => (
                   <Tr key={row.id} $alt={i % 2 === 1}>
                     <SectorName>{row.id}</SectorName>
                     <Td style={{ color: HEAT_COLOR[row.heat] }}>{row.lst.toFixed(1)}</Td>
@@ -594,7 +620,7 @@ const SatelliteIntelligence = () => {
           <AccordionBody $open={expanded}>
             <DataTable>
               <tbody>
-                {REMAINING_SECTORS.map((row, i) => (
+                {remainingSectors.map((row, i) => (
                   <Tr key={row.id} $alt={i % 2 === 1}>
                     <SectorName>{row.id}</SectorName>
                     <Td style={{ color: HEAT_COLOR[row.heat] }}>{row.lst.toFixed(1)}</Td>

@@ -926,14 +926,14 @@ const OutbreakMap = ({ selectedDisease, forecastWindow }) => {
         const preemptiveActions = ["Targeted fogging", "ASHA worker alert", "Community advisory"];
 
         container.innerHTML = `
-          <div style="min-width:200px;font-family:Inter,sans-serif">
-            <div style="font-weight:700;font-size:14px;color:#1A1A2E;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e2e8f0">${sector || raw}</div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;color:#1e293b"><span>Current HRI:</span><strong style="color:#0D7377">${wardData.currentHRI}/12</strong></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;color:#1e293b"><span>Outbreak probability:</span><strong style="color:${getProbabilityColor(adjProb)}">${adjProb}%</strong></div>
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;margin-top:10px;margin-bottom:4px">Key Risk Drivers</div>
-            ${riskDrivers.map((d) => `<div style="font-size:12px;color:#1e293b;padding:2px 0">• ${d}</div>`).join("")}
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;margin-top:10px;margin-bottom:4px">Preemptive Actions</div>
-            ${preemptiveActions.map((a) => `<div style="font-size:12px;color:#1e293b;padding:2px 0">→ ${a}</div>`).join("")}
+          <div style="min-width:240px; font-family:'Inter',sans-serif; background:#0f172a; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.5); color:#f8fafc;">
+            <div style="font-weight:800; font-size:0.9rem; color:#fff; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1); text-transform:uppercase; letter-spacing:0.05em;">${sector || raw}</div>
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px; color:#94a3b8;"><span>Current HRI:</span><strong style="color:#2dd4bf">${((wardData.currentHRI / 12) * 100).toFixed(1)}/100</strong></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:6px; color:#94a3b8;"><span>Outbreak probability:</span><strong style="color:${getProbabilityColor(adjProb)}">${adjProb}%</strong></div>
+            <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#6366f1; margin-top:14px; margin-bottom:6px;">Key Risk Drivers</div>
+            ${riskDrivers.map((d) => `<div style="font-size:0.8rem; color:#f1f5f9; padding:2px 0; display:flex; align-items:center; gap:6px;"><span style="color:#6366f1;">•</span> ${d}</div>`).join("")}
+            <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#f97316; margin-top:14px; margin-bottom:6px;">Preemptive Actions</div>
+            ${preemptiveActions.map((a) => `<div style="font-size:0.8rem; color:#f1f5f9; padding:2px 0; display:flex; align-items:center; gap:6px;"><span style="color:#f97316;">→</span> ${a}</div>`).join("")}
           </div>
         `;
         return container;

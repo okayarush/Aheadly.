@@ -25,6 +25,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const express = require('express');
 
 /* ─── CONFIG ─────────────────────────────────────────────────── */
 
@@ -38,8 +39,22 @@ const REPORTS_FILE       = path.resolve(__dirname, '../client/public/telegram_re
 const ASHA_SURVEYS_FILE  = path.resolve(__dirname, '../client/public/asha_surveys.json');
 const ASHA_SIGNALS_FILE  = path.resolve(__dirname, '../client/public/asha_ward_signals.json');
 const PHOTOS_DIR         = path.resolve(__dirname, '../client/public/telegram_photos');
+const KNOWN_CHATS_FILE   = path.resolve(__dirname, 'known_chats.json');
 const MAX_REPORTS        = 200;
 const MAX_ASHA_SURVEYS   = 500;
+
+// Track all chat IDs that have ever messaged the bot
+function loadKnownChats() {
+  try { return JSON.parse(fs.readFileSync(KNOWN_CHATS_FILE, 'utf8')); } catch { return []; }
+}
+function saveKnownChat(chatId) {
+  const chats = loadKnownChats();
+  if (!chats.includes(chatId)) {
+    chats.push(chatId);
+    fs.writeFileSync(KNOWN_CHATS_FILE, JSON.stringify(chats, null, 2));
+    console.log(`📋 New chat ID saved: ${chatId}`);
+  }
+}
 
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
@@ -230,8 +245,14 @@ I'm your civic health assistant for *Solapur*.
 → \`help\`                   — full command list`;
 
 bot.onText(/^\/start$/i, (msg) => {
+  saveKnownChat(msg.chat.id);
   clearState(msg.chat.id);
   sendMD(msg.chat.id, WELCOME_TEXT);
+});
+
+bot.onText(/^\/mychatid$/i, (msg) => {
+  saveKnownChat(msg.chat.id);
+  sendMD(msg.chat.id, `🆔 Your Chat ID is:\n\`${msg.chat.id}\`\n\nShare this with the dashboard to receive advisories.`);
 });
 
 /* ─── ASHA MODE TRIGGER ──────────────────────────────────────── */
@@ -994,9 +1015,75 @@ Enter the next Household ID, or type \`EXIT\` to quit.`
      ════════════════════════════════════════════════════════════ */
   if (state.step !== 'idle') return; // Don't interrupt active citizen flows
 
+  // Skip if text would be handled by any onText handler (same patterns, no anchors)
+  const alreadyHandled =
+    /^\/start$/i.test(text) ||
+    /^\/mychatid$/i.test(text) ||
+    /^ASHA$/i.test(text) ||
+    /^EXIT$/i.test(text) ||
+    /^(hi|hello|hey|namaste|hii|helo)$/i.test(text) ||
+    /^\/help|help/i.test(text) ||
+    /report|sanitation|garbage|drain|toilet|bin/i.test(text) ||
+    /fever|pain|headache|symptoms|sick|unwell|nausea|cough/i.test(text) ||
+    /passport|health card|healthcard/i.test(text);
+  if (alreadyHandled) return;
+
   sendMD(chatId,
     `I didn't catch that. Try:\n• \`report\` — sanitation issue\n• \`fever\` — health symptom\n• \`passport\` — health passport\n• \`ASHA\` — field worker mode\n• \`help\` — all commands`
   );
+});
+
+/* ─── API SERVER FOR SENDING ADVISORIES ─────────────────────── */
+
+const apiApp = express();
+apiApp.use(express.json());
+apiApp.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
+// POST /api/send-advisory - Broadcast advisory to all known chats
+apiApp.post('/api/send-advisory', async (req, res) => {
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: 'message required' });
+  }
+
+  const chats = loadKnownChats();
+  if (chats.length === 0) {
+    return res.status(404).json({ error: 'No known chat IDs. Send /start or /mychatid to the bot first.' });
+  }
+
+  try {
+    await Promise.all(chats.map(id => bot.sendMessage(id, message, { parse_mode: 'Markdown' })));
+    console.log(`📤 Advisory broadcast to ${chats.length} chat(s): ${chats.join(', ')}`);
+    res.json({ success: true, message: `Sent to ${chats.length} chat(s)` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/test-advisory - Test endpoint with hardcoded chat
+apiApp.get('/api/test-advisory', (req, res) => {
+  const testChatId = process.env.TEST_CHAT_ID || '1776158913104'; // Replace with your test chat ID
+  const testMessage = req.query.message || '🚨 *Test Advisory*\n\nThis is a test message from the Urbanome app!';
+
+  try {
+    bot.sendMessage(testChatId, testMessage, { parse_mode: 'Markdown' });
+    res.json({ success: true, message: `Test advisory sent to ${testChatId}` });
+    console.log(`📤 Test advisory sent to ${testChatId}`);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const API_PORT = 3001;
+apiApp.listen(API_PORT, () => {
+  console.log(`📡 Advisory API running on http://localhost:${API_PORT}`);
 });
 
 /* ─── START ──────────────────────────────────────────────────── */

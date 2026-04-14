@@ -1,8 +1,9 @@
 
 import { DiseaseDataManager } from "./DiseaseDataManager";
-import { CommunitySanitationManager } from "./CommunitySanitationManager";
-import { getHRIScore, calculateHeatRisk, getWaterStagnationSusceptibility } from "./RiskCalculator";
+import { CommunityIntelligenceManager } from "./CommunityIntelligenceManager";
+import { getHRIScore } from "./RiskCalculator";
 import { getSectorID } from "./HospitalRegistry";
+import { EnvironmentalDataManager } from "./EnvironmentalDataManager";
 
 // Cache to prevent re-fetching on every render if dashboard is re-mounted
 let cachedData = null;
@@ -14,36 +15,16 @@ export const DashboardStatManager = {
         if (cachedData) return cachedData;
 
         try {
-            // 1. Fetch Static CSV Data (NDVI, Stagnation, Heat)
-            // Parallel fetch for performance
-            const [ndviRes, stagRes, heatRes] = await Promise.all([
-                fetch("/Solapur_Wardwise_NDVI_2023.csv"),
-                fetch("/Solapur_Ward_Water_Stagnation_Risk.csv"),
-                fetch("/Solapur_Ward_Heat_Stress_LST.csv")
-            ]);
-
-            const [ndviText, stagText, heatText] = await Promise.all([
-                ndviRes.text(),
-                stagRes.text(),
-                heatRes.text()
-            ]);
-
-            // 2. Parse Data
-            const ndviMap = parseNDVI(ndviText);
-            const { stagnationMap } = parseStagnation(stagText, ndviMap); // Stagnation needs NDVI? logic says yes in DigitalTwin, let's see. 
-            // Actually DigitalTwin recalculates stagnation based on loaded CSV columns (which has mean_ndvi). 
-            // The CSV "Solapur_Ward_Water_Stagnation_Risk.csv" likely has pre-calculated columns or we recalculate.
-            // DigitalTwin's logic: 
-            // const ndviMean = parseFloat(cols[ndviIdx]); 
-            // const level = getWaterStagnationSusceptibility(ndviMean, totalArea);
-
-            // 3. Process Heat Data (Depends on NDVI)
-            const heatMap = parseHeat(heatText, ndviMap);
+            // 1. Load all environmental data via the single source of truth
+            await EnvironmentalDataManager.initialize();
+            const ndviMap = EnvironmentalDataManager.getAllNDVIData();
+            const stagnationMap = EnvironmentalDataManager.getAllStagnationData();
+            const heatMap = EnvironmentalDataManager.getAllHeatData();
 
             // 4. Get Dynamic Data
             const diseaseData = DiseaseDataManager.getWardAggregates();
-            const sanitationReports = CommunitySanitationManager.getAllReports();
-            const sanitationRiskMap = CommunitySanitationManager.getRiskTable();
+            const sanitationReports = CommunityIntelligenceManager.getAllReports();
+            const sanitationRiskMap = CommunityIntelligenceManager.getRiskTable();
 
             // 5. Aggregate Ward-Level HRI
             let totalHRIScore = 0;
@@ -146,78 +127,6 @@ export const DashboardStatManager = {
     }
 };
 
-/* ===================== PARSERS ===================== */
-
-function parseNDVI(text) {
-    const lines = text.trim().split(/\r?\n/);
-    const headers = lines[0].split(",");
-    const nameIdx = headers.indexOf("Name");
-    const meanIdx = headers.indexOf("NDVI_mean");
-    const map = {};
-    for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(",");
-        const name = cols[nameIdx]?.trim().toLowerCase(); // Normalize key
-        const mean = parseFloat(cols[meanIdx]);
-        if (name) map[name] = { mean };
-    }
-    return map;
-}
-
-function parseStagnation(text, ndviMap) {
-    const lines = text.trim().split(/\r?\n/);
-    const headers = lines[0].split(",");
-    const nameIdx = headers.indexOf("Name");
-    const areaIdx = headers.indexOf("Total_Area");
-    const ndviIdx = headers.indexOf("mean"); // In this CSV, NDVI might be 'mean'
-    const map = {};
-    for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(",");
-        const name = cols[nameIdx]?.trim().toLowerCase();
-        if (name) {
-            const totalArea = parseFloat(cols[areaIdx]);
-            // Use mean from CSV, or fallback to ndviMap? DigitalTwin uses CSV's 'mean' column
-            const ndviMean = parseFloat(cols[ndviIdx]);
-            const level = getWaterStagnationSusceptibility(ndviMean, totalArea);
-            map[name] = { level };
-        }
-    }
-    return { stagnationMap: map };
-}
-
-function parseHeat(text, ndviMap) {
-    const lines = text.trim().split(/\r?\n/);
-    const headers = lines[0].split(",");
-    const nameIdx = headers.indexOf("Name");
-    const lstIdx = headers.indexOf("mean_lst_c");
-
-    const wardLSTs = [];
-    const tempMap = {};
-
-    for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(",");
-        const name = cols[nameIdx]?.trim().toLowerCase();
-        const meanLst = parseFloat(cols[lstIdx]);
-        if (name && !isNaN(meanLst)) {
-            wardLSTs.push(meanLst);
-            tempMap[name] = { meanLst };
-        }
-    }
-
-    // Percentiles
-    wardLSTs.sort((a, b) => a - b);
-    const p25 = wardLSTs[Math.floor(wardLSTs.length * 0.25)];
-    const p75 = wardLSTs[Math.floor(wardLSTs.length * 0.75)];
-
-    const finalMap = {};
-    Object.keys(tempMap).forEach(key => {
-        const wardData = tempMap[key];
-        const ndviVal = ndviMap[key]?.mean || 0;
-        const risk = calculateHeatRisk(wardData.meanLst, ndviVal, p25, p75);
-        finalMap[key] = { risk, meanLst: wardData.meanLst };
-    });
-
-    return finalMap;
-}
 
 /* ===================== HELPERS ===================== */
 
