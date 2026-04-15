@@ -81,7 +81,7 @@ const WARD_NAME_TO_SECTOR = {
   'railway lines':'Sector-09',
   'sadar bazar':  'Sector-10',
   'south solapur':'Sector-11',
-  'market yard':  'Sector-12',
+  'market yard':  'Sector-11',
 };
 
 function getSectorID(name) {
