@@ -48,7 +48,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 3.2, max: 3.2, color: '#4da6ff', note: '31 confirmed dengue admissions this week' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.6, max: 2.8, color: '#f5a623', note: '14 HIGH risk households flagged in sector' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.8, max: 2.0, color: '#00d4aa', note: 'LST 47.9°C · Stagnation index CRITICAL' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.8, max: 2.0, color: '#00d4aa', note: 'LST 44.8°C · Stagnation index CRITICAL' },
       { source: 'Community Reports', icon: '👥', score: 1.2, max: 1.4, color: '#2dd48a', note: '18 stagnant water + 9 symptom reports' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.5, max: 0.6, color: '#b48aff', note: 'Humidity 84% · High breeding conditions' }
     ],
@@ -155,7 +155,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 3.1, max: 3.2, color: '#4da6ff', note: '27 dengue admissions — active outbreak' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.4, max: 2.8, color: '#f5a623', note: '11 HIGH risk households flagged' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.7, max: 2.0, color: '#00d4aa', note: 'LST 46.3°C · Stagnation HIGH' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.7, max: 2.0, color: '#00d4aa', note: 'LST 43.5°C · Stagnation HIGH' },
       { source: 'Community Reports', icon: '👥', score: 1.1, max: 1.4, color: '#2dd48a', note: '14 stagnant water reports this week' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.5, max: 0.6, color: '#b48aff', note: 'Humidity 81%' }
     ],
@@ -262,7 +262,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.8, max: 3.2, color: '#4da6ff', note: '22 dengue cases — rising trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.1, max: 2.8, color: '#f5a623', note: '8 HIGH risk households this week' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.4, max: 2.0, color: '#00d4aa', note: 'LST 46.2°C · Stagnation MODERATE' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.4, max: 2.0, color: '#00d4aa', note: 'LST 43.5°C · Stagnation MODERATE' },
       { source: 'Community Reports', icon: '👥', score: 0.9, max: 1.4, color: '#2dd48a', note: '9 reports this week' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.5, max: 0.6, color: '#b48aff', note: 'Humidity 79%' }
     ],
@@ -292,7 +292,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases',     icon: '🏥', score: 2.6, max: 3.2, color: '#4da6ff', note: '18 dengue cases — rising trend' },
       { source: 'ASHA Field Surveys',     icon: '👩‍⚕️', score: 2.0, max: 2.8, color: '#f5a623', note: '9 HIGH risk households flagged near market' },
-      { source: 'NASA Satellite Signals', icon: '🛰',  score: 1.5, max: 2.0, color: '#00d4aa', note: 'LST 47.6°C · Stagnation MODERATE-HIGH' },
+      { source: 'NASA Satellite Signals', icon: '🛰',  score: 1.5, max: 2.0, color: '#00d4aa', note: 'LST 44.5°C · Stagnation MODERATE-HIGH' },
       { source: 'Community Reports',      icon: '👥', score: 1.1, max: 1.4, color: '#2dd48a', note: '16 stagnant water reports near market drains' },
       { source: 'Weather & Environment',  icon: '🌦', score: 0.5, max: 0.6, color: '#b48aff', note: 'Humidity 81%' }
     ],
@@ -384,7 +384,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.6, max: 3.2, color: '#4da6ff', note: '19 respiratory admissions — rising' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.0, max: 2.8, color: '#f5a623', note: '7 households with cough/breathlessness' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.6, max: 2.0, color: '#00d4aa', note: 'LST 48.2°C · Stagnation MODERATE · PM2.5 elevated' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.6, max: 2.0, color: '#00d4aa', note: 'LST 45.0°C · Stagnation MODERATE · PM2.5 elevated' },
       { source: 'Community Reports', icon: '👥', score: 0.7, max: 1.4, color: '#2dd48a', note: '6 air quality complaints' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.6, max: 0.6, color: '#b48aff', note: 'High humidity + monsoon conditions' }
     ],
@@ -476,7 +476,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.4, max: 3.2, color: '#4da6ff', note: '14 typhoid cases — rising trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.2, max: 2.8, color: '#f5a623', note: '9 households — fever + GI symptoms' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.2, max: 2.0, color: '#00d4aa', note: 'LST 47.4°C · Stagnation MODERATE · Water stagnation near supply lines' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.2, max: 2.0, color: '#00d4aa', note: 'LST 44.4°C · Stagnation MODERATE · Water stagnation near supply lines' },
       { source: 'Community Reports', icon: '👥', score: 1.1, max: 1.4, color: '#2dd48a', note: '12 contaminated water reports' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.4, max: 0.6, color: '#b48aff', note: 'Moderate conditions' }
     ],
@@ -583,7 +583,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.3, max: 3.2, color: '#4da6ff', note: '11 typhoid admissions from rail colony catchments' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.1, max: 2.8, color: '#f5a623', note: '8 households with fever + GI complaints' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.1, max: 2.0, color: '#00d4aa', note: 'LST 46.9°C · Stagnation MODERATE · Localized near service lanes' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.1, max: 2.0, color: '#00d4aa', note: 'LST 44.0°C · Stagnation MODERATE · Localized near service lanes' },
       { source: 'Community Reports', icon: '👥', score: 1.0, max: 1.4, color: '#2dd48a', note: '9 contaminated water complaints in 7 days' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.4, max: 0.6, color: '#b48aff', note: 'Intermittent rain stress on pipelines' }
     ],
@@ -618,7 +618,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.1, max: 3.2, color: '#4da6ff', note: '8 diarrhoeal admissions with rising week-on-week trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 2.0, max: 2.8, color: '#f5a623', note: '7 households flagged near open drains' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.2, max: 2.0, color: '#00d4aa', note: 'LST 46.7°C · Stagnation MODERATE · Runoff in low-lying pockets' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.2, max: 2.0, color: '#00d4aa', note: 'LST 43.8°C · Stagnation MODERATE · Runoff in low-lying pockets' },
       { source: 'Community Reports', icon: '👥', score: 0.9, max: 1.4, color: '#2dd48a', note: '8 open-drain and wastewater overflow complaints' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.4, max: 0.6, color: '#b48aff', note: 'Monsoon humidity sustaining contamination risk' }
     ],
@@ -710,7 +710,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 2.0, max: 3.2, color: '#4da6ff', note: '6 cholera admissions tied to shared water source' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 1.9, max: 2.8, color: '#f5a623', note: '6 households with acute watery diarrhoea symptoms' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.1, max: 2.0, color: '#00d4aa', note: 'LST 46.4°C · Stagnation HIGH · Drain backup near borewell strip' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.1, max: 2.0, color: '#00d4aa', note: 'LST 43.6°C · Stagnation HIGH · Drain backup near borewell strip' },
       { source: 'Community Reports', icon: '👥', score: 0.9, max: 1.4, color: '#2dd48a', note: '7 foul-water complaints this week' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.4, max: 0.6, color: '#b48aff', note: 'Persistent humidity supports contamination survival' }
     ],
@@ -802,7 +802,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 1.4, max: 3.2, color: '#4da6ff', note: '9 dengue cases with no accelerated spread' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 1.3, max: 2.8, color: '#f5a623', note: '4 households under observation' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.0, max: 2.0, color: '#00d4aa', note: 'LST 45.6°C · Stagnation MODERATE-HIGH · Localized pockets' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 1.0, max: 2.0, color: '#00d4aa', note: 'LST 43.0°C · Stagnation MODERATE-HIGH · Localized pockets' },
       { source: 'Community Reports', icon: '👥', score: 0.6, max: 1.4, color: '#2dd48a', note: '4 stagnant water reports addressed' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.3, max: 0.6, color: '#b48aff', note: 'Moderate humidity profile' }
     ],
@@ -836,7 +836,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 1.1, max: 3.2, color: '#4da6ff', note: '4 respiratory admissions, stable trajectory' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 1.0, max: 2.8, color: '#f5a623', note: '3 households with mild respiratory symptoms' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.9, max: 2.0, color: '#00d4aa', note: 'LST 45.8°C · Stagnation LOW · PM2.5 near arterial roads' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.9, max: 2.0, color: '#00d4aa', note: 'LST 43.2°C · Stagnation LOW · PM2.5 near arterial roads' },
       { source: 'Community Reports', icon: '👥', score: 0.5, max: 1.4, color: '#2dd48a', note: '2 air quality complaints logged' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.3, max: 0.6, color: '#b48aff', note: 'Humidity stable, no severe spikes' }
     ],
@@ -913,7 +913,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 0.9, max: 3.2, color: '#4da6ff', note: '3 malaria cases with no rise trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 0.9, max: 2.8, color: '#f5a623', note: '2 households under watch' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.8, max: 2.0, color: '#00d4aa', note: 'LST 46.8°C · Stagnation LOW · Low-to-moderate breeding conditions' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.8, max: 2.0, color: '#00d4aa', note: 'LST 43.9°C · Stagnation LOW · Low-to-moderate breeding conditions' },
       { source: 'Community Reports', icon: '👥', score: 0.4, max: 1.4, color: '#2dd48a', note: 'Minimal mosquito complaints this week' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.2, max: 0.6, color: '#b48aff', note: 'Weather stable and moderate' }
     ],
@@ -990,7 +990,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 0.4, max: 3.2, color: '#4da6ff', note: '2 malaria cases — no active trend' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 0.6, max: 2.8, color: '#f5a623', note: '1 HIGH risk household this week' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.8, max: 2.0, color: '#00d4aa', note: 'LST 46.1°C · Stagnation LOW' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.8, max: 2.0, color: '#00d4aa', note: 'LST 43.4°C · Stagnation LOW' },
       { source: 'Community Reports', icon: '👥', score: 0.2, max: 1.4, color: '#2dd48a', note: 'No active reports' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.3, max: 0.6, color: '#b48aff', note: 'Normal conditions' }
     ],
@@ -1024,7 +1024,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 0.8, max: 3.2, color: '#4da6ff', note: '5 dengue cases, trend remains stable' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 0.7, max: 2.8, color: '#f5a623', note: '2 households under observation' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.7, max: 2.0, color: '#00d4aa', note: 'LST 46.5°C · Stagnation LOW · Monitored zones stable' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.7, max: 2.0, color: '#00d4aa', note: 'LST 43.7°C · Stagnation LOW · Monitored zones stable' },
       { source: 'Community Reports', icon: '👥', score: 0.3, max: 1.4, color: '#2dd48a', note: 'Few vector complaints, mostly resolved' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.2, max: 0.6, color: '#b48aff', note: 'No adverse weather trigger' }
     ],
@@ -1086,7 +1086,7 @@ export const SECTOR_DATA = {
     contributors: [
       { source: 'Hospital HMS Cases', icon: '🏥', score: 0.3, max: 3.2, color: '#4da6ff', note: '1 isolated diarrhoeal case recorded' },
       { source: 'ASHA Field Surveys', icon: '👩‍⚕️', score: 0.4, max: 2.8, color: '#f5a623', note: 'No household cluster flagged' },
-      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.5, max: 2.0, color: '#00d4aa', note: 'LST 46.0°C · Stagnation LOW · Low environmental stress' },
+      { source: 'NASA Satellite Signals', icon: '🛰', score: 0.5, max: 2.0, color: '#00d4aa', note: 'LST 43.3°C · Stagnation LOW · Low environmental stress' },
       { source: 'Community Reports', icon: '👥', score: 0.2, max: 1.4, color: '#2dd48a', note: 'No sanitation escalation reports' },
       { source: 'Weather & Environment', icon: '🌦', score: 0.2, max: 0.6, color: '#b48aff', note: 'Stable weather conditions' }
     ],

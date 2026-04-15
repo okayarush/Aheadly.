@@ -50,16 +50,92 @@ const TRANSLATIONS = {
     passportFooter: "This worker is authorised to conduct household health surveys on behalf of SMC",
     share: "Share / Show to Resident",
     scanQR: "Scan to verify identity",
-    
+
+    // Brief content
+    briefHRI: "Ward HRI today: 74 — HIGH",
+    briefAlertLabel: "Priority alert:",
+    briefAlertDesc: "Dengue signals rising in your sector. Check for fever, joint pain, and stagnant water in every household today.",
+    briefFocusLabel: "Focus areas:",
+    briefFocusDesc: "Mangalwar Peth and Gandhi Chowk — 3 HIGH risk households flagged from yesterday.",
+    briefWeatherLabel: "Weather note:",
+    briefWeatherDesc: "Humidity 84% today — prime mosquito breeding conditions. Prioritize stagnation checks.",
+    briefVaccineLabel: "Vaccination reminder:",
+    briefVaccineDesc: "2 households on your route have overdue polio doses.",
+
+    // Alerts tab
+    alertsHeader: "Notifications & Alerts",
+    alert1Title: "Dengue Cluster — Mangalwar Peth",
+    alert1Time: "2h ago",
+    alert1Desc: "SMC Health Command flagged 3 HIGH risk households near your route.",
+    alert2Title: "Vaccination Drive — Ward 12",
+    alert2Time: "5h ago",
+    alert2Desc: "Polio drive scheduled for 22 March. 4 overdue households on your list.",
+    alert3Title: "Weather Advisory",
+    alert3Time: "Yesterday",
+    alert3Desc: "High humidity forecast for next 3 days. Prioritise stagnant water checks.",
+    alert4Title: "Sync Complete",
+    alert4Time: "Yesterday",
+    alert4Desc: "3 surveys uploaded successfully to SMC Health server.",
+
+    // Surveys tab
+    surveysMonthHeader: "This Month — March 2026",
+    recentSurveys: "Recent Surveys",
+    todayPending: "Today — Pending",
+    todayLabel: "Today",
+    yesterdayLabel: "Yesterday",
+
+    // Profile tab
+    workSummary: "Work Summary",
+    surveysMonthLabel: "Surveys this month",
+    surveyStreakLabel: "Survey streak",
+    streakVal: "🔥 18 days",
+    hhCoverage: "HH coverage — Ward 12",
+    escalationsRaised: "Escalations raised",
+    detailsLabel: "Details",
+    supervisorLabel: "Supervisor",
+    wardAssignLabel: "Ward assignment",
+    wardAssignVal: "Ward 12 — Sector-12",
+    activeSinceLabel: "Active since",
+    helplineLabel: "Helpline",
+    signOut: "Sign Out",
+
+    // Passport detail labels
+    passportWardLabel: "Ward Assignment:",
+    passportSinceLabel: "Active Since:",
+    passportSupervisorLabel: "Supervisor:",
+    passportHelplineLabel: "Helpline:",
+    passportWardVal: "Ward 12 — Sector-12",
+    passportSinceVal: "March 2021",
+    passportSupervisorVal: "Dr. Meena Kulkarni",
+    passportHelplineVal: "1800-XXX-XXXX",
+
+    // Bottom nav
+    navHome: "Home",
+    navAlerts: "Alerts",
+    navSurveys: "Surveys",
+    navProfile: "Profile",
+
     // Survey
     beforeBegin: "Before You Begin",
+    contextualAlert: "Contextual alert active. Complete checklist to begin:",
+    stepLabel: "Step",
+    stepOf: "of",
     step0_1: "Introduce yourself and show your ASHA Passport",
     step0_2: "Ask if any member has had fever in the last 7 days",
     step0_3: "Check surroundings for stagnant water / open containers before entering",
     step0_4: "Note if there are children under 5 or pregnant women (priority)",
     step0_5: "Confirm household ID matches your register",
-    
+
     step1Title: "Step 1 — Household Details",
+    labelSector: "Sector",
+    labelHouseNo: "House Number",
+    labelHHId: "Household ID (Read-only)",
+    labelLandmark: "Landmark",
+    labelResidents: "Number of residents",
+    labelResName: "Resident name (Head of Household)",
+    labelContact: "Contact number",
+    sectorOpt1: "Sector-12 (Market Yard)",
+    sectorOpt2: "Sector-11",
     step1_sec: "Sector: Sector-12 (Market Yard)",
     step1_hh: "House Number: 14-B",
     step1_id: "Household ID: HH-2024-0847",
@@ -67,16 +143,70 @@ const TRANSLATIONS = {
     step1_res: "Number of residents: 5",
     step1_head: "Resident name: Ramesh Thorat",
     step1_ph: "Contact: 98XXXXXXXX",
-    
+
     step2Title: "Step 2 — Demographics",
+    labelChildUnder5: "Children under 5",
+    labelChild518: "Children 5-18",
+    labelAdults: "Adults",
+    labelSeniors: "Seniors (60+)",
+    pregnantWomen: "Pregnant women in household",
+    memberDisability: "Any member with disability",
+
     step3Title: "Step 3 — Symptoms (last 7 days)",
+    symFever: "Fever",
+    symJoint: "Joint/muscle pain",
+    symHeadache: "Headache",
+    symVomit: "Vomiting",
+    symDiarrhea: "Diarrhoea",
+    symRash: "Rash",
+    labelSymDuration: "Symptom duration (days)",
+    hospitalisation: "Any hospitalisation in last 30 days?",
+
     step4Title: "Step 4 — Sanitation & Environment",
+    labelDrinkSrc: "Drinking water source",
+    labelWaterStorage: "Water storage",
+    labelStagnant: "Stagnant water nearby",
+    labelToilet: "Toilet facility",
+    openDrain: "Open drain visible",
+    optMunTap: "Municipal tap",
+    optWell: "Well / Borewell",
+    optTanker: "Water Tanker",
+    optClosed: "Closed containers",
+    optOpenFlagged: "Open container (Flagged)",
+    optNo: "No",
+    optYesFront: "Yes — in front of house (Flagged)",
+    optYesBack: "Yes — behind house (Flagged)",
+    optIndoor: "Indoor flush",
+    optPublic: "Public / Community toilet",
+
     step5Title: "Step 5 — Vaccination Status",
+    child3yr: "Child (3yrs)",
+    polio: "Polio",
+    overdue: "⚠ OVERDUE",
+    bcg: "BCG",
+    doneTick: "✅ Done",
+    measles: "Measles",
+    adult34yr: "Adult (34yrs)",
+    covidBooster: "COVID Booster",
+    dueSoon: "⚠ Due soon",
+    allOthers3: "All Others (3 members)",
+    stdSchedule: "Standard schedule",
+    upToDate: "✅ Up to date",
+    advisedVaccines: "Advised on overdue vaccines",
+
     step6Title: "Step 6 — Voice Note (Optional)",
-    
+    voiceNoteDesc: "Describe anything unusual not captured in the form.",
+
     aiDebrief: "Aheadly AI Analysis",
     aiSub: "Based on survey data for HH-2024-0847",
     highRisk: "HIGH RISK",
+    aiPoint1: "⚠ Fever + joint pain in 2 members — dengue symptom pattern",
+    aiPoint2: "⚠ Open water storage + stagnant water outside — breeding site confirmed",
+    aiPoint3: "⚠ Open drain visible — environmental risk factor",
+    aiPoint4: "ℹ Child with overdue polio vaccination — vulnerability factor",
+    clusterIntel: "Cluster Intelligence: 3 similar HIGH risk reports on this street this week. This may indicate an active disease cluster forming.",
+    flagAlert: "🚨 Flag for SMC Alert",
+    scheduleFollowup: "📅 Schedule follow-up in 3 days",
     close: "Next Household →"
   },
   mr: {
@@ -115,8 +245,75 @@ const TRANSLATIONS = {
     share: "रहिवाशांना दाखवा",
     scanQR: "ओळख सत्यापित करण्यासाठी स्कॅन करा",
 
+    // Brief content
+    briefHRI: "वॉर्ड HRI आज: 74 — उच्च",
+    briefAlertLabel: "प्राधान्य सतर्कता:",
+    briefAlertDesc: "डेंगूचे संकेत वाढत आहेत. आज प्रत्येक घरात ताप, सांधेदुखी आणि साचलेले पाणी तपासा.",
+    briefFocusLabel: "लक्ष क्षेत्रे:",
+    briefFocusDesc: "मंगळवार पेठ आणि गांधी चौक — कालपासून 3 उच्च धोक्याची घरे चिन्हांकित.",
+    briefWeatherLabel: "हवामान नोंद:",
+    briefWeatherDesc: "आज आर्द्रता 84% — डासांच्या प्रजननाची मुख्य परिस्थिती. साचलेल्या पाण्याची तपासणी प्राधान्याने करा.",
+    briefVaccineLabel: "लसीकरण स्मरण:",
+    briefVaccineDesc: "तुमच्या मार्गावरील 2 घरांचे पोलिओ डोस थकीत आहेत.",
+
+    // Alerts tab
+    alertsHeader: "सूचना आणि सतर्कता",
+    alert1Title: "डेंगू समूह — मंगळवार पेठ",
+    alert1Time: "2 तासांपूर्वी",
+    alert1Desc: "SMC आरोग्य विभागाने तुमच्या मार्गाजवळ 3 उच्च धोक्याची घरे चिन्हांकित केली.",
+    alert2Title: "लसीकरण मोहीम — प्रभाग 12",
+    alert2Time: "5 तासांपूर्वी",
+    alert2Desc: "22 मार्चला पोलिओ मोहीम नियोजित. तुमच्या यादीत 4 थकीत घरे.",
+    alert3Title: "हवामान सल्ला",
+    alert3Time: "काल",
+    alert3Desc: "पुढील 3 दिवस उच्च आर्द्रतेचा अंदाज. साचलेल्या पाण्याची तपासणी प्राधान्याने करा.",
+    alert4Title: "सिंक पूर्ण",
+    alert4Time: "काल",
+    alert4Desc: "3 सर्वेक्षणे यशस्वीरित्या SMC आरोग्य सर्व्हरवर अपलोड केली.",
+
+    // Surveys tab
+    surveysMonthHeader: "या महिन्यात — मार्च 2026",
+    recentSurveys: "अलीकडील सर्वेक्षणे",
+    todayPending: "आज — प्रलंबित",
+    todayLabel: "आज",
+    yesterdayLabel: "काल",
+
+    // Profile tab
+    workSummary: "कामाचा सारांश",
+    surveysMonthLabel: "या महिन्यातील सर्वेक्षणे",
+    surveyStreakLabel: "सर्वेक्षण सलग",
+    streakVal: "🔥 18 दिवस",
+    hhCoverage: "घर व्याप्ती — प्रभाग 12",
+    escalationsRaised: "तातडीच्या सूचना पाठवल्या",
+    detailsLabel: "तपशील",
+    supervisorLabel: "पर्यवेक्षक",
+    wardAssignLabel: "प्रभाग नियुक्ती",
+    wardAssignVal: "प्रभाग 12 — विभाग-12",
+    activeSinceLabel: "पासून सक्रिय",
+    helplineLabel: "हेल्पलाइन",
+    signOut: "बाहेर पडा",
+
+    // Passport detail labels
+    passportWardLabel: "प्रभाग नियुक्ती:",
+    passportSinceLabel: "पासून सक्रिय:",
+    passportSupervisorLabel: "पर्यवेक्षक:",
+    passportHelplineLabel: "हेल्पलाइन:",
+    passportWardVal: "प्रभाग 12 — विभाग-12",
+    passportSinceVal: "मार्च 2021",
+    passportSupervisorVal: "डॉ. मीना कुलकर्णी",
+    passportHelplineVal: "1800-XXX-XXXX",
+
+    // Bottom nav
+    navHome: "मुखपृष्ठ",
+    navAlerts: "सतर्कता",
+    navSurveys: "सर्वेक्षणे",
+    navProfile: "प्रोफाइल",
+
     // Survey Translations
     beforeBegin: "सुरू करण्यापूर्वी",
+    contextualAlert: "संदर्भात्मक सतर्कता सक्रिय. सुरू करण्यापूर्वी यादी पूर्ण करा:",
+    stepLabel: "पायरी",
+    stepOf: "पैकी",
     step0_1: "तुमची ओळख करून द्या आणि तुमचा ASHA पासपोर्ट दाखवा",
     step0_2: "गेल्या 7 दिवसात कोणाला ताप आला होता का ते विचारा",
     step0_3: "प्रवेश करण्यापूर्वी साचलेले पाणी / उघडे डबे तपासा",
@@ -124,6 +321,15 @@ const TRANSLATIONS = {
     step0_5: "घरगुती आयडी तुमच्या रजिस्टरशी जुळतो का याची पुष्टी करा",
 
     step1Title: "पायरी 1 — घराचा तपशील",
+    labelSector: "विभाग",
+    labelHouseNo: "घर क्रमांक",
+    labelHHId: "घर आयडी (फक्त वाचन)",
+    labelLandmark: "खूण",
+    labelResidents: "रहिवाशांची संख्या",
+    labelResName: "रहिवाशाचे नाव (कुटुंब प्रमुख)",
+    labelContact: "संपर्क क्रमांक",
+    sectorOpt1: "विभाग-12 (मार्केट यार्ड)",
+    sectorOpt2: "विभाग-11",
     step1_sec: "विभाग: विभाग-12 (मार्केट यार्ड)",
     step1_hh: "घर क्रमांक: 14-B",
     step1_id: "घर आयडी: HH-2024-0847",
@@ -133,14 +339,68 @@ const TRANSLATIONS = {
     step1_ph: "संपर्क: 98XXXXXXXX",
 
     step2Title: "पायरी 2 — लोकसंख्याशास्त्र",
+    labelChildUnder5: "5 वर्षांखालील मुले",
+    labelChild518: "5-18 वर्षे मुले",
+    labelAdults: "प्रौढ",
+    labelSeniors: "ज्येष्ठ (60+)",
+    pregnantWomen: "घरात गर्भवती महिला",
+    memberDisability: "कोणताही अपंग सदस्य",
+
     step3Title: "पायरी 3 — लक्षणे (गेले 7 दिवस)",
+    symFever: "ताप",
+    symJoint: "सांधे/स्नायू दुखणे",
+    symHeadache: "डोकेदुखी",
+    symVomit: "उलटी",
+    symDiarrhea: "जुलाब",
+    symRash: "पुरळ",
+    labelSymDuration: "लक्षणांचा कालावधी (दिवस)",
+    hospitalisation: "गेल्या 30 दिवसांत कोणाला रुग्णालयात भरती केले?",
+
     step4Title: "पायरी 4 — स्वच्छता आणि पर्यावरण",
+    labelDrinkSrc: "पिण्याचे पाण्याचे स्त्रोत",
+    labelWaterStorage: "पाणीसाठा",
+    labelStagnant: "जवळपास साचलेले पाणी",
+    labelToilet: "शौचालय सुविधा",
+    openDrain: "खुली गटार दृश्यमान",
+    optMunTap: "महानगरपालिका नळ",
+    optWell: "विहीर / बोअरवेल",
+    optTanker: "पाण्याचा टँकर",
+    optClosed: "बंद डबे",
+    optOpenFlagged: "उघडा डबा (चिन्हांकित)",
+    optNo: "नाही",
+    optYesFront: "होय — घराच्या समोर (चिन्हांकित)",
+    optYesBack: "होय — घराच्या मागे (चिन्हांकित)",
+    optIndoor: "आतील फ्लश",
+    optPublic: "सार्वजनिक / सामुदायिक शौचालय",
+
     step5Title: "पायरी 5 — लसीकरण स्थिती",
+    child3yr: "मूल (3 वर्षे)",
+    polio: "पोलिओ",
+    overdue: "⚠ थकीत",
+    bcg: "BCG",
+    doneTick: "✅ झाले",
+    measles: "गोवर",
+    adult34yr: "प्रौढ (34 वर्षे)",
+    covidBooster: "COVID बूस्टर",
+    dueSoon: "⚠ लवकरच येणार",
+    allOthers3: "इतर सर्व (3 सदस्य)",
+    stdSchedule: "मानक वेळापत्रक",
+    upToDate: "✅ अद्ययावत",
+    advisedVaccines: "थकीत लसींबाबत सल्ला दिला",
+
     step6Title: "पायरी 6 — व्हॉइस नोट (पर्यायी)",
-    
+    voiceNoteDesc: "फॉर्ममध्ये न नोंदलेली कोणतीही असामान्य गोष्ट सांगा.",
+
     aiDebrief: "Aheadly AI विश्लेषण",
     aiSub: "HH-2024-0847 च्या सर्वेक्षण डेटावर आधारित",
     highRisk: "उच्च धोका",
+    aiPoint1: "⚠ 2 सदस्यांना ताप + सांधेदुखी — डेंगूची लक्षणे",
+    aiPoint2: "⚠ उघडा पाणीसाठा + बाहेर साचलेले पाणी — प्रजनन स्थळ निश्चित",
+    aiPoint3: "⚠ खुली गटार दृश्यमान — पर्यावरणीय धोका घटक",
+    aiPoint4: "ℹ पोलिओ लसीकरण थकीत असलेले मूल — असुरक्षितता घटक",
+    clusterIntel: "क्लस्टर माहिती: या आठवड्यात या रस्त्यावर 3 समान उच्च धोक्याचे अहवाल. हे सक्रिय रोग समूह तयार होण्याचे संकेत देऊ शकते.",
+    flagAlert: "🚨 SMC सतर्कतेसाठी चिन्हांकित करा",
+    scheduleFollowup: "📅 3 दिवसांत फॉलो-अप नियोजित करा",
     close: "पुढचे घर →"
   }
 };
@@ -620,12 +880,12 @@ export default function ASHAField() {
               <AnimatePresence>
                 {briefOpen && (
                   <BriefContent initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-                    <div className="hri">Ward HRI today: 74 — HIGH</div>
+                    <div className="hri">{t('briefHRI')}</div>
                     <ul>
-                      <li><b>Priority alert:</b> Dengue signals rising in your sector. Check for fever, joint pain, and stagnant water in every household today.</li>
-                      <li><b>Focus areas:</b> Mangalwar Peth and Gandhi Chowk — 3 HIGH risk households flagged from yesterday.</li>
-                      <li><b>Weather note:</b> Humidity 84% today — prime mosquito breeding conditions. Prioritize stagnation checks.</li>
-                      <li><b>Vaccination reminder:</b> 2 households on your route have overdue polio doses.</li>
+                      <li><b>{t('briefAlertLabel')}</b> {t('briefAlertDesc')}</li>
+                      <li><b>{t('briefFocusLabel')}</b> {t('briefFocusDesc')}</li>
+                      <li><b>{t('briefWeatherLabel')}</b> {t('briefWeatherDesc')}</li>
+                      <li><b>{t('briefVaccineLabel')}</b> {t('briefVaccineDesc')}</li>
                     </ul>
                     <CollapseBtn onClick={() => setBriefOpen(false)}>{t('briefRead')}</CollapseBtn>
                   </BriefContent>
@@ -669,12 +929,12 @@ export default function ASHAField() {
         {/* ALERTS TAB */}
         {surveyStep === null && activeTab === 'alerts' && (
           <ScrollContent>
-            <SectionHeader>Notifications & Alerts</SectionHeader>
+            <SectionHeader>{t('alertsHeader')}</SectionHeader>
             {[
-              { icon: '🔴', title: 'Dengue Cluster — Mangalwar Peth', time: '2h ago', desc: 'SMC Health Command flagged 3 HIGH risk households near your route.', color: RED },
-              { icon: '🟠', title: 'Vaccination Drive — Ward 12', time: '5h ago', desc: 'Polio drive scheduled for 22 March. 4 overdue households on your list.', color: AMBER },
-              { icon: '🟡', title: 'Weather Advisory', time: 'Yesterday', desc: 'High humidity forecast for next 3 days. Prioritise stagnant water checks.', color: YELLOW },
-              { icon: '✅', title: 'Sync Complete', time: 'Yesterday', desc: '3 surveys uploaded successfully to SMC Health server.', color: '#10b981' },
+              { icon: '🔴', title: t('alert1Title'), time: t('alert1Time'), desc: t('alert1Desc'), color: RED },
+              { icon: '🟠', title: t('alert2Title'), time: t('alert2Time'), desc: t('alert2Desc'), color: AMBER },
+              { icon: '🟡', title: t('alert3Title'), time: t('alert3Time'), desc: t('alert3Desc'), color: YELLOW },
+              { icon: '✅', title: t('alert4Title'), time: t('alert4Time'), desc: t('alert4Desc'), color: '#10b981' },
             ].map((alert, i) => (
               <div key={i} style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 16, padding: 20, marginBottom: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -690,22 +950,22 @@ export default function ASHAField() {
         {/* SURVEYS TAB */}
         {surveyStep === null && activeTab === 'surveys' && (
           <ScrollContent>
-            <SectionHeader>This Month — March 2026</SectionHeader>
+            <SectionHeader>{t('surveysMonthHeader')}</SectionHeader>
             <div style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 16, padding: 20, marginBottom: 24, display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
-              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: TEAL }}>47</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>COMPLETED</div></div>
+              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: TEAL }}>47</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{t('completed')}</div></div>
               <div style={{ width: 1, background: '#2a2e39' }} />
-              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: AMBER }}>8</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>PENDING</div></div>
+              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: AMBER }}>8</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{t('pending')}</div></div>
               <div style={{ width: 1, background: '#2a2e39' }} />
-              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: '#64748b' }}>2</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>SKIPPED</div></div>
+              <div><div style={{ fontSize: '2rem', fontWeight: 900, color: '#64748b' }}>2</div><div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{t('skipped')}</div></div>
             </div>
 
-            <SectionHeader>Recent Surveys</SectionHeader>
+            <SectionHeader>{t('recentSurveys')}</SectionHeader>
             {[
-              { hh: 'HH-2024-0847', addr: '14-B Mangalwar Peth', date: 'Today — Pending', status: 'PENDING', bg: 'rgba(251,191,36,0.15)', color: AMBER },
-              { hh: 'HH-2024-0842', addr: '7 Rajiv Nagar Colony', date: 'Today', status: 'COMPLETED', bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
-              { hh: 'HH-2024-0831', addr: '3 Gandhi Chowk', date: 'Yesterday', status: 'COMPLETED', bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
-              { hh: 'HH-2024-0819', addr: '22 Siddheshwar Road', date: '18 Mar', status: 'COMPLETED', bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
-              { hh: 'HH-2024-0805', addr: '8 New Colony', date: '18 Mar', status: 'SKIPPED', bg: 'rgba(100,116,139,0.15)', color: '#64748b' },
+              { hh: 'HH-2024-0847', addr: '14-B Mangalwar Peth', date: t('todayPending'), status: t('pending'), bg: 'rgba(251,191,36,0.15)', color: AMBER },
+              { hh: 'HH-2024-0842', addr: '7 Rajiv Nagar Colony', date: t('todayLabel'), status: t('completed'), bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+              { hh: 'HH-2024-0831', addr: '3 Gandhi Chowk', date: t('yesterdayLabel'), status: t('completed'), bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+              { hh: 'HH-2024-0819', addr: '22 Siddheshwar Road', date: '18 Mar', status: t('completed'), bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+              { hh: 'HH-2024-0805', addr: '8 New Colony', date: '18 Mar', status: t('skipped'), bg: 'rgba(100,116,139,0.15)', color: '#64748b' },
             ].map((s, i) => (
               <div key={i} style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 14, padding: 16, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
@@ -725,18 +985,18 @@ export default function ASHAField() {
               <div style={{ width: 80, height: 80, borderRadius: '50%', background: TEAL_BG, border: `2px solid ${TEAL}`, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>
                 <FiUser color={TEAL} />
               </div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 900 }}>Sunita Pawar</div>
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>SMC-ASHA-0142 · Ward 12</div>
-              <PassportBtn style={{ marginTop: 12 }} onClick={() => setShowPassport(true)}>🪪 View Passport</PassportBtn>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900 }}>{t('workerName')}</div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{t('workerId')}</div>
+              <PassportBtn style={{ marginTop: 12 }} onClick={() => setShowPassport(true)}>{t('viewPassport')}</PassportBtn>
             </div>
 
-            <SectionHeader>Work Summary</SectionHeader>
+            <SectionHeader>{t('workSummary')}</SectionHeader>
             <div style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 16, padding: 20, marginBottom: 20 }}>
               {[
-                { label: 'Surveys this month', value: '47' },
-                { label: 'Survey streak', value: '🔥 18 days' },
-                { label: 'HH coverage — Ward 12', value: '78%' },
-                { label: 'Escalations raised', value: '3' },
+                { label: t('surveysMonthLabel'), value: '47' },
+                { label: t('surveyStreakLabel'), value: t('streakVal') },
+                { label: t('hhCoverage'), value: '78%' },
+                { label: t('escalationsRaised'), value: '3' },
               ].map((row, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < 3 ? '1px solid #2a2e39' : 'none', fontSize: '0.88rem' }}>
                   <span style={{ color: 'rgba(255,255,255,0.6)' }}>{row.label}</span>
@@ -745,13 +1005,13 @@ export default function ASHAField() {
               ))}
             </div>
 
-            <SectionHeader>Details</SectionHeader>
+            <SectionHeader>{t('detailsLabel')}</SectionHeader>
             <div style={{ background: '#1a1d26', border: '1px solid #2a2e39', borderRadius: 16, padding: 20, marginBottom: 20 }}>
               {[
-                { label: 'Supervisor', value: 'Dr. Meena Kulkarni' },
-                { label: 'Ward assignment', value: 'Ward 12 — Sector-12' },
-                { label: 'Active since', value: 'March 2021' },
-                { label: 'Helpline', value: '1800-XXX-XXXX' },
+                { label: t('supervisorLabel'), value: t('passportSupervisorVal') },
+                { label: t('wardAssignLabel'), value: t('wardAssignVal') },
+                { label: t('activeSinceLabel'), value: t('passportSinceVal') },
+                { label: t('helplineLabel'), value: t('passportHelplineVal') },
               ].map((row, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < 3 ? '1px solid #2a2e39' : 'none', fontSize: '0.88rem' }}>
                   <span style={{ color: 'rgba(255,255,255,0.6)' }}>{row.label}</span>
@@ -761,7 +1021,7 @@ export default function ASHAField() {
             </div>
 
             <button style={{ width: '100%', background: '#1a1d26', border: '1px solid #2a2e39', color: RED, borderRadius: 12, padding: 14, fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer' }}>
-              Sign Out
+              {t('signOut')}
             </button>
           </ScrollContent>
         )}
@@ -770,7 +1030,7 @@ export default function ASHAField() {
         {surveyStep !== null && (
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#0f111a', zIndex: 150, display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '20px', borderBottom: '1px solid #1e212b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>{surveyStep === 0 ? t('beforeBegin') : surveyStep === 7 ? t('aiDebrief') : `Step ${surveyStep} of 6`}</div>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>{surveyStep === 0 ? t('beforeBegin') : surveyStep === 7 ? t('aiDebrief') : `${t('stepLabel')} ${surveyStep} ${t('stepOf')} 6`}</div>
               <FiX style={{ fontSize: '1.5rem', cursor: 'pointer' }} onClick={() => setSurveyStep(null)} />
             </div>
 
@@ -778,7 +1038,7 @@ export default function ASHAField() {
               {/* STEP 0: Pre-Survey Checklist */}
               {surveyStep === 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', marginBottom: 10 }}>Contextual alert active. Complete checklist to begin:</p>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', marginBottom: 10 }}>{t('contextualAlert')}</p>
                   {[t('step0_1'), t('step0_2'), t('step0_3'), t('step0_4'), t('step0_5')].map((text, i) => (
                     <div 
                       key={i} 
@@ -801,42 +1061,42 @@ export default function ASHAField() {
                   <div style={{ fontSize: '1.2rem', fontWeight: 800, color: TEAL, marginBottom: 10 }}>{t('step1Title')}</div>
                   
                   <FormGroup>
-                    <Label>Sector</Label>
+                    <Label>{t('labelSector')}</Label>
                     <Select defaultValue="Sector-12">
-                      <option value="Sector-12">Sector-12 (Market Yard)</option>
-                      <option value="Sector-11">Sector-11</option>
+                      <option value="Sector-12">{t('sectorOpt1')}</option>
+                      <option value="Sector-11">{t('sectorOpt2')}</option>
                     </Select>
                   </FormGroup>
-                  
+
                   <FormGroup>
-                    <Label>House Number</Label>
+                    <Label>{t('labelHouseNo')}</Label>
                     <Input defaultValue="14-B" />
                   </FormGroup>
-                  
+
                   <FormGroup>
-                    <Label>Household ID (Read-only)</Label>
+                    <Label>{t('labelHHId')}</Label>
                     <Input disabled value="HH-2024-0847" />
                   </FormGroup>
-                  
+
                   <FormGroup>
-                    <Label>Landmark</Label>
+                    <Label>{t('labelLandmark')}</Label>
                     <Input defaultValue="Near Siddheshwar Temple" />
                   </FormGroup>
-                  
+
                   <div style={{ height: 1, background: '#1e212b', margin: '20px 0' }} />
-                  
+
                   <FormGroup>
-                    <Label>Number of residents</Label>
+                    <Label>{t('labelResidents')}</Label>
                     <Input type="number" defaultValue="5" />
                   </FormGroup>
-                  
+
                   <FormGroup>
-                    <Label>Resident name (Head of Household)</Label>
+                    <Label>{t('labelResName')}</Label>
                     <Input defaultValue="Ramesh Thorat" />
                   </FormGroup>
-                  
+
                   <FormGroup>
-                    <Label>Contact number</Label>
+                    <Label>{t('labelContact')}</Label>
                     <Input defaultValue="98XXXXXXXX" />
                   </FormGroup>
 
@@ -850,34 +1110,34 @@ export default function ASHAField() {
                   <div style={{ fontSize: '1.2rem', fontWeight: 800, color: TEAL, marginBottom: 10 }}>{t('step2Title')}</div>
                   
                   <FormGroup>
-                    <Label>Children under 5</Label>
+                    <Label>{t('labelChildUnder5')}</Label>
                     <PillSelector>
                       <PillBtn>0</PillBtn><PillBtn $active>1</PillBtn><PillBtn>2</PillBtn><PillBtn>3+</PillBtn>
                     </PillSelector>
                   </FormGroup>
                   <FormGroup>
-                    <Label>Children 5-18</Label>
+                    <Label>{t('labelChild518')}</Label>
                     <PillSelector>
                       <PillBtn>0</PillBtn><PillBtn $active>1</PillBtn><PillBtn>2</PillBtn><PillBtn>3+</PillBtn>
                     </PillSelector>
                   </FormGroup>
                   <FormGroup>
-                    <Label>Adults</Label>
+                    <Label>{t('labelAdults')}</Label>
                     <PillSelector>
                       <PillBtn>0</PillBtn><PillBtn>1</PillBtn><PillBtn $active>2</PillBtn><PillBtn>3+</PillBtn>
                     </PillSelector>
                   </FormGroup>
                   <FormGroup>
-                    <Label>Seniors (60+)</Label>
+                    <Label>{t('labelSeniors')}</Label>
                     <PillSelector>
                       <PillBtn>0</PillBtn><PillBtn $active>1</PillBtn><PillBtn>2</PillBtn><PillBtn>3+</PillBtn>
                     </PillSelector>
                   </FormGroup>
-                  
+
                   <div style={{ height: 1, background: '#1e212b', margin: '20px 0' }} />
-                  
-                  <CheckRow $checked={false}><div className="text">Pregnant women in household</div><div className="box" /></CheckRow>
-                  <CheckRow $checked={false}><div className="text">Any member with disability</div><div className="box" /></CheckRow>
+
+                  <CheckRow $checked={false}><div className="text">{t('pregnantWomen')}</div><div className="box" /></CheckRow>
+                  <CheckRow $checked={false}><div className="text">{t('memberDisability')}</div><div className="box" /></CheckRow>
 
                   <PrimaryBtn style={{ marginTop: 20 }} onClick={() => setSurveyStep(3)}>{t('next')}</PrimaryBtn>
                 </div>
@@ -889,29 +1149,29 @@ export default function ASHAField() {
                   <div style={{ fontSize: '1.2rem', fontWeight: 800, color: TEAL, marginBottom: 10 }}>{t('step3Title')}</div>
                   
                   <CheckRow $checked={demoState.fever} onClick={() => toggleDemo('fever')}>
-                    <div className="text">Fever</div><div className="box">{demoState.fever && <FiCheck color="#000" />}</div>
+                    <div className="text">{t('symFever')}</div><div className="box">{demoState.fever && <FiCheck color="#000" />}</div>
                   </CheckRow>
                   <CheckRow $checked={demoState.joint} onClick={() => toggleDemo('joint')}>
-                    <div className="text">Joint/muscle pain</div><div className="box">{demoState.joint && <FiCheck color="#000" />}</div>
+                    <div className="text">{t('symJoint')}</div><div className="box">{demoState.joint && <FiCheck color="#000" />}</div>
                   </CheckRow>
                   <CheckRow $checked={demoState.headache} onClick={() => toggleDemo('headache')}>
-                    <div className="text">Headache</div><div className="box">{demoState.headache && <FiCheck color="#000" />}</div>
+                    <div className="text">{t('symHeadache')}</div><div className="box">{demoState.headache && <FiCheck color="#000" />}</div>
                   </CheckRow>
                   <CheckRow $checked={demoState.vomit} onClick={() => toggleDemo('vomit')}>
-                    <div className="text">Vomiting</div><div className="box">{demoState.vomit && <FiCheck color="#000" />}</div>
+                    <div className="text">{t('symVomit')}</div><div className="box">{demoState.vomit && <FiCheck color="#000" />}</div>
                   </CheckRow>
                   <CheckRow $checked={demoState.diarrhea} onClick={() => toggleDemo('diarrhea')}>
-                    <div className="text">Diarrhoea</div><div className="box">{demoState.diarrhea && <FiCheck color="#000" />}</div>
+                    <div className="text">{t('symDiarrhea')}</div><div className="box">{demoState.diarrhea && <FiCheck color="#000" />}</div>
                   </CheckRow>
                   <CheckRow $checked={demoState.rash} onClick={() => toggleDemo('rash')}>
-                    <div className="text">Rash</div><div className="box">{demoState.rash && <FiCheck color="#000" />}</div>
+                    <div className="text">{t('symRash')}</div><div className="box">{demoState.rash && <FiCheck color="#000" />}</div>
                   </CheckRow>
-                  
+
                   <FormGroup style={{marginTop: 20}}>
-                    <Label>Symptom duration (days)</Label>
+                    <Label>{t('labelSymDuration')}</Label>
                     <Input type="number" defaultValue="3" />
                   </FormGroup>
-                  <CheckRow $checked={false}><div className="text">Any hospitalisation in last 30 days?</div><div className="box" /></CheckRow>
+                  <CheckRow $checked={false}><div className="text">{t('hospitalisation')}</div><div className="box" /></CheckRow>
 
                   <PrimaryBtn style={{ marginTop: 20 }} onClick={() => setSurveyStep(4)}>{t('next')}</PrimaryBtn>
                 </div>
@@ -923,41 +1183,41 @@ export default function ASHAField() {
                   <div style={{ fontSize: '1.2rem', fontWeight: 800, color: TEAL, marginBottom: 10 }}>{t('step4Title')}</div>
                   
                   <FormGroup>
-                    <Label>Drinking water source</Label>
+                    <Label>{t('labelDrinkSrc')}</Label>
                     <Select value={demoState.drinkingSource} onChange={e => setDemoState(s => ({...s, drinkingSource: e.target.value}))}>
-                      <option value="mun_tap">Municipal tap</option>
-                      <option value="well">Well / Borewell</option>
-                      <option value="tanker">Water Tanker</option>
+                      <option value="mun_tap">{t('optMunTap')}</option>
+                      <option value="well">{t('optWell')}</option>
+                      <option value="tanker">{t('optTanker')}</option>
                     </Select>
                   </FormGroup>
-                  
+
                   <FormGroup>
-                    <Label>Water storage</Label>
+                    <Label>{t('labelWaterStorage')}</Label>
                     <Select defaultValue="open">
-                      <option value="closed">Closed containers</option>
-                      <option value="open">Open container (Flagged)</option>
+                      <option value="closed">{t('optClosed')}</option>
+                      <option value="open">{t('optOpenFlagged')}</option>
                     </Select>
                   </FormGroup>
-                  
+
                   <FormGroup>
-                    <Label>Stagnant water nearby</Label>
+                    <Label>{t('labelStagnant')}</Label>
                     <Select value={demoState.stagnantWater} onChange={e => setDemoState(s => ({...s, stagnantWater: e.target.value}))} style={{ color: demoState.stagnantWater === 'yes_front' ? RED : 'white' }}>
-                      <option value="none">No</option>
-                      <option value="yes_front">Yes — in front of house (Flagged)</option>
-                      <option value="yes_back">Yes — behind house (Flagged)</option>
+                      <option value="none">{t('optNo')}</option>
+                      <option value="yes_front">{t('optYesFront')}</option>
+                      <option value="yes_back">{t('optYesBack')}</option>
                     </Select>
                   </FormGroup>
-                  
+
                   <FormGroup>
-                    <Label>Toilet facility</Label>
+                    <Label>{t('labelToilet')}</Label>
                     <Select defaultValue="indoor">
-                      <option value="indoor">Indoor flush</option>
-                      <option value="public">Public / Community toilet</option>
+                      <option value="indoor">{t('optIndoor')}</option>
+                      <option value="public">{t('optPublic')}</option>
                     </Select>
                   </FormGroup>
-                  
+
                   <CheckRow $checked={demoState.drain} onClick={() => toggleDemo('drain')}>
-                    <div className="text">Open drain visible</div>
+                    <div className="text">{t('openDrain')}</div>
                     <div className="box">{demoState.drain && <FiCheck color="#000" />}</div>
                   </CheckRow>
 
@@ -971,34 +1231,34 @@ export default function ASHAField() {
                   <div style={{ fontSize: '1.2rem', fontWeight: 800, color: TEAL, marginBottom: 10 }}>{t('step5Title')}</div>
                   
                   <div style={{ background: '#1a1d26', padding: 16, borderRadius: 12 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 10 }}>Child (3yrs)</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 10 }}>{t('child3yr')}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: '0.85rem' }}>
-                      <span>Polio</span> <strong style={{color: AMBER}}>⚠ OVERDUE</strong>
+                      <span>{t('polio')}</span> <strong style={{color: AMBER}}>{t('overdue')}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: '0.85rem' }}>
-                      <span>BCG</span> <strong style={{color: TEAL}}>✅ Done</strong>
+                      <span>{t('bcg')}</span> <strong style={{color: TEAL}}>{t('doneTick')}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span>Measles</span> <strong style={{color: TEAL}}>✅ Done</strong>
+                      <span>{t('measles')}</span> <strong style={{color: TEAL}}>{t('doneTick')}</strong>
                     </div>
                   </div>
-                  
+
                   <div style={{ background: '#1a1d26', padding: 16, borderRadius: 12 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 10 }}>Adult (34yrs)</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 10 }}>{t('adult34yr')}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span>COVID Booster</span> <strong style={{color: AMBER}}>⚠ Due soon</strong>
+                      <span>{t('covidBooster')}</span> <strong style={{color: AMBER}}>{t('dueSoon')}</strong>
                     </div>
                   </div>
-                  
+
                   <div style={{ background: '#1a1d26', padding: 16, borderRadius: 12 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 10 }}>All Others (3 members)</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 10 }}>{t('allOthers3')}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span>Standard schedule</span> <strong style={{color: TEAL}}>✅ Up to date</strong>
+                      <span>{t('stdSchedule')}</span> <strong style={{color: TEAL}}>{t('upToDate')}</strong>
                     </div>
                   </div>
-                  
+
                   <CheckRow $checked={demoState.advised} onClick={() => toggleDemo('advised')} style={{marginTop: 20}}>
-                    <div className="text">Advised on overdue vaccines</div>
+                    <div className="text">{t('advisedVaccines')}</div>
                     <div className="box">{demoState.advised && <FiCheck color="#000" />}</div>
                   </CheckRow>
 
@@ -1010,7 +1270,7 @@ export default function ASHAField() {
               {surveyStep === 6 && (
                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', marginTop: 40 }}>
                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: TEAL }}>{t('step6Title')}</div>
-                   <div style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', fontSize: '0.85rem' }}>Describe anything unusual not captured in the form.</div>
+                   <div style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', fontSize: '0.85rem' }}>{t('voiceNoteDesc')}</div>
                    
                    <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', border: `2px solid ${RED}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 40, cursor: 'pointer' }}>
                      <FiMic style={{ fontSize: '3rem', color: RED }} />
@@ -1032,20 +1292,20 @@ export default function ASHAField() {
 
                   <div style={{ background: '#1a1d26', padding: 20, borderRadius: 16 }}>
                     <ul style={{ paddingLeft: 16, margin: 0, fontSize: '0.85rem', lineHeight: 1.6, color: 'rgba(255,255,255,0.8)' }}>
-                      <li style={{marginBottom: 10}}>⚠ Fever + joint pain in 2 members — dengue symptom pattern</li>
-                      <li style={{marginBottom: 10}}>⚠ Open water storage + stagnant water outside — breeding site confirmed</li>
-                      <li style={{marginBottom: 10}}>⚠ Open drain visible — environmental risk factor</li>
-                      <li>ℹ Child with overdue polio vaccination — vulnerability factor</li>
+                      <li style={{marginBottom: 10}}>{t('aiPoint1')}</li>
+                      <li style={{marginBottom: 10}}>{t('aiPoint2')}</li>
+                      <li style={{marginBottom: 10}}>{t('aiPoint3')}</li>
+                      <li>{t('aiPoint4')}</li>
                     </ul>
                   </div>
 
                   <div style={{ background: 'rgba(251,191,36,0.1)', padding: 16, borderRadius: 12, border: `1px solid ${AMBER}`, fontSize: '0.85rem', color: AMBER, fontWeight: 700 }}>
-                    Cluster Intelligence: 3 similar HIGH risk reports on this street this week. This may indicate an active disease cluster forming.
+                    {t('clusterIntel')}
                   </div>
 
                   <div style={{ display: 'grid', gap: 10, marginTop: 10 }}>
-                    <button style={{ background: RED, color: 'white', border: 'none', padding: 14, borderRadius: 10, fontWeight: 800, fontSize: '0.9rem' }} onClick={handleEscalation}>🚨 Flag for SMC Alert</button>
-                    <button style={{ background: '#2a2e39', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontWeight: 700, fontSize: '0.9rem' }}>📅 Schedule follow-up in 3 days</button>
+                    <button style={{ background: RED, color: 'white', border: 'none', padding: 14, borderRadius: 10, fontWeight: 800, fontSize: '0.9rem' }} onClick={handleEscalation}>{t('flagAlert')}</button>
+                    <button style={{ background: '#2a2e39', color: 'white', border: 'none', padding: 14, borderRadius: 10, fontWeight: 700, fontSize: '0.9rem' }}>{t('scheduleFollowup')}</button>
                   </div>
 
                   <PrimaryBtn style={{ marginTop: 30 }} onClick={() => setSurveyStep(null)}>{t('close')}</PrimaryBtn>
@@ -1106,10 +1366,10 @@ export default function ASHAField() {
                   <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: 24 }}>{t('workerId')}</div>
                   
                   <div style={{ textAlign: 'left', fontSize: '0.8rem', background: '#f1f5f9', padding: 16, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div><strong>Ward Assignment:</strong> Ward 12 — Sector-12</div>
-                    <div><strong>Active Since:</strong> March 2021</div>
-                    <div><strong>Supervisor:</strong> Dr. Meena Kulkarni</div>
-                    <div><strong>Helpline:</strong> 1800-XXX-XXXX</div>
+                    <div><strong>{t('passportWardLabel')}</strong> {t('passportWardVal')}</div>
+                    <div><strong>{t('passportSinceLabel')}</strong> {t('passportSinceVal')}</div>
+                    <div><strong>{t('passportSupervisorLabel')}</strong> {t('passportSupervisorVal')}</div>
+                    <div><strong>{t('passportHelplineLabel')}</strong> {t('passportHelplineVal')}</div>
                   </div>
                 </div>
                 <div style={{ background: TEAL, color: '#000', padding: 12, textAlign: 'center', fontSize: '0.75rem', fontWeight: 800 }}>
@@ -1122,10 +1382,10 @@ export default function ASHAField() {
 
         {/* BOTTOM NAV */}
         <BottomNav>
-          <NavItem $active={activeTab === 'home'} onClick={() => { setSurveyStep(null); setActiveTab('home'); }}><FiHome /><span>Home</span></NavItem>
-          <NavItem $active={activeTab === 'alerts'} onClick={() => { setSurveyStep(null); setActiveTab('alerts'); }}><FiBell /><span>Alerts</span></NavItem>
-          <NavItem $active={activeTab === 'surveys'} onClick={() => { setSurveyStep(null); setActiveTab('surveys'); }}><FiFileText /><span>Surveys</span></NavItem>
-          <NavItem $active={activeTab === 'profile'} onClick={() => { setSurveyStep(null); setActiveTab('profile'); }}><FiUser /><span>Profile</span></NavItem>
+          <NavItem $active={activeTab === 'home'} onClick={() => { setSurveyStep(null); setActiveTab('home'); }}><FiHome /><span>{t('navHome')}</span></NavItem>
+          <NavItem $active={activeTab === 'alerts'} onClick={() => { setSurveyStep(null); setActiveTab('alerts'); }}><FiBell /><span>{t('navAlerts')}</span></NavItem>
+          <NavItem $active={activeTab === 'surveys'} onClick={() => { setSurveyStep(null); setActiveTab('surveys'); }}><FiFileText /><span>{t('navSurveys')}</span></NavItem>
+          <NavItem $active={activeTab === 'profile'} onClick={() => { setSurveyStep(null); setActiveTab('profile'); }}><FiUser /><span>{t('navProfile')}</span></NavItem>
         </BottomNav>
 
       </MobileShell>

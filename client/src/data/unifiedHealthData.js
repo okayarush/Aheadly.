@@ -436,7 +436,7 @@ export const generateTickerEvents = () => {
   Object.values(wardData).forEach(ward => {
     const hb = ward.hri.breakdown;
     if (hb.heatExposure >= 2.0)
-      events.push({ icon: '🌡️', text: `${ward.name} LST: ${(36 + hb.heatExposure * 1.1).toFixed(1)}°C` });
+      events.push({ icon: '🌡️', text: `${ward.name} LST: ${(43 + (hb.heatExposure - 8) * (2 / 14)).toFixed(1)}°C` });
     if (hb.waterStagnation >= 2.0)
       events.push({ icon: '💧', text: `Stagnation alert — ${ward.name}` });
     if (ward.communityReports.last7Days > 8)

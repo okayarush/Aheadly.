@@ -1,5 +1,22 @@
 [
   {
+    "id": "tg-1776239323728-1x3ge",
+    "type": "sanitation",
+    "issue_type": "Stagnant Water",
+    "source": "telegram",
+    "sector": "Sector-11",
+    "latitude": 17.712619,
+    "longitude": 75.856663,
+    "location": {
+      "lat": 17.712619,
+      "lng": 75.856663
+    },
+    "has_proof": true,
+    "photo_path": "/telegram_photos/tg-1776239323728-1x3ge.jpg",
+    "note": null,
+    "timestamp": "2026-04-15T07:48:47.072Z"
+  },
+  {
     "id": "tg-1776158913104-y48ud",
     "type": "sanitation",
     "issue_type": "Open Drain / Sewage",
