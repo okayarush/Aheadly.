@@ -174,7 +174,7 @@ const ControlPanel = styled.div`
 
 const LAYER_EXPLANATIONS = {
   hri: {
-    title: "Health Rate Index (HRI)",
+    title: "HEALTH RISK INDEX (HRI)",
     desc: "A composite risk score identifying sectors with the highest public health vulnerability.",
     insight: "High-score sectors require immediate municipal intervention to prevent disease outbreaks.",
     uses: ["Disease Burden", "Heat Stress", "Sanitation & Environment"],
@@ -1622,7 +1622,7 @@ const DigitalTwin = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', color: activeLayer === "hri" ? '#fca5a5' : 'inherit' }}>
                   <FiActivity color={activeLayer === "hri" ? '#fca5a5' : 'inherit'} />
-                  Health Rate Index (HRI)
+                  HEALTH RISK INDEX (HRI)
                 </div>
               </ToggleItem>
 
@@ -1758,6 +1758,35 @@ const DigitalTwin = () => {
                   >{f}</span>
                 ))}
               </div>
+              {/* Clear reports button */}
+              {telegramReports.length > 0 && (
+                <button
+                  onClick={() => setTelegramReports([])}
+                  title="Clear all Telegram reports"
+                  style={{
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    color: '#ef4444',
+                    padding: '6px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'all 0.2s',
+                    opacity: 0.6,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.style.background = 'rgba(239,68,68,0.12)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '0.6';
+                    e.currentTarget.style.background = 'rgba(239,68,68,0.08)';
+                  }}
+                >
+                  <FiTrash2 size={16} />
+                </button>
+              )}
               <button
                 onClick={() => setShowRecentModal(false)}
                 style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', cursor: 'pointer', color: '#94a3b8', padding: '6px 10px', display: 'flex', alignItems: 'center' }}
